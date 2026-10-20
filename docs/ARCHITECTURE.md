@@ -1,6 +1,6 @@
 # BookKeepAI 架构与数据字典
 
-版本：S02-1.1（S04/S05接收补充）｜日期：2026-10-20｜负责人：Codex｜状态：原S02已接收；本次补充见§11，S05实现仍待返工
+版本：S02-1.2（S05-R1复验补充）｜日期：2026-10-20｜负责人：Codex｜状态：原S02已接收；§11含hash基准澄清，S05-R1仍待返工
 
 本文件是规范性文字，不是运行时schema、SQL、源码或实现证明。输入为开发方案v1.0、S01-1.0 PRD/ACCEPTANCE及S01交接；S01接收结论见[接收记录](../evidence/S02/S01-RECEIPT.md)。接口以[CONTRACTS](CONTRACTS.md)为准，细化理由及影响见[DECISIONS](DECISIONS.md)。具体依赖版本、数据库DDL、校验器、自动化测试及构建由DSH后续实现。
 
@@ -213,5 +213,7 @@ S04只搭安全IPC及明确NOT_IMPLEMENTED/UNSUPPORTED stub、不保存真实密
 当前账本修订号以持久 Ledger.dataRevision 为事实源。MutationReceipt 内部 revision_at_commit 保存历史提交值，不能回写当前 store 水位；IPC 当前信封和恢复令牌使用当前事实源，历史提交值作为独立 committedRevision 元数据。输出映射及回归要求见 CONTRACTS §10.1、BK-S05-001。
 
 备份档案及其可发现目录属于独立保留的维护资源。恢复旧账本后仍须可发现、校验并选择此前保留的所选档案、较新档案和 pre_restore；不得靠合并交易/旧审计来保留备份目录。实现可将目录与 generation 分离或采用受限校验重建等效方案，需证明路径受限、坏档案不伪造成功。见 CONTRACTS §10.2、BK-S05-002。
+
+R1新增目录重建不能削弱hash校验：已知创建hash须作为基准持续保留，扫描当前内容hash只能比较，不能压过DB/目录中已有基准。已知元数据冲突需明确拒绝/标错，不能因恢复到更早generation而让不匹配文件变成新基准。见CONTRACTS§10.2、DECISIONS D41和BK-S05-003；本轮组合故障路径为静态发现，待DSH补真实SQLite回归。
 
 S05 的 DB-only .bkdb、内部 backupId 选择与全量目录仅作为基础阶段适配；S15 统一最终文件格式、分页、外部选择 token、恢复操作状态核实、孤儿补偿和故障恢复，需兼容或明确转换已有档案。S11 前 sourceCandidateId 仅唯一约束预留，候选外键/批准关联后补；这些阶段边界不等于 AC11/16 已通过。
