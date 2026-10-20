@@ -1,0 +1,167 @@
+{
+  "ok": true,
+  "kind": "S06 implementation self-test, not S08 acceptance",
+  "localAppData": "C:\\Users\\Administrator\\AppData\\Local\\Temp\\BookKeepAI S06 中文 LuGd3o",
+  "checks": [
+    {
+      "id": "empty-ledger-real-db",
+      "ok": true,
+      "detail": {}
+    },
+    {
+      "id": "keyboard-ctrl-n-focus-trap-esc-unsaved-and-preserved-invalid-input",
+      "ok": true,
+      "detail": {}
+    },
+    {
+      "id": "F01-create-stable-order-collapse",
+      "ok": true,
+      "detail": {
+        "displayed": "符合筛选 3 笔 · ¥33.30"
+      }
+    },
+    {
+      "id": "edit-delete-confirm-restore-immediate-totals",
+      "ok": true,
+      "detail": {
+        "editedFen": 3350,
+        "afterDeleteFen": 1850,
+        "restoredFen": 3350,
+        "finalFen": 3330
+      }
+    },
+    {
+      "id": "name-search-empty-result-date-inclusive",
+      "ok": true,
+      "detail": {}
+    },
+    {
+      "id": "category-management-entry-and-persistent-return",
+      "ok": true,
+      "detail": {}
+    },
+    {
+      "id": "actual-process-restart-and-sql-display-reconciliation",
+      "ok": true,
+      "detail": {
+        "active": {
+          "count": 3,
+          "totalFen": 3330
+        },
+        "rows": [
+          {
+            "name": "午餐",
+            "amount_fen": 1350,
+            "occurred_date": "2026-09-27",
+            "occurred_time": "12:00",
+            "time_precision": "minute",
+            "deleted_at": null,
+            "version": 1
+          },
+          {
+            "name": "双荟",
+            "amount_fen": 480,
+            "occurred_date": "2026-09-27",
+            "occurred_time": "18:00",
+            "time_precision": "minute",
+            "deleted_at": null,
+            "version": 3
+          },
+          {
+            "name": "晚餐",
+            "amount_fen": 1500,
+            "occurred_date": "2026-09-27",
+            "occurred_time": "19:00",
+            "time_precision": "minute",
+            "deleted_at": null,
+            "version": 3
+          }
+        ],
+        "ledgerCount": 1,
+        "categories": 34,
+        "quickCheck": [
+          {
+            "quick_check": "ok"
+          }
+        ],
+        "foreignKeys": []
+      }
+    },
+    {
+      "id": "viewport-1280x720",
+      "ok": true,
+      "detail": {
+        "width": 1280,
+        "height": 720,
+        "horizontalOverflow": false
+      }
+    },
+    {
+      "id": "viewport-640x480",
+      "ok": true,
+      "detail": {
+        "width": 640,
+        "height": 480,
+        "horizontalOverflow": false
+      }
+    },
+    {
+      "id": "long-name-cross-year-unknown-time-and-200-percent-form-scroll",
+      "ok": true,
+      "detail": {}
+    }
+  ],
+  "consoleErrors": [],
+  "finalDatabase": {
+    "active": {
+      "count": 4,
+      "totalFen": 3430
+    },
+    "rows": [
+      {
+        "name": "午餐",
+        "amount_fen": 1350,
+        "occurred_date": "2026-09-27",
+        "occurred_time": "12:00",
+        "time_precision": "minute",
+        "deleted_at": null,
+        "version": 1
+      },
+      {
+        "name": "双荟",
+        "amount_fen": 480,
+        "occurred_date": "2026-09-27",
+        "occurred_time": "18:00",
+        "time_precision": "minute",
+        "deleted_at": null,
+        "version": 3
+      },
+      {
+        "name": "晚餐",
+        "amount_fen": 1500,
+        "occurred_date": "2026-09-27",
+        "occurred_time": "19:00",
+        "time_precision": "minute",
+        "deleted_at": null,
+        "version": 3
+      },
+      {
+        "name": "跨年长名称验证跨年长名称验证跨年长名称验证跨年长名称验证跨年长名称验证跨年长名称验证跨年长名称验证跨年长名称验证跨年长名称验证跨年长名称验证跨年长名称验证跨年长名称验证",
+        "amount_fen": 100,
+        "occurred_date": "2024-12-31",
+        "occurred_time": null,
+        "time_precision": "date",
+        "deleted_at": null,
+        "version": 1
+      }
+    ],
+    "ledgerCount": 1,
+    "categories": 34,
+    "quickCheck": [
+      {
+        "quick_check": "ok"
+      }
+    ],
+    "foreignKeys": []
+  }
+}

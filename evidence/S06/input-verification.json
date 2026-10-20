@@ -1,0 +1,399 @@
+{
+  "receivedCommit": "9cfba93e361d302a19718860ef124e60c6b6f14d",
+  "fix": "29f0a51",
+  "preservedBaseline": "9a1c369de8c087e9518b57bc14579fea44e19e44",
+  "results": [
+    {
+      "manifest": "evidence/S05-R2/INPUTS.sha256",
+      "count": 13,
+      "matchedAtReceivedCommit": 13,
+      "rows": [
+        {
+          "path": "AGENTS.md",
+          "expected": "665533672D8E14AD73147F85F9AEA4CAC1BF56346841C6E07EA8264984B7CC02",
+          "atReceivedCommit": true,
+          "atStart": false
+        },
+        {
+          "path": "执行看板.md",
+          "expected": "999311B259EE4B6FE03B5E2691041954970CF29CABCBEE05942FB2CA8E5FFAD9",
+          "atReceivedCommit": true,
+          "atStart": false
+        },
+        {
+          "path": "tasks/S05-REWORK-R2.md",
+          "expected": "891AD4A04DAA49DFBF9A3374D566735786AF82E257C5ADE9E488B7BE3D820359",
+          "atReceivedCommit": true,
+          "atStart": null
+        },
+        {
+          "path": "evidence/RECEIPT-S05-R1/RECEIPT.md",
+          "expected": "B7E3E6F5BB978B1EDCD5A3A36E72E11C36D8150930298B6C349EB55C61282485",
+          "atReceivedCommit": true,
+          "atStart": null
+        },
+        {
+          "path": "evidence/RECEIPT-S05-R1/ISSUES.md",
+          "expected": "1869B67EE9910401638C80B089C592AED3320A4CF6003421C1068C4FB41EC3BE",
+          "atReceivedCommit": true,
+          "atStart": null
+        },
+        {
+          "path": "handoff/S05/ACCEPTANCE-R1.md",
+          "expected": "60FF9A4DCA4868C16B6B9A6201A7A72E25B90630FB487429378286206B6EF1CF",
+          "atReceivedCommit": true,
+          "atStart": null
+        },
+        {
+          "path": "handoff/S05/REWORK-R1.md",
+          "expected": "74E4526F5343FDBC7919AFDE8BB89746F783BBD10DCC6C6EA9973FFA032750DC",
+          "atReceivedCommit": true,
+          "atStart": null
+        },
+        {
+          "path": "docs/CONTRACTS.md",
+          "expected": "9C1330DCCBB626957C847D1C4CB6E6A64B95AEFEC8174DBB935C382887CA6339",
+          "atReceivedCommit": true,
+          "atStart": false
+        },
+        {
+          "path": "docs/ARCHITECTURE.md",
+          "expected": "D27E6A47F7EF204CFE29F263755317A4670EB5C8496353E3D715DB5B670DDE7F",
+          "atReceivedCommit": true,
+          "atStart": false
+        },
+        {
+          "path": "docs/DECISIONS.md",
+          "expected": "53304472512889B48CE63A114F87CE65D059FAE4E0D3A15F14F8C58F45473AE7",
+          "atReceivedCommit": true,
+          "atStart": false
+        },
+        {
+          "path": "tasks/S05.md",
+          "expected": "C08FB1BDB6BEF2F71578BDE65FE7340AFDA49192F4C950C88EA14AE3E367D1AA",
+          "atReceivedCommit": true,
+          "atStart": null
+        },
+        {
+          "path": "handoff/S05/HANDOFF.md",
+          "expected": "9F3350FDBF9E396909646C9148FDEEF17CAAC79651D81C077FD5132D73A960DA",
+          "atReceivedCommit": true,
+          "atStart": true
+        },
+        {
+          "path": "package-lock.json",
+          "expected": "C2C8FBA2536E20CAB15099A5405EFBAC081F3DADA33596E4AB475ACC6ED38685",
+          "atReceivedCommit": true,
+          "atStart": true
+        }
+      ]
+    },
+    {
+      "manifest": "evidence/S05-R2/OUTPUTS.sha256",
+      "count": 25,
+      "matchedAtReceivedCommit": 25,
+      "rows": [
+        {
+          "path": "evidence/S05-R2/changed-files.txt",
+          "expected": "98326639B0629FB0255E53140158947053D6CE943F45904AEDE55FBE4AD2BA7C",
+          "atReceivedCommit": true,
+          "atStart": null
+        },
+        {
+          "path": "evidence/S05-R2/db-report.json",
+          "expected": "5F52D3AD5512240D11A333D01009DC54F9CAC258D3359EFB1A3F47E08E2CB80A",
+          "atReceivedCommit": true,
+          "atStart": null
+        },
+        {
+          "path": "evidence/S05-R2/git-diff-stat.txt",
+          "expected": "D807073DB7C788E0FD994D8B7614B20BD36EA7F6333A0F02BCE642ADD4E3ACF8",
+          "atReceivedCommit": true,
+          "atStart": null
+        },
+        {
+          "path": "evidence/S05-R2/INPUTS.sha256",
+          "expected": "A034B50E8B9DC83AAB40E34DBE99783935BD04C32A22846CEB96C6E6B3F51172",
+          "atReceivedCommit": true,
+          "atStart": null
+        },
+        {
+          "path": "evidence/S05-R2/ISSUES-RESPONSE.md",
+          "expected": "36D589633C1068915021AF3DFC1C4AB3C5A411B6B2CC556797226051F003C282",
+          "atReceivedCommit": true,
+          "atStart": null
+        },
+        {
+          "path": "evidence/S05-R2/logs/build.log",
+          "expected": "DD736D5C301CBFA62DD79DCEFCCAA00BFD0E97F75A35B08BB0D6F40CADF5F28B",
+          "atReceivedCommit": true,
+          "atStart": null
+        },
+        {
+          "path": "evidence/S05-R2/logs/db-report.log",
+          "expected": "8A8B928D0FFB0419E4C3A8EB8E9C5850B0023E7F767F11E90F76CC21F7CFA11C",
+          "atReceivedCommit": true,
+          "atStart": null
+        },
+        {
+          "path": "evidence/S05-R2/logs/regression-after-fix.log",
+          "expected": "3E552F8F2F987196B41B03DA2D4C08CAB1634064134662F31BF7DB4960A131CD",
+          "atReceivedCommit": true,
+          "atStart": null
+        },
+        {
+          "path": "evidence/S05-R2/logs/regression-before-fix.log",
+          "expected": "75DD048D4F4F45700FDB63668F019D220B1C5B6FE8C8D32AF4A16BD55BC9BD7A",
+          "atReceivedCommit": true,
+          "atStart": null
+        },
+        {
+          "path": "evidence/S05-R2/logs/smoke-electron.log",
+          "expected": "296B24F96E50BD97E20353CE5196BA5739E28E8260A6CA68BFB12664CCDD5EA2",
+          "atReceivedCommit": true,
+          "atStart": null
+        },
+        {
+          "path": "evidence/S05-R2/logs/test.log",
+          "expected": "5AD70A65CD238B9AFDA5AD0C91954C70935AD77E3E0C2B0B23F23FA382B71EF1",
+          "atReceivedCommit": true,
+          "atStart": null
+        },
+        {
+          "path": "evidence/S05-R2/logs/typecheck.log",
+          "expected": "BC2CF4545144E26FD04275F36BA16A7B84A5183C025D43A049F712D789D0925E",
+          "atReceivedCommit": true,
+          "atStart": null
+        },
+        {
+          "path": "evidence/S05-R2/regression-after-fix.json",
+          "expected": "A4209FC72603B5F9B4CC95E5325966C9FB7B0F57666D50B1048BEDF31D2D68D8",
+          "atReceivedCommit": true,
+          "atStart": null
+        },
+        {
+          "path": "evidence/S05-R2/REVIEW-R2.md",
+          "expected": "480E2F9A781F6E43399A698AEDA0E8A2E89A3DB0E19BCE3DB92D2AE6B0A7AEAC",
+          "atReceivedCommit": true,
+          "atStart": null
+        },
+        {
+          "path": "evidence/S05-R2/schema-v1.sql",
+          "expected": "522903562BB78870E189A4CC44BECBC091958C3099F722D2232C8BEE501B65D5",
+          "atReceivedCommit": true,
+          "atStart": null
+        },
+        {
+          "path": "evidence/S05-R2/selftest-dev-restart.json",
+          "expected": "2089CADF574C2A1484EEC21CF0165CC350C58B9801F4FE688058CE4918A3E323",
+          "atReceivedCommit": true,
+          "atStart": null
+        },
+        {
+          "path": "evidence/S05-R2/selftest-dev.json",
+          "expected": "62D95E06AC418B69396719E7A5572D47B86898CB68856719DAE862B36A349F75",
+          "atReceivedCommit": true,
+          "atStart": null
+        },
+        {
+          "path": "handoff/S05/REWORK-R2.md",
+          "expected": "191B3D6F28CFBDF9FC553DA493340A38FE7453B7E6D4D083FC84D2B1C19C1B3A",
+          "atReceivedCommit": true,
+          "atStart": null
+        },
+        {
+          "path": "README.md",
+          "expected": "762B67B22C87BFBAB862CA922F9EB200F02D801BFFBABD94B41A0B479068586E",
+          "atReceivedCommit": true,
+          "atStart": null
+        },
+        {
+          "path": "src/main/services/backup-service.ts",
+          "expected": "982EB8FCFB2108C5E7E90473847457ED181485BA98B3A9A89B82166BB7BDA221",
+          "atReceivedCommit": true,
+          "atStart": null
+        },
+        {
+          "path": "src/main/services/ledger-store.ts",
+          "expected": "D3087BAF0F3CDE9EEE3F4D519CC8186AEDC4AE3AD53251726FD598E91D3F98D1",
+          "atReceivedCommit": true,
+          "atStart": null
+        },
+        {
+          "path": "src/main/storage/backup-catalog.ts",
+          "expected": "341CAD56B842F68F8C360B0FCFB3D4F8C84CF31E75796284F25708D111EBF682",
+          "atReceivedCommit": true,
+          "atStart": null
+        },
+        {
+          "path": "src/renderer/pages/DataPage.tsx",
+          "expected": "E95E9AF7B7990DF498D16DEFE7C29F0F223FE7E999C8DF2152F30524ABFA4A52",
+          "atReceivedCommit": true,
+          "atStart": null
+        },
+        {
+          "path": "tests/unit/db/backup.test.ts",
+          "expected": "0E44A72BB95EFB306E6614B556BCEBBD34FE2ACBF31B600A09C3C8AC4A81AE1B",
+          "atReceivedCommit": true,
+          "atStart": null
+        },
+        {
+          "path": "tests/unit/db/rework2-regression.test.ts",
+          "expected": "2A0C5F93C2E1286D809FB533BC0572759FA9437BC261AE97F48D01D624D15F35",
+          "atReceivedCommit": true,
+          "atStart": null
+        }
+      ]
+    }
+  ],
+  "d43": {
+    "count": 36,
+    "matching": 36,
+    "rows": [
+      {
+        "path": "分步中文提示词.md",
+        "ok": true
+      },
+      {
+        "path": "交接与验收.md",
+        "ok": true
+      },
+      {
+        "path": "开发方案.md",
+        "ok": true
+      },
+      {
+        "path": "开始阅读.md",
+        "ok": true
+      },
+      {
+        "path": "文档审阅记录.md",
+        "ok": true
+      },
+      {
+        "path": "执行看板.md",
+        "ok": true
+      },
+      {
+        "path": "AGENTS.md",
+        "ok": true
+      },
+      {
+        "path": "docs/ACCEPTANCE.md",
+        "ok": true
+      },
+      {
+        "path": "docs/ARCHITECTURE.md",
+        "ok": true
+      },
+      {
+        "path": "docs/CONTRACTS.md",
+        "ok": true
+      },
+      {
+        "path": "docs/DECISIONS.md",
+        "ok": true
+      },
+      {
+        "path": "docs/FIXTURES.md",
+        "ok": true
+      },
+      {
+        "path": "docs/ICON-MAP.md",
+        "ok": true
+      },
+      {
+        "path": "docs/PRD.md",
+        "ok": true
+      },
+      {
+        "path": "docs/UX.md",
+        "ok": true
+      },
+      {
+        "path": "evidence/RESPONSIBILITY-CODEX-20261020/before/分步中文提示词.md",
+        "ok": true
+      },
+      {
+        "path": "evidence/RESPONSIBILITY-CODEX-20261020/before/交接与验收.md",
+        "ok": true
+      },
+      {
+        "path": "evidence/RESPONSIBILITY-CODEX-20261020/before/开发方案.md",
+        "ok": true
+      },
+      {
+        "path": "evidence/RESPONSIBILITY-CODEX-20261020/before/开始阅读.md",
+        "ok": true
+      },
+      {
+        "path": "evidence/RESPONSIBILITY-CODEX-20261020/before/文档审阅记录.md",
+        "ok": true
+      },
+      {
+        "path": "evidence/RESPONSIBILITY-CODEX-20261020/before/执行看板.md",
+        "ok": true
+      },
+      {
+        "path": "evidence/RESPONSIBILITY-CODEX-20261020/before/AGENTS.md",
+        "ok": true
+      },
+      {
+        "path": "evidence/RESPONSIBILITY-CODEX-20261020/before/docs/ACCEPTANCE.md",
+        "ok": true
+      },
+      {
+        "path": "evidence/RESPONSIBILITY-CODEX-20261020/before/docs/ARCHITECTURE.md",
+        "ok": true
+      },
+      {
+        "path": "evidence/RESPONSIBILITY-CODEX-20261020/before/docs/CONTRACTS.md",
+        "ok": true
+      },
+      {
+        "path": "evidence/RESPONSIBILITY-CODEX-20261020/before/docs/DECISIONS.md",
+        "ok": true
+      },
+      {
+        "path": "evidence/RESPONSIBILITY-CODEX-20261020/before/docs/FIXTURES.md",
+        "ok": true
+      },
+      {
+        "path": "evidence/RESPONSIBILITY-CODEX-20261020/before/docs/ICON-MAP.md",
+        "ok": true
+      },
+      {
+        "path": "evidence/RESPONSIBILITY-CODEX-20261020/before/docs/PRD.md",
+        "ok": true
+      },
+      {
+        "path": "evidence/RESPONSIBILITY-CODEX-20261020/before/docs/UX.md",
+        "ok": true
+      },
+      {
+        "path": "evidence/RESPONSIBILITY-CODEX-20261020/before/README.md",
+        "ok": true
+      },
+      {
+        "path": "evidence/RESPONSIBILITY-CODEX-20261020/CHECKS.md",
+        "ok": true
+      },
+      {
+        "path": "evidence/RESPONSIBILITY-CODEX-20261020/git-status.before.txt",
+        "ok": true
+      },
+      {
+        "path": "evidence/RESPONSIBILITY-CODEX-20261020/INPUTS.sha256",
+        "ok": true
+      },
+      {
+        "path": "handoff/RESPONSIBILITY-CODEX-20261020/HANDOFF.md",
+        "ok": true
+      },
+      {
+        "path": "README.md",
+        "ok": true
+      }
+    ]
+  }
+}

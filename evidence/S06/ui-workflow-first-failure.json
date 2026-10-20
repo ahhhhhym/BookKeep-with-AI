@@ -1,0 +1,8 @@
+{
+  "ok": false,
+  "kind": "S06 implementation self-test, not S08 acceptance",
+  "localAppData": "C:\\Users\\Administrator\\AppData\\Local\\Temp\\BookKeepAI S06 中文 uwmPnu",
+  "checks": [],
+  "consoleErrors": [],
+  "error": "locator.waitFor: Timeout 12000ms exceeded.\nCall log:\n\u001b[2m  - waiting for getByRole('heading', { name: '还没有支出，记下第一笔吧。' }) to be visible\u001b[22m\n\n    at D:\\BookKeep with AI\\scripts\\smoke-s06.mjs:58:62"
+}

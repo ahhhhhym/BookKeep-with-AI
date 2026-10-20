@@ -1,0 +1,20 @@
+[
+  {
+    "manifest": "evidence/S05-R2/INPUTS.sha256",
+    "matched": 8,
+    "differences": [
+      "AGENTS.md",
+      "执行看板.md",
+      "docs/CONTRACTS.md",
+      "docs/ARCHITECTURE.md",
+      "docs/DECISIONS.md"
+    ]
+  },
+  {
+    "manifest": "evidence/S05-R2/OUTPUTS.sha256",
+    "matched": 24,
+    "differences": [
+      "README.md"
+    ]
+  }
+]

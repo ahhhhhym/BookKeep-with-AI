@@ -1,0 +1,43 @@
+
+> bookkeepai@0.1.0 test
+> vitest run tests/unit/db/s06-ledger.test.ts
+
+
+ RUN  v5.0.5 D:/BookKeep with AI
+
+ ❯ tests/unit/db/s06-ledger.test.ts (8 tests | 1 failed) 511ms
+   ❯ S06 表单与真实SQLite联动 (4)
+     × F01 输入→分→显示→编辑→软删→恢复→关闭重开始终一致，原键不重复 125ms
+     ✓ 无效金额/名称/日期/分类不生成输入，不修改用户原始文本 32ms
+     ✓ 已停用原分类未改可保留，不能新增或改选停用分类；未知时间存null 32ms
+     ✓ F02 搜索、日期含尾转换、分类和删除集独立；只用服务端汇总 38ms
+   ✓ S06 快照读取及日期 (4)
+     ✓ 超过一页同日记录合并组头，第一页小计即为完整组总额 135ms
+     ✓ 分页期间发生写入使cursor失效，自动重读第一页且不拼接旧行 117ms
+     ✓ STALE_EPOCH只重试读，且旧筛选迟到响应不能盖过新筛选 28ms
+     ✓ 上海午夜、跨年、星期与无时区漂移，未来/长名不伪造时刻 2ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  tests/unit/db/s06-ledger.test.ts > S06 表单与真实SQLite联动 > F01 输入→分→显示→编辑→软删→恢复→关闭重开始终一致，原键不重复
+AssertionError: expected '1850' to be '1830' // Object.is equality
+
+Expected: "1830"
+Received: "1850"
+
+ ❯ tests/unit/db/s06-ledger.test.ts:49:42
+     47|     expect(edited.transaction.amountFen).toBe(500); expect(page(store)…
+     48|     const deleted = store.softDeleteTransaction({ id: records[1]!.id, …
+     49|     expect(page(store).filteredTotalFen).toBe('1830');
+       |                                          ^
+     50|     const restoreId = randomUUID(); const restore = { id: deleted.id, …
+     51|     store.restoreTransaction(restore, restoreId); store.restoreTransac…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 7 passed (8)
+   Start at  23:27:48
+   Duration  881ms (tests 72%, transform 18%, import 9%, worker 1%)
+

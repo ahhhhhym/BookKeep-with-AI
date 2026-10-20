@@ -1,0 +1,10 @@
+locator.waitFor: Timeout 12000ms exceeded.
+Call log:
+  - waiting for getByRole('heading', { name: '还没有支出，记下第一笔吧。' }) to be visible
+
+    at D:\BookKeep with AI\scripts\smoke-s06.mjs:58:62 {
+  log: [
+    "  - waiting for getByRole('heading', { name: '还没有支出，记下第一笔吧。' }) to be visible"
+  ],
+  name: 'TimeoutError'
+}

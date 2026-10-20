@@ -1,0 +1,13 @@
+{
+  "date": "2026-10-20",
+  "pwsh": "7.6.5",
+  "edition": "Core",
+  "os": "Microsoft Windows 10 专业版",
+  "build": "19045",
+  "arch": "AMD64",
+  "node": "v24.19.0",
+  "smokeDataRoot": "C:\\Users\\Administrator\\AppData\\Local\\Temp\\BookKeepAI-S06-final-db6621c5047646aebb2362ce98a37cd9",
+  "priorHead": "9cfba93e361d302a19718860ef124e60c6b6f14d",
+  "preservedBaseline": "9a1c369de8c087e9518b57bc14579fea44e19e44",
+  "sourceCommit": "fa034a3434fc45089627c4f2745c925c8816c032"
+}

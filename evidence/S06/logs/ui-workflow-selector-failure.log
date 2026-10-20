@@ -1,0 +1,32 @@
+PASS empty-ledger-real-db
+PASS keyboard-ctrl-n-focus-trap-esc-unsaved-and-preserved-invalid-input
+locator.selectOption: Timeout 12000ms exceeded.
+Call log:
+  - waiting for getByLabel('消费分类（必填）', { exact: true })
+
+    at create (D:\BookKeep with AI\scripts\smoke-s06.mjs:38:54)
+    at async file:///D:/BookKeep%20with%20AI/scripts/smoke-s06.mjs:75:3 {
+  log: [ "  - waiting for getByLabel('消费分类（必填）', { exact: true })" ],
+  name: 'TimeoutError'
+}
+node:internal/process/promises:394
+    triggerUncaughtException(err, true /* fromPromise */);
+    ^
+
+ProtocolError: Protocol error (Page.handleJavaScriptDialog): No dialog is showing
+    at C:\Users\Administrator\.cache\codex-runtimes\codex-primary-runtime\dependencies\node\node_modules\playwright-core\lib\coreBundle.js:34783:61
+    at new Promise (<anonymous>)
+    at _CRSession.send (C:\Users\Administrator\.cache\codex-runtimes\codex-primary-runtime\dependencies\node\node_modules\playwright-core\lib\coreBundle.js:34782:16)
+    at Dialog._onHandle (C:\Users\Administrator\.cache\codex-runtimes\codex-primary-runtime\dependencies\node\node_modules\playwright-core\lib\coreBundle.js:37653:32)
+    at Dialog._accept (C:\Users\Administrator\.cache\codex-runtimes\codex-primary-runtime\dependencies\node\node_modules\playwright-core\lib\coreBundle.js:12954:20)
+    at Dialog._close (C:\Users\Administrator\.cache\codex-runtimes\codex-primary-runtime\dependencies\node\node_modules\playwright-core\lib\coreBundle.js:12964:22)
+    at DialogManager.dialogDidOpen (C:\Users\Administrator\.cache\codex-runtimes\codex-primary-runtime\dependencies\node\node_modules\playwright-core\lib\coreBundle.js:12986:18)
+    at _FrameSession._onDialog (C:\Users\Administrator\.cache\codex-runtimes\codex-primary-runtime\dependencies\node\node_modules\playwright-core\lib\coreBundle.js:37646:49)
+    at _CRSession.<anonymous> (C:\Users\Administrator\.cache\codex-runtimes\codex-primary-runtime\dependencies\node\node_modules\playwright-core\lib\coreBundle.js:37320:103)
+    at _CRSession.emit (node:events:509:28) {
+  type: 'error',
+  method: 'Page.handleJavaScriptDialog',
+  logs: undefined
+}
+
+Node.js v24.19.0

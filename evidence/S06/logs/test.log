@@ -1,0 +1,42 @@
+
+> bookkeepai@0.1.0 test
+> vitest run
+
+
+ RUN  v5.0.5 D:/BookKeep with AI
+
+ ✓ tests/unit/ipc-spec.test.ts (26 tests) 28ms
+ ✓ tests/unit/db/amount-date.test.ts (7 tests) 37ms
+ ✓ tests/unit/candidate.test.ts (11 tests) 12ms
+ ✓ tests/unit/mock-provider.test.ts (7 tests) 19ms
+ ✓ tests/unit/categories.test.ts (6 tests) 13ms
+ ✓ tests/unit/icons.test.ts (4 tests) 9ms
+ ✓ tests/unit/validation.test.ts (8 tests) 9ms
+ ✓ tests/unit/boundaries.test.ts (5 tests) 11ms
+ ✓ tests/unit/db/ledger-init.test.ts (5 tests) 497ms
+ ✓ tests/unit/db/category.test.ts (6 tests) 558ms
+ ✓ tests/unit/security.test.ts (6 tests) 11ms
+ ✓ tests/unit/contract.test.ts (6 tests) 11ms
+ ✓ tests/unit/sender.test.ts (5 tests) 9ms
+ ✓ tests/unit/paths.test.ts (4 tests) 6ms
+ ✓ tests/unit/db/s06-ledger.test.ts (8 tests) 962ms
+ ✓ tests/unit/db/migration.test.ts (6 tests) 984ms
+   ✓ 数据库迁移：版本、备份与失败恢复 (6)
+     ✓ 迁移失败回滚并进入 recovery_required：旧数据可读、写入被拒绝、可恢复到迁移前备份 316ms
+ ✓ tests/unit/db/transaction.test.ts (15 tests) 1071ms
+ ✓ tests/unit/db/backup.test.ts (8 tests) 1237ms
+   ✓ 备份恢复：校验、切换、epoch 与失败保护 (7)
+     ✓ 恢复回滚数据并更换 dataEpoch，保留 pre_restore 与旧 generation；重启保持新状态 412ms
+ ✓ tests/unit/db/rework2-regression.test.ts (5 tests) 1535ms
+   ✓ BK-S05-003 目录重建的 hash 基准 (5)
+     ✓ B1→B2→合法改 B2 金额→目录丢失→重启→恢复 B1→再预览 B2 仍拒绝 487ms
+     ✓ 目录 JSON 损坏 + 档案内容已变：重启/恢复 B1 后仍以原 hash 拒绝 B2 308ms
+ ✓ tests/unit/db/rework-regression.test.ts (8 tests) 1609ms
+   ✓ BK-S05-002 恢复后备份目录仍可发现/校验/恢复 (5)
+     ✓ 恢复 B1 后 B1、B2 与 pre_restore 仍在列表中，且可再次预览/恢复 B2 402ms
+
+ Test Files  20 passed (20)
+      Tests  156 passed (156)
+   Start at  23:41:49
+   Duration  2.11s (tests 78%, import 13%, transform 8%, worker 2%)
+

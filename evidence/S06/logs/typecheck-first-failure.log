@@ -1,0 +1,9 @@
+
+> bookkeepai@0.1.0 typecheck
+> tsc -p tsconfig.main.json --noEmit && tsc -p tsconfig.renderer.json --noEmit && tsc -p tsconfig.tests.json --noEmit
+
+tests/unit/db/s06-ledger.test.ts(26,75): error TS2345: Argument of type '{ includeDisabled: boolean; }' is not assignable to parameter of type 'boolean'.
+tests/unit/db/s06-ledger.test.ts(35,45): error TS2345: Argument of type '{ includeDisabled: boolean; }' is not assignable to parameter of type 'boolean'.
+tests/unit/db/s06-ledger.test.ts(61,66): error TS2345: Argument of type '{ includeDisabled: boolean; }' is not assignable to parameter of type 'boolean'.
+tests/unit/db/s06-ledger.test.ts(73,38): error TS2345: Argument of type '{ includeDisabled: boolean; }' is not assignable to parameter of type 'boolean'.
+tests/unit/db/s06-ledger.test.ts(75,39): error TS2345: Argument of type '{ includeDisabled: boolean; }' is not assignable to parameter of type 'boolean'.
