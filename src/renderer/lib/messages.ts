@@ -24,6 +24,7 @@ const MESSAGES: Partial<Record<ErrorCode, string>> = {
   OUTPUT_SCHEMA_INVALID: '识别结果格式无效，本图没有生成候选。',
   INTERNAL_ERROR: '操作未完成，请重试并记录错误编号。',
   STORAGE_UNAVAILABLE: '无法访问本地数据目录，请检查系统环境。',
+  STORAGE_FULL: '存储空间不足，尚未保存。请释放空间后重试。',
   DB_BUSY: '账本正忙，请稍后重试。',
   AMOUNT_INVALID: '请输入 0.01～9,999,999.99 元，最多两位小数。',
   DATE_INVALID: '请选择有效的完整日期（1900-01-01～9998-12-31）。',

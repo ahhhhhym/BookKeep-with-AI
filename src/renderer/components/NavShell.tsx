@@ -1,4 +1,4 @@
-import type { JSX } from 'react';
+import { useEffect, useState, type JSX } from 'react';
 import { NAV_ITEMS } from '../navigation';
 import type { NavId } from '../../shared/nav';
 import { AppIcon } from '../lib/icon-registry';
@@ -15,10 +15,17 @@ export interface NavShellProps {
  * 抽屉关闭通过 Esc 或点击遮罩触发，焦点由 App 归还菜单按钮。
  */
 export function NavShell({ current, onNavigate, open, onClose }: NavShellProps): JSX.Element {
+  const [narrow, setNarrow] = useState(() => window.matchMedia('(max-width: 899px)').matches);
+  useEffect(() => {
+    const media = window.matchMedia('(max-width: 899px)');
+    const update = (): void => setNarrow(media.matches);
+    media.addEventListener('change', update);
+    return () => media.removeEventListener('change', update);
+  }, []);
   return (
     <>
       <div className="backdrop" data-open={open} onClick={onClose} aria-hidden="true" />
-      <nav className="nav" id="main-nav" aria-label="主导航" data-open={open}>
+      <nav className="nav" id="main-nav" aria-label="主导航" data-open={open} inert={narrow && !open}>
         <div className="nav-brand">
           <span className="nav-brand-mark" aria-hidden="true">
             ¥
@@ -42,7 +49,7 @@ export function NavShell({ current, onNavigate, open, onClose }: NavShellProps):
         ))}
         <div className="nav-spacer" />
         <p className="nav-footnote">
-          S05 本地账本
+          本地账本
           <br />
           数据落库 · 无需联网
         </p>

@@ -14,6 +14,7 @@ import { bridgeAvailable, call } from './lib/bridge';
 import { BRIDGE_UNAVAILABLE_TEXT, describeError } from './lib/messages';
 import type { NavId } from '../shared/nav';
 import type { AiSettingsView, ProviderCapabilitiesView, SecretStatusView } from '../shared/dto';
+import type { LeaveGuard } from './components/ExpenseEditor';
 
 export function App(): JSX.Element {
   const [navId, setNavId] = useState<NavId>('ledger');
@@ -24,6 +25,10 @@ export function App(): JSX.Element {
   const [lastError, setLastError] = useState<string | null>(null);
   const [bridgeMissing] = useState(() => !bridgeAvailable());
   const menuButtonRef = useRef<HTMLButtonElement | null>(null);
+  const leaveGuard = useRef<LeaveGuard>(null);
+  const [newRequest, setNewRequest] = useState(0);
+  const consumeNewRequest = useCallback(() => setNewRequest(0), []);
+  const registerGuard = useCallback((guard: LeaveGuard): void => { leaveGuard.current = guard; }, []);
 
   useEffect(() => {
     if (bridgeMissing) return undefined;
@@ -52,9 +57,21 @@ export function App(): JSX.Element {
   }, [bridgeMissing]);
 
   const navigate = useCallback((id: NavId) => {
-    setNavId(id);
-    setDrawerOpen(false);
+    const leave = (): void => { setNavId(id); setDrawerOpen(false); };
+    if (leaveGuard.current) leaveGuard.current(leave);
+    else leave();
   }, []);
+
+  useEffect(() => {
+    const handler = (event: KeyboardEvent): void => {
+      if (event.isComposing || !event.ctrlKey || event.key.toLowerCase() !== 'n') return;
+      if (document.querySelector('dialog[open]') || (event.target instanceof HTMLInputElement && event.target.type === 'password')) return;
+      event.preventDefault();
+      navigate('ledger'); setNewRequest((value) => value + 1);
+    };
+    window.addEventListener('keydown', handler);
+    return () => window.removeEventListener('keydown', handler);
+  }, [navigate]);
 
   useEffect(() => {
     if (!drawerOpen) return undefined;
@@ -109,7 +126,7 @@ export function App(): JSX.Element {
       <NavShell current={navId} onNavigate={navigate} open={drawerOpen} onClose={() => setDrawerOpen(false)} />
 
       <main id="main-content" className="main" tabIndex={-1}>
-        {navId === 'ledger' ? <LedgerPage /> : null}
+        {navId === 'ledger' ? <LedgerPage onManageCategories={() => navigate('categories')} registerGuard={registerGuard} newRequest={newRequest} onNewRequestHandled={consumeNewRequest} /> : null}
         {navId === 'statistics' ? <StatisticsPage /> : null}
         {navId === 'import' ? <ImportPage onError={setLastError} /> : null}
         {navId === 'queue' ? <QueuePage /> : null}

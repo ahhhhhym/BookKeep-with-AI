@@ -1,20 +1,23 @@
-# BookKeepAI（S05 本地账本与持久化）
+# BookKeepAI（S06 手工记账）
 
-中文 Windows 桌面 AI 辅助记账软件。**当前提交为 S05**：在 S04 安全骨架之上加入 SQLite
+当前进度（2026-10-20）：S06手工记账已实现并完成自测，下一步S07由用户另行启动；S08及G1～G6尚未通过。可用新增、编辑、软删除、恢复、搜索/日期/分类筛选与持久化日期列表。启动方式沿用下文，正式ZIP仍未生成。证据与限制见 [S06交接](handoff/S06/HANDOFF.md)。
+
+中文 Windows 桌面 AI 辅助记账软件。**当前为 S06 实现自测版**：沿用 S05 SQLite
 迁移、默认账本与 34 个分类种子、分类/交易仓储与受限 IPC、版本冲突、软删除与审计、
-一致快照备份与恢复基础。统计、真实识图、审核入账与 CSV 导出尚未实现（S06 起）。
+一致快照备份与恢复基础，并接入手工记账表单、日期列表与筛选。统计、真实识图、审核入账与 CSV 导出尚未实现。
 
 - 完成状态：S01～S03文档、S04工程骨架、S05数据/仓储已通过对应阶段接收，最新为
   [S05-R2接收](handoff/S05/ACCEPTANCE-R2.md)。该轮148项测试、13项定向回归及两次28/28启动自检
-  属于已有接收证据，本次未重跑；AC只有相关子层证据，G1～G6均未通过。
+  属于既有S05接收证据；本次S06全量156项及原R1/R2回归重跑通过。AC只有子层证据，G1～G6均未通过。
 - 后续负责人：**S06～S20全部交给Codex**，包括编程、测试、修复、验收、构建打包与说明；
   DSH保留S04/S05历史实现归属。见[AGENTS](AGENTS.md)、[决策D43](docs/DECISIONS.md)和
-  [分步中文提示词](分步中文提示词.md)。从S06继续，本次仅调整方案/文档，S06尚未开始。
+  [分步中文提示词](分步中文提示词.md)。S06已完成实现自测；下一步S07由用户另行启动。
 - 实现自测与S08/S17/S19验收分轮，验收固定版本且当轮不改被验代码；失败返回对应Codex实现步骤。
   同一会话兼任实现/验收须披露；人类仍提供样本/真值、本地密钥、必要补验并决定最终发布。
 - 规格来源：`docs/PRD.md`、`docs/ARCHITECTURE.md`、`docs/CONTRACTS.md`、`docs/UX.md`、
   `docs/ICON-MAP.md`、`docs/FIXTURES.md`、`docs/DECISIONS.md`。
-- 本步骤交接：`tasks/S05.md`、`handoff/S05/HANDOFF.md`、`handoff/S05/REWORK-R1.md`、
+- S06交接：`tasks/S06.md`、`handoff/S06/HANDOFF.md`、`evidence/S06/`。
+- 历史S05交接：`tasks/S05.md`、`handoff/S05/HANDOFF.md`、`handoff/S05/REWORK-R1.md`、
   `handoff/S05/REWORK-R2.md`、`evidence/S05/`、`evidence/S05-R1/`、`evidence/S05-R2/`。
 
 ## 1. 技术栈与锁定版本

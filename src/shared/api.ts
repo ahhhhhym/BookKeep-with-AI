@@ -33,7 +33,11 @@ import type { CategoryListInput, ProviderCapabilitiesInput, SaveSecretInput } fr
 import type { AppErrorPayload } from './errors';
 
 /** 桥接结果对象：错误以数据形式返回，不跨上下文抛自定义异常（避免丢字段）。 */
-export type ApiResult<T> = { ok: true; data: T } | { ok: false; error: AppErrorPayload };
+export type ApiResult<T> = ({ ok: true; data: T } | { ok: false; error: AppErrorPayload }) & {
+  /** 透传既有信封元数据；S06写意图绑定读取世代，旧调用方可忽略。 */
+  dataEpoch?: string | null;
+  dataRevision?: number;
+};
 
 export interface BookKeepApi {
   readonly contractVersion: string;

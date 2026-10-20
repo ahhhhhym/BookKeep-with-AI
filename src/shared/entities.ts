@@ -254,4 +254,6 @@ export interface BackupRestoreResult extends MutationReplayed {
 /** 变更操作的幂等选项：重试必须复用同一个 mutationId（docs/CONTRACTS.md §1）。 */
 export interface MutationOptions {
   mutationId?: string;
+  /** 表单/确认意图读取时的世代；显式传入时不能被桥接全局缓存替换。 */
+  dataEpoch?: string;
 }

@@ -219,3 +219,5 @@ S04只搭安全IPC及明确NOT_IMPLEMENTED/UNSUPPORTED stub、不保存真实密
 R1新增目录重建不能削弱hash校验：已知创建hash须作为基准持续保留，扫描当前内容hash只能比较，不能压过DB/目录中已有基准。已知元数据冲突需明确拒绝/标错，不能因恢复到更早generation而让不匹配文件变成新基准。见CONTRACTS§10.2、DECISIONS D41/D42和BK-S05-003；R1静态发现的问题已由DSH补真实SQLite回归，R2本次复跑5项通过并关闭。
 
 S05 的 DB-only .bkdb、内部 backupId 选择与全量目录仅作为基础阶段适配；S15 统一最终文件格式、分页、外部选择 token、恢复操作状态核实、孤儿补偿和故障恢复，需兼容或明确转换已有档案。S11 前 sourceCandidateId 仅唯一约束预留，候选外键/批准关联后补；这些阶段边界不等于 AC11/16 已通过。
+
+S06按D45落实客户端世代栅栏：列表快照与编辑/删除/恢复意图保存读取时dataEpoch，preload发送显式世代，主进程原有校验拒绝旧表单；桥接透传既有信封epoch/revision，跨代分页不能混拼，迟到旧响应不回写新缓存。详见CONTRACTS§10.3；不改变schema/IPC业务载荷，S08另轮复核。

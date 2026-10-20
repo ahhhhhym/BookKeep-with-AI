@@ -87,7 +87,7 @@ async function ensureEpoch(): Promise<void> {
 async function invoke<T>(
   channel: string,
   payload: unknown,
-  options: { readonly mutation: boolean; readonly mutationId?: string },
+  options: { readonly mutation: boolean; readonly mutationId?: string; readonly dataEpoch?: string },
 ): Promise<ApiResult<T>> {
   if (currentEpoch === null && !EPOCH_OPTIONAL_CHANNELS.has(channel)) {
     await ensureEpoch();
@@ -95,7 +95,7 @@ async function invoke<T>(
   const request: Record<string, unknown> = {
     contractVersion: CONTRACT_VERSION,
     requestId: newUuidV4(),
-    dataEpoch: currentEpoch,
+    dataEpoch: options.dataEpoch ?? currentEpoch,
     payload,
   };
   if (options.mutation) {
@@ -113,13 +113,14 @@ async function invoke<T>(
     return { ok: false, error: FALLBACK_ERROR };
   }
 
-  if (envelope && typeof envelope.dataEpoch === 'string') currentEpoch = envelope.dataEpoch;
-  if (envelope && envelope.ok === true) return { ok: true, data: envelope.data as T };
-  return { ok: false, error: envelope?.error ?? FALLBACK_ERROR };
+  if (envelope && typeof envelope.dataEpoch === 'string' && (currentEpoch === null || currentEpoch === request.dataEpoch)) currentEpoch = envelope.dataEpoch;
+  const metadata = { dataEpoch: envelope?.dataEpoch ?? null, dataRevision: envelope?.dataRevision };
+  if (envelope && envelope.ok === true) return { ok: true, data: envelope.data as T, ...metadata };
+  return { ok: false, error: envelope?.error ?? FALLBACK_ERROR, ...metadata };
 }
 
-function mutationOptions(options?: MutationOptions): { readonly mutation: true; readonly mutationId?: string } {
-  return { mutation: true, mutationId: options?.mutationId };
+function mutationOptions(options?: MutationOptions): { readonly mutation: true; readonly mutationId?: string; readonly dataEpoch?: string } {
+  return { mutation: true, mutationId: options?.mutationId, dataEpoch: options?.dataEpoch };
 }
 
 const api: BookKeepApi = {

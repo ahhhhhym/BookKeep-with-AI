@@ -25,7 +25,7 @@ function formatSize(bytes: number): string {
 }
 
 /**
- * P08 数据管理：正式交易 CSV（S06/S15）与本地完整备份/恢复（S05 基础）。
+ * P08 数据管理：正式交易 CSV（S15）与本地完整备份/恢复（S05 基础）。
  * 备份/恢复的真实文件操作全部在主进程；渲染层只拿到受限 Artifact/token。
  */
 export function DataPage(): JSX.Element {
@@ -136,7 +136,7 @@ export function DataPage(): JSX.Element {
         <Panel title="正式交易 CSV">
           <p className="muted">导出全部正式未删除记录或当前筛选结果，UTF-8 带 BOM、CRLF、公式前缀转义。</p>
           <div className="form-actions">
-            <button type="button" className="button" disabled title="S06/S15 实现">
+            <button type="button" className="button" disabled title="S15 实现">
               选择保存位置并导出
             </button>
           </div>
@@ -259,7 +259,7 @@ export function DataPage(): JSX.Element {
       ) : null}
 
       <SkeletonNotice
-        step="S06 / S15（CSV 与恢复加固）"
+        step="S15（CSV 与恢复加固）"
         items={[
           'CSV 全量快照导出与中文/公式安全检查',
           '恢复中断/断电故障注入与旧 generation 清理',

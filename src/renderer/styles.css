@@ -1,4 +1,4 @@
-/* BookKeepAI 骨架样式：白底浅灰、蓝色主色、细线分隔（docs/UX.md §1）。 */
+/* BookKeepAI：白底浅灰、蓝色主色、细线分隔（docs/UX.md §1）。 */
 
 :root {
   --bg: #f5f7fb;
@@ -883,3 +883,41 @@ a {
   border: 1px solid var(--border);
   border-radius: 6px;
 }
+/* S06 手工账本，沿用 UX 既定布局和色彩。 */
+select, textarea { font: inherit; color: inherit; }
+.expense-actions, .expense-row-actions { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+.ledger-filters { display: flex; flex-wrap: wrap; gap: 12px; align-items: end; }
+.ledger-filters > .field { flex: 1 1 165px; }
+.ledger-filters > .ledger-search { flex: 2 1 220px; }
+.ledger-filters input:not([type=checkbox]) { width: 100%; min-width: 0; padding: 9px 10px; border: 1px solid var(--border); border-radius: 6px; background: white; color: var(--text); }
+.category-filter { flex: 1 0 100%; }
+.category-filter summary { cursor: pointer; color: var(--text-secondary); }
+.filter-categories { display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 8px; padding-top: 12px; }
+.ledger-summary { display: flex; justify-content: space-between; gap: 12px; align-items: center; flex-wrap: wrap; }
+.ledger-summary p { font-weight: 600; font-variant-numeric: tabular-nums; }
+.date-group { background: var(--surface); border-bottom: 1px solid var(--border); }
+.date-group-heading { display: flex; width: 100%; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px; border: 0; border-bottom: 1px solid var(--border-soft); background: #eef3fb; padding: 12px 16px; cursor: pointer; text-align: left; color: var(--text); font-size: 14px; }
+.date-title { display: inline-flex; align-items: center; gap: 6px; }
+.amount { font-variant-numeric: tabular-nums; white-space: nowrap; }
+.amount small { font-size: 12px; font-weight: 400; }
+.expense-list { list-style: none; margin: 0; padding: 0; }
+.expense-list[hidden] { display: none; }
+.expense-row { display: grid; grid-template-columns: 40px minmax(0, 1fr) auto auto; gap: 12px; align-items: center; padding: 14px 16px; border-bottom: 1px solid var(--border-soft); }
+.expense-row:last-child { border-bottom: 0; }
+.expense-meta { min-width: 0; display: flex; flex-direction: column; gap: 3px; }
+.expense-name { overflow-wrap: anywhere; }
+.expense-amount { font-size: 17px; font-weight: 600; }
+.expense-dialog { width: min(560px, calc(100vw - 24px)); max-height: calc(100vh - 24px); overflow: auto; border: 1px solid var(--border); border-radius: var(--radius); box-shadow: var(--shadow); padding: 24px; color: var(--text); background: var(--surface); }
+.expense-dialog::backdrop { background: rgb(15 23 42 / 35%); }
+.expense-dialog h2 { margin-bottom: 12px; font-size: 20px; }
+.expense-fields { border: 0; padding: 0; margin: 16px 0; display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 12px; min-width: 0; }
+.expense-fields .field { min-width: 0; max-width: none; }
+.expense-wide { grid-column: 1 / -1; }
+.expense-fields input:not([type=checkbox]), .expense-fields select, .expense-fields textarea { width: 100%; min-width: 0; border: 1px solid var(--border); border-radius: 6px; padding: 9px 10px; background: white; }
+.expense-fields [aria-invalid=true] { border-color: var(--danger); }
+.field-error { font-size: 12px; color: var(--danger); }
+.expense-dialog .expense-actions { justify-content: flex-end; margin-top: 16px; }
+.future-confirm { display: block; color: var(--warn); margin-bottom: 12px; }
+.conflict-review { padding: 12px 0; display: grid; gap: 8px; }
+@media (max-width: 899px) { .expense-row { grid-template-columns: 32px minmax(0, 1fr) auto; gap: 8px; padding: 12px; } .expense-row-actions { grid-column: 2 / -1; justify-content: flex-end; } .expense-dialog { padding: 16px; } }
+@media (max-width: 420px) { .expense-fields { grid-template-columns: 1fr; } .date-group-heading { padding: 10px; } }

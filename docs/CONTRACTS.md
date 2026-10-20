@@ -266,3 +266,5 @@ S10/S11 在附件/候选建立后扩展备份清单与关联校验；S15 补对�
 - mock 的 structuredOutputStatus=verified 只表示本地结构校验，不代表 DeepSeek 图片支持、质量或 G2；skeleton.mockRecognition 不落正式账，S10 替换后移除临时通道。
 - sourceCandidateId 的唯一索引可作为 S05 内部预留，S11 必须加入真实候选关联和批准原子事务，现状不能算 AC10/11 通过。S09 前的 secret stub 不扩展成真实存储。
 - UI 失败重试必须持有原 mutationId；S06 记账表单落实，备份维护 UI 最迟 S15 同步，不以禁用按钮代替持久幂等。
+
+S06落实补充（D45）：preload向渲染层ApiResult透传既有信封dataEpoch/dataRevision元数据（旧调用方可忽略）；MutationOptions允许显式dataEpoch覆盖桥接缓存，表示调用方打开表单/确认操作时读取的世代，不是放宽主进程校验。S06列表读取保存信封epoch；新增/编辑/软删/恢复都绑定该值，STALE_EPOCH后只重读，保留输入对照且要求关闭重开。不同epoch分页即使revision相同也不能合并。来自旧请求的迟到信封不允许把已切换的preload缓存改回旧epoch。无新增通道或业务字段。
