@@ -1,6 +1,6 @@
 # BookKeepAI IPC、provider与候选契约
 
-版本：S02-1.0｜日期：2026-10-20｜作者：Codex｜状态：文档自查完成，待S03接收
+版本：S02-1.1（S04/S05接收补充）｜日期：2026-10-20｜作者：Codex｜状态：原S02已接收；本次裁定见§10，S05实现仍待返工
 
 本文件仅用文字、表格及不可执行的数据例子定义接口；不是TypeScript声明、JSON Schema、SQL或HTTP示例代码。DSH编写并验证正式schema。基础域、实体和事务见[ARCHITECTURE](ARCHITECTURE.md)，有冲突先登记[DECISIONS](DECISIONS.md)再改实现。方案§3.3全部操作保留；补充CSV/批量审核/数据维护入口以落实已确认功能，不开放通用文件、SQL或HTTP能力。
 
@@ -21,7 +21,7 @@
 
 所有入口都要R校验；表中的W/F/U/S/D为附加权限，不是renderer可自行传入的权限开关。文件选择token由preload仅对实际File/原生对话框请求主进程换发，不能从字符串构造；UI只得到图片assetId、只读resourceToken、备份artifactId等业务句柄，无通用读盘权。主进程保存对话框取消为USER_CANCELLED，无副作用。
 
-幂等规则：变更在同事务保存MutationReceipt，唯一(ledgerId,operation,mutationId)；相同键/规范化payload重发返回原结果（replayed=true及原revision），不同payload报IDEMPOTENCY_CONFLICT。超时或连接断开后先查状态或原键重发，禁止盲目换键。提交前失败无成功收据，可原键重试；业务修正需新键；expectedVersion属于payload，不能同键换version。请求ID不是幂等键。已批准候选的独立唯一来源兜底比收据更强，见§5。重放旧revision不使UI回退，须按当前revision刷新。
+幂等规则：变更在同事务保存MutationReceipt，唯一(ledgerId,operation,mutationId)；相同键/规范化payload重发返回原业务结果及replayed=true，原提交revision与当前水位分离（§10.1），不同payload报IDEMPOTENCY_CONFLICT。超时或连接断开后先查状态或原键重发，禁止盲目换键。提交前失败无成功收据，可原键重试；业务修正需新键；expectedVersion属于payload，不能同键换version。请求ID不是幂等键。已批准候选的独立唯一来源兜底比收据更强，见§5。重放旧结果不使主进程或UI当前revision回退，须按当前revision刷新。
 
 settings.saveSecret为例外：不持久化secret、secret摘要或payloadHash；只在主进程会话内记mutationId及安全结果，重发同id不重新保存（不比较或回显新secret），更换输入必须新id。重启后以settings.readStatus确认，不自动重发明文。设置更改仍CAS防过期覆盖；加密文件先临时写/校验/原子换名后更新安全元数据，失败恢复旧blob和模式，不谎报已保存。
 
@@ -231,3 +231,34 @@ DB提交失败如已拿到有效provider结果，可在本次主进程内暂存�
 2026-10-20重新读取[官方更新记录](https://api-docs.deepseek.com/updates/)：当前调用名deepseek-flash；该别名可能改变底层版本，运行记录requestedModel和实际返回actualModel。重新读取[JSON Output](https://api-docs.deepseek.com/guides/json_mode/)确认JSON输出与业务校验分开；本次不据此推定图片+JSON组合可用。[Vision官方页面](https://api-docs.deepseek.com/guides/vision/)本次两次抓取超时，图片输入继承开发方案2026-10-20的来源记录，S09必须现场重读并用项目账户实测。
 
 项目选择固定HTTPS api.deepseek.com profile，方案拟用/chat/completions和内联预处理图；本文件的schemaVersion/candidates是项目内部协议，绝非声称官方原生字段。HTTP内容块、JSON模式、输出长度、思考/流式等参数只使用S09当时官方说明和探针验证过的组合，不在S02猜值或写可执行请求。S09记录所用官方来源日期、adapter/prompt/schema版本、合成图hash、请求是否含图、返回可核对字段、requested/actualModel、耗时/Usage（未知null）、脱敏错误及是否真正通过G2。探针无真实key、完整headers、图片base64或真实账本。配置无效/未获上传费用同意则未执行，不用mock替代。
+
+## 10. S04/S05 接收补充（2026-10-20，修订 S02-1.1）
+
+本节是 Codex 对 DSH 交接缺口的文字裁定，优先于前文同项简写；不代表现有代码已满足。bookkeep.v1 保留，以下给出显式输出映射及阶段适配，DSH 按 tasks/S05-REWORK.md 修复后复验。
+
+### 10.1 原提交修订号与当前水位
+
+MutationReceipt 可以有内部 revision_at_commit，回放原对象/version 时不得将该值赋给当前账本水位。成功/失败信封 dataRevision 表示响应时当前持久账本修订号；同 epoch 内不能因回放倒退。恢复后的新 epoch 可有较低 revision，客户端须按 epoch 分开处理。
+
+§3 的 Category/Transaction 变更输出简写正式映射为 data 对象：分别含 category 或 transaction、replayed:boolean、committedRevision:非负安全整数。首次提交与同键回放的 committedRevision 均为该次原提交值；业务对象仍为原提交快照。这样既保留幂等结果，又不将历史修订号混入当前信封。category.list 的 revision、transaction.list 的 snapshotRevision 仍是各自读取的当前快照，不因其他请求回放而降低。此新增元数据由 DSH 补实现，不将本次静态审查视为已通过。
+
+恢复令牌的 epoch/revision 必须与 commit 时当前持久事实源比较；缓存只能在可证明同步时使用，不能由历史收据回写。预览后任何业务变更即使随后回放旧请求，也必须重新预览。成功恢复后旧 epoch 请求按原规则 STALE_EPOCH；不要为了“幂等”允许旧确认跨 epoch 覆盖。
+
+### 10.2 S05 备份阶段适配与保留规则
+
+S05 基础阶段允许 backup.create 在应用内部 backups 目录生成 DB-only 档案，仍必须 containsPrivateDataAcknowledged=true；backup.restore preview 暂以已登记 backupId 选择，commit 仍需 restoreToken/currentDataWillBeReplaced=true/mutationId。这些内部操作只需 W/R 校验；§6 的对外保存/选择 token 流程和 F 权限仍是 S15 完整目标，不接受任意路径参数。
+
+backup.list 正式登记为受限只读操作；S05 暂可空输入返回现有 records，输出与实体同名字段对应且不含任意路径。该全量目录是阶段例外，S15 须按 §2 分页，不能静默截断或因此删除备份；分页规格由 Codex 在 S15 任务书固化，不由 DSH 自定。
+
+独立备份目录不应随账本回退而不可访问：恢复后必须保留所选备份、较新备份及 pre_restore 的可发现/可校验/可选择状态；坏档案显示错误，不能伪造可恢复。不得通过合并旧交易/审计来保留目录。此项适用于 S05 基础验收，见 BK-S05-002。
+
+S10/S11 在附件/候选建立后扩展备份清单与关联校验；S15 补对外选择/保存、恢复操作状态核实、文件/收据补偿、维护锁、故障注入、限额及孤儿处理。当前 .bkdb 内嵌 manifest 的 files 记录的是加 manifest 前 DB 快照 hash/size，仅为 S05 内部格式适配，不能声称符合最终逐文件清单校验；S15 必须统一正式格式并保留对已有基础档案的显式兼容/转换说明。
+
+### 10.3 其他交接裁定
+
+- 单账本阶段由主进程绑定当前 ledgerId，现有载荷无需重复传入 ledgerId；对象仍需校验同账本归属，恢复后旧 epoch 失效，不放宽为多账本操作。
+- transaction.list 省略 filter/page 时默认无日期、无分类、无名称过滤、deleted=active、limit=50、cursor=null。category.create 省略 sortOrder 时按当前最大值与340的较大值加10生成，最小350；超999999拒绝 FIELD_INVALID，不越界或回绕。
+- S04 错误 details 可增加受限 capability/step/reason；现有 operation/counter 只允许本地操作名/计数器名，不能携带用户原文、SQL、路径或模型正文。未知键/结构错误用 PAYLOAD_INVALID，已知字段取值用 FIELD_INVALID 或已有 AMOUNT_INVALID/DATE_INVALID 等领域错误。
+- mock 的 structuredOutputStatus=verified 只表示本地结构校验，不代表 DeepSeek 图片支持、质量或 G2；skeleton.mockRecognition 不落正式账，S10 替换后移除临时通道。
+- sourceCandidateId 的唯一索引可作为 S05 内部预留，S11 必须加入真实候选关联和批准原子事务，现状不能算 AC10/11 通过。S09 前的 secret stub 不扩展成真实存储。
+- UI 失败重试必须持有原 mutationId；S06 记账表单落实，备份维护 UI 最迟 S15 同步，不以禁用按钮代替持久幂等。

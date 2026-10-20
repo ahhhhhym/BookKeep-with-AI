@@ -60,3 +60,20 @@ iconKey固定为`lucide:<slug>`，作为本地白名单别名；Category.iconKey
 分类页默认按sortOrder/id排序，已停用项独立区仍可搜索及启用；旧记录/统计以当前名称和图标显示并带“已停用”，关联和金额不变。其他允许改名换图标但不可停用（按cat_other身份保护，不能靠名称识别）。新增/改名1～20码点，NFC及首尾去空白，停用类也占名；最多500类（含停用）。图标选择只允许本地白名单，不能上传SVG或任意链接。
 
 操作验收：首次及二次初始化均34类且无设置类；逐项选择后显示对应中文及稳定ID；餐饮改名“用餐”后旧交易仍cat_food；停用后新建不可选、旧编辑未改categoryId可保留、恢复原记录可保留；cat_other停用报CATEGORY_PROTECTED；任意非法iconKey报ICON_INVALID，原数据不变。AC01/04/21/22由DSH S05/06实现、Codex S08/S17/S19验收，当前均未执行。
+
+## 4. S04 导航资源接收补充（2026-10-20）
+
+本机工程锁定 lucide-react/lucide-static 1.60.0；本次 build 复跑核验42/42 slug及12份第三方许可。34个分类加以下8个导航共42项；原有设置slug已计入8项，故相对原35项新增7项。分类图标白名单仍为原34项，导航slug不能成为消费分类。
+
+| 导航 | iconKey |
+|---|---|
+| 记账 | lucide:notebook-pen |
+| 统计 | lucide:chart-line |
+| 图片导入 | lucide:image-plus |
+| 任务队列 | lucide:list-checks |
+| 候选审核 | lucide:clipboard-check |
+| 分类 | lucide:layout-grid |
+| 数据管理 | lucide:database |
+| 设置 | lucide:settings |
+
+这是资源核验，不是图标按钮的键盘/读屏/缩放交互验收；后者仍在 AC21。

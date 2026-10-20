@@ -1,0 +1,16 @@
+{
+  "DiffCheckExit": 0,
+  "DiffCheckOutput": [],
+  "ImplementationChanges": [],
+  "RunningProjectProcesses": [],
+  "WorkingTree": [
+    " M docs/ARCHITECTURE.md",
+    " M docs/CONTRACTS.md",
+    " M docs/DECISIONS.md",
+    " M docs/ICON-MAP.md",
+    " M 执行看板.md",
+    "?? evidence/RECEIPT-S04-S05/",
+    "?? handoff/S05/ACCEPTANCE.md",
+    "?? tasks/S05-REWORK.md"
+  ]
+}

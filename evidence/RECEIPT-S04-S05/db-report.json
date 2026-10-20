@@ -1,0 +1,360 @@
+{
+  "generatedAt": "2026-10-20T13:33:37.021Z",
+  "dataRootSuffix": "BookKeepAI\\data\\generations",
+  "generationId": "de2075da-6338-47c6-a3a3-f685ff1cea53",
+  "databaseRelativePath": "data/generations/de2075da-6338-47c6-a3a3-f685ff1cea53/ledger.db",
+  "appMeta": {
+    "db_schema_version": 1,
+    "contract_version": "bookkeep.v1",
+    "data_epoch": "f7ad5202-8c05-4cf8-bb1b-4fe5bdd3d29e",
+    "active_generation": "de2075da-6338-47c6-a3a3-f685ff1cea53",
+    "migration_state": "clean"
+  },
+  "ledger": [
+    {
+      "id": "9e54da9c-1ad0-4f29-ba42-43f95b017db3",
+      "name": "默认账本",
+      "currency": "CNY",
+      "timezone": "Asia/Shanghai",
+      "default_key": "default",
+      "data_revision": 0,
+      "dataset_revision": 0,
+      "version": 1,
+      "created_at": "2026-10-20T13:22:52.419Z",
+      "updated_at": "2026-10-20T13:22:52.419Z"
+    }
+  ],
+  "counts": {
+    "ledger": 1,
+    "category": 34,
+    "transaction": 0,
+    "audit": 1,
+    "receipt": 0,
+    "backup": 0
+  },
+  "categories": [
+    {
+      "id": "cat_food",
+      "name": "餐饮",
+      "icon_key": "lucide:utensils",
+      "sort_order": 10,
+      "enabled": 1,
+      "system_key": "food",
+      "version": 1
+    },
+    {
+      "id": "cat_shopping",
+      "name": "购物",
+      "icon_key": "lucide:shopping-bag",
+      "sort_order": 20,
+      "enabled": 1,
+      "system_key": "shopping",
+      "version": 1
+    },
+    {
+      "id": "cat_daily",
+      "name": "日用",
+      "icon_key": "lucide:toilet",
+      "sort_order": 30,
+      "enabled": 1,
+      "system_key": "daily",
+      "version": 1
+    },
+    {
+      "id": "cat_transport",
+      "name": "交通",
+      "icon_key": "lucide:bus-front",
+      "sort_order": 40,
+      "enabled": 1,
+      "system_key": "transport",
+      "version": 1
+    },
+    {
+      "id": "cat_vegetables",
+      "name": "蔬菜",
+      "icon_key": "lucide:carrot",
+      "sort_order": 50,
+      "enabled": 1,
+      "system_key": "vegetables",
+      "version": 1
+    },
+    {
+      "id": "cat_fruit",
+      "name": "水果",
+      "icon_key": "lucide:cherry",
+      "sort_order": 60,
+      "enabled": 1,
+      "system_key": "fruit",
+      "version": 1
+    },
+    {
+      "id": "cat_snacks",
+      "name": "零食",
+      "icon_key": "lucide:cupcake",
+      "sort_order": 70,
+      "enabled": 1,
+      "system_key": "snacks",
+      "version": 1
+    },
+    {
+      "id": "cat_sport",
+      "name": "运动",
+      "icon_key": "lucide:bike",
+      "sort_order": 80,
+      "enabled": 1,
+      "system_key": "sport",
+      "version": 1
+    },
+    {
+      "id": "cat_entertainment",
+      "name": "娱乐",
+      "icon_key": "lucide:mic",
+      "sort_order": 90,
+      "enabled": 1,
+      "system_key": "entertainment",
+      "version": 1
+    },
+    {
+      "id": "cat_communication",
+      "name": "通讯",
+      "icon_key": "lucide:phone-call",
+      "sort_order": 100,
+      "enabled": 1,
+      "system_key": "communication",
+      "version": 1
+    },
+    {
+      "id": "cat_clothing",
+      "name": "服饰",
+      "icon_key": "lucide:shirt",
+      "sort_order": 110,
+      "enabled": 1,
+      "system_key": "clothing",
+      "version": 1
+    },
+    {
+      "id": "cat_beauty",
+      "name": "美容",
+      "icon_key": "lucide:brush",
+      "sort_order": 120,
+      "enabled": 1,
+      "system_key": "beauty",
+      "version": 1
+    },
+    {
+      "id": "cat_housing",
+      "name": "住房",
+      "icon_key": "lucide:house",
+      "sort_order": 130,
+      "enabled": 1,
+      "system_key": "housing",
+      "version": 1
+    },
+    {
+      "id": "cat_home",
+      "name": "居家",
+      "icon_key": "lucide:armchair",
+      "sort_order": 140,
+      "enabled": 1,
+      "system_key": "home",
+      "version": 1
+    },
+    {
+      "id": "cat_children",
+      "name": "孩子",
+      "icon_key": "lucide:baby",
+      "sort_order": 150,
+      "enabled": 1,
+      "system_key": "children",
+      "version": 1
+    },
+    {
+      "id": "cat_elders",
+      "name": "长辈",
+      "icon_key": "lucide:person-standing",
+      "sort_order": 160,
+      "enabled": 1,
+      "system_key": "elders",
+      "version": 1
+    },
+    {
+      "id": "cat_social",
+      "name": "社交",
+      "icon_key": "lucide:messages-square",
+      "sort_order": 170,
+      "enabled": 1,
+      "system_key": "social",
+      "version": 1
+    },
+    {
+      "id": "cat_travel",
+      "name": "旅行",
+      "icon_key": "lucide:plane",
+      "sort_order": 180,
+      "enabled": 1,
+      "system_key": "travel",
+      "version": 1
+    },
+    {
+      "id": "cat_tobacco_alcohol",
+      "name": "烟酒",
+      "icon_key": "lucide:wine",
+      "sort_order": 190,
+      "enabled": 1,
+      "system_key": "tobacco_alcohol",
+      "version": 1
+    },
+    {
+      "id": "cat_digital",
+      "name": "数码",
+      "icon_key": "lucide:cable",
+      "sort_order": 200,
+      "enabled": 1,
+      "system_key": "digital",
+      "version": 1
+    },
+    {
+      "id": "cat_car",
+      "name": "汽车",
+      "icon_key": "lucide:car",
+      "sort_order": 210,
+      "enabled": 1,
+      "system_key": "car",
+      "version": 1
+    },
+    {
+      "id": "cat_medical",
+      "name": "医疗",
+      "icon_key": "lucide:briefcase-medical",
+      "sort_order": 220,
+      "enabled": 1,
+      "system_key": "medical",
+      "version": 1
+    },
+    {
+      "id": "cat_books",
+      "name": "书籍",
+      "icon_key": "lucide:book-bookmark",
+      "sort_order": 230,
+      "enabled": 1,
+      "system_key": "books",
+      "version": 1
+    },
+    {
+      "id": "cat_study",
+      "name": "学习",
+      "icon_key": "lucide:graduation-cap",
+      "sort_order": 240,
+      "enabled": 1,
+      "system_key": "study",
+      "version": 1
+    },
+    {
+      "id": "cat_pet",
+      "name": "宠物",
+      "icon_key": "lucide:dog",
+      "sort_order": 250,
+      "enabled": 1,
+      "system_key": "pet",
+      "version": 1
+    },
+    {
+      "id": "cat_cash_gift",
+      "name": "礼金",
+      "icon_key": "lucide:banknote",
+      "sort_order": 260,
+      "enabled": 1,
+      "system_key": "cash_gift",
+      "version": 1
+    },
+    {
+      "id": "cat_gift",
+      "name": "礼物",
+      "icon_key": "lucide:gift",
+      "sort_order": 270,
+      "enabled": 1,
+      "system_key": "gift",
+      "version": 1
+    },
+    {
+      "id": "cat_office",
+      "name": "办公",
+      "icon_key": "lucide:briefcase-business",
+      "sort_order": 280,
+      "enabled": 1,
+      "system_key": "office",
+      "version": 1
+    },
+    {
+      "id": "cat_repair",
+      "name": "维修",
+      "icon_key": "lucide:hammer",
+      "sort_order": 290,
+      "enabled": 1,
+      "system_key": "repair",
+      "version": 1
+    },
+    {
+      "id": "cat_donation",
+      "name": "捐赠",
+      "icon_key": "lucide:heart-handshake",
+      "sort_order": 300,
+      "enabled": 1,
+      "system_key": "donation",
+      "version": 1
+    },
+    {
+      "id": "cat_lottery",
+      "name": "彩票",
+      "icon_key": "lucide:ticket",
+      "sort_order": 310,
+      "enabled": 1,
+      "system_key": "lottery",
+      "version": 1
+    },
+    {
+      "id": "cat_relatives",
+      "name": "亲友",
+      "icon_key": "lucide:users-round",
+      "sort_order": 320,
+      "enabled": 1,
+      "system_key": "relatives",
+      "version": 1
+    },
+    {
+      "id": "cat_delivery",
+      "name": "快递",
+      "icon_key": "lucide:package",
+      "sort_order": 330,
+      "enabled": 1,
+      "system_key": "delivery",
+      "version": 1
+    },
+    {
+      "id": "cat_other",
+      "name": "其他",
+      "icon_key": "lucide:ellipsis",
+      "sort_order": 340,
+      "enabled": 1,
+      "system_key": "other",
+      "version": 1
+    }
+  ],
+  "migrations": [
+    {
+      "from_version": 0,
+      "to_version": 1,
+      "status": "completed",
+      "checksum": "2bd16a4a43d96866283572268ed7cee60457826545c60c5cb3ab85a4d4bca06d",
+      "backup_id": null,
+      "error_code": null
+    }
+  ],
+  "backups": [],
+  "integrity": {
+    "quickCheck": [
+      "ok"
+    ],
+    "foreignKeyViolations": 0
+  }
+}
