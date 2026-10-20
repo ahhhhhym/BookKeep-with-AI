@@ -1,13 +1,16 @@
 /**
- * 独立备份目录（S05-R1，CONTRACTS §10.2 / ARCHITECTURE §11）。
+ * 独立备份目录（S05-R1/R2，CONTRACTS §10.2 / ARCHITECTURE §11）。
  *
  * 备份档案位于 generation 之外的 `backups/`，因此恢复旧账本不会让已保留档案失去入口。
  * `backups/catalog.json` 记录每份档案的受限元数据（不含路径外内容、不含密钥）；
  * 恢复切换新 generation 时把目录合并回当前 DB 的 backup_record，使列表/预览/再次恢复
  * 在恢复后与重启后仍然可用。合并只写维护元数据，绝不复制旧交易或审计。
  *
- * 启动时扫描 `backups/*.bkdb` 补偿“档案已写、目录未登记”的崩溃窗口；坏档案不伪造成功，
- * 仍保留历史条目，预览阶段返回 HASH_MISMATCH/BACKUP_INVALID。
+ * S05-R2/BK-S05-003：`archiveHash` 是已知创建基准。启动时先把当前 generation 的
+ * backup_record（可信创建记录）导入目录，再扫描未知档案；扫描得到的当前文件 hash 只可
+ * 作为“无创建基准的独立档案”的初始基准（origin=discovered），绝不能覆盖 DB/目录中已有
+ * 的创建基准。DB 与目录同为 created 且 hash 不一致时标记 conflict，预览/恢复明确拒绝，
+ * 不按扫描/读取顺序静默选择。
  */
 
 import { existsSync, readFileSync, readdirSync, renameSync, unlinkSync, writeFileSync } from 'node:fs';
@@ -25,6 +28,9 @@ import { backupArchivePath, backupArchiveRef, type StoragePaths } from './layout
 
 export const BACKUP_CATALOG_VERSION = 'bk-backup-catalog.v1';
 
+export type BackupCatalogOrigin = 'created' | 'discovered';
+export type BackupCatalogIntegrity = 'ok' | 'conflict';
+
 export interface BackupCatalogEntry {
   readonly id: string;
   readonly ledgerId: string;
@@ -33,6 +39,7 @@ export interface BackupCatalogEntry {
   readonly manifestVersion: typeof BACKUP_MANIFEST_VERSION;
   readonly dbSchemaVersion: number;
   readonly appVersion: string;
+  /** 已知创建基准；扫描得到的当前文件 hash 不得覆盖它（除非该条仅为 discovered）。 */
   readonly archiveHash: string;
   readonly archiveRef: string;
   readonly errorCode: string | null;
@@ -40,6 +47,11 @@ export interface BackupCatalogEntry {
   readonly version: number;
   readonly createdAt: string;
   readonly updatedAt: string;
+  readonly origin: BackupCatalogOrigin;
+  readonly integrity: BackupCatalogIntegrity;
+  readonly conflictCode: string | null;
+  /** 冲突时另一侧（DB）记录提供的 hash，仅供诊断；不代表可接受基准。 */
+  readonly conflictingHash: string | null;
 }
 
 interface BackupCatalogFile {
@@ -47,6 +59,8 @@ interface BackupCatalogFile {
   readonly updatedAt: string;
   readonly entries: readonly BackupCatalogEntry[];
 }
+
+export const CATALOG_CONFLICT_DB_HASH = 'CATALOG_DB_HASH_MISMATCH';
 
 function catalogPath(paths: StoragePaths): string {
   return path.join(paths.backups, 'catalog.json');
@@ -66,30 +80,61 @@ function isStatus(value: unknown): value is BackupStatus {
   );
 }
 
-function isCatalogEntry(value: unknown): value is BackupCatalogEntry {
-  if (typeof value !== 'object' || value === null || Array.isArray(value)) return false;
+function isHash(value: unknown): value is string {
+  return typeof value === 'string' && /^[0-9a-f]{64}$/.test(value);
+}
+
+/**
+ * 校验并规范化目录条目。R1 生成的旧条目没有 origin/integrity 字段：
+ * 视为 created/ok（R1 只由创建路径写入），以保持旧目录可读。
+ */
+function parseCatalogEntry(value: unknown): BackupCatalogEntry | null {
+  if (typeof value !== 'object' || value === null || Array.isArray(value)) return null;
   const record = value as Record<string, unknown>;
-  return (
-    isUuidV4(record.id) &&
-    typeof record.ledgerId === 'string' &&
-    record.ledgerId.length > 0 &&
-    isKind(record.kind) &&
-    isStatus(record.status) &&
-    record.manifestVersion === BACKUP_MANIFEST_VERSION &&
-    typeof record.dbSchemaVersion === 'number' &&
-    Number.isSafeInteger(record.dbSchemaVersion) &&
-    record.dbSchemaVersion >= 1 &&
-    typeof record.appVersion === 'string' &&
-    typeof record.archiveHash === 'string' &&
-    /^[0-9a-f]{64}$/.test(record.archiveHash) &&
-    record.archiveRef === backupArchiveRef(record.id as string) &&
-    (record.errorCode === null || typeof record.errorCode === 'string') &&
-    (record.finishedAt === null || typeof record.finishedAt === 'string') &&
-    typeof record.version === 'number' &&
-    Number.isSafeInteger(record.version) &&
-    typeof record.createdAt === 'string' &&
-    typeof record.updatedAt === 'string'
-  );
+  if (
+    !isUuidV4(record.id) ||
+    typeof record.ledgerId !== 'string' ||
+    record.ledgerId.length === 0 ||
+    !isKind(record.kind) ||
+    !isStatus(record.status) ||
+    record.manifestVersion !== BACKUP_MANIFEST_VERSION ||
+    typeof record.dbSchemaVersion !== 'number' ||
+    !Number.isSafeInteger(record.dbSchemaVersion) ||
+    record.dbSchemaVersion < 1 ||
+    typeof record.appVersion !== 'string' ||
+    !isHash(record.archiveHash) ||
+    record.archiveRef !== backupArchiveRef(record.id as string) ||
+    (record.errorCode !== null && typeof record.errorCode !== 'string') ||
+    (record.finishedAt !== null && typeof record.finishedAt !== 'string') ||
+    typeof record.version !== 'number' ||
+    !Number.isSafeInteger(record.version) ||
+    typeof record.createdAt !== 'string' ||
+    typeof record.updatedAt !== 'string'
+  ) {
+    return null;
+  }
+  const origin: BackupCatalogOrigin = record.origin === 'discovered' ? 'discovered' : 'created';
+  const integrity: BackupCatalogIntegrity = record.integrity === 'conflict' ? 'conflict' : 'ok';
+  return {
+    id: record.id,
+    ledgerId: record.ledgerId,
+    kind: record.kind,
+    status: record.status,
+    manifestVersion: BACKUP_MANIFEST_VERSION,
+    dbSchemaVersion: record.dbSchemaVersion,
+    appVersion: record.appVersion,
+    archiveHash: record.archiveHash,
+    archiveRef: record.archiveRef,
+    errorCode: record.errorCode,
+    finishedAt: record.finishedAt,
+    version: record.version,
+    createdAt: record.createdAt,
+    updatedAt: record.updatedAt,
+    origin,
+    integrity,
+    conflictCode: typeof record.conflictCode === 'string' ? record.conflictCode : null,
+    conflictingHash: isHash(record.conflictingHash) ? record.conflictingHash : null,
+  };
 }
 
 export function readBackupCatalog(paths: StoragePaths): BackupCatalogEntry[] {
@@ -98,13 +143,25 @@ export function readBackupCatalog(paths: StoragePaths): BackupCatalogEntry[] {
   try {
     const parsed = JSON.parse(readFileSync(file, 'utf8')) as Partial<BackupCatalogFile>;
     if (parsed.manifestVersion !== BACKUP_CATALOG_VERSION || !Array.isArray(parsed.entries)) return [];
-    return parsed.entries.filter(isCatalogEntry);
+    const entries: BackupCatalogEntry[] = [];
+    const seen = new Set<string>();
+    for (const raw of parsed.entries) {
+      const entry = parseCatalogEntry(raw);
+      if (!entry || seen.has(entry.id)) continue;
+      seen.add(entry.id);
+      entries.push(entry);
+    }
+    return entries;
   } catch {
     return [];
   }
 }
 
-function writeBackupCatalog(paths: StoragePaths, entries: readonly BackupCatalogEntry[], now: string): void {
+function writeBackupCatalog(
+  paths: StoragePaths,
+  entries: readonly BackupCatalogEntry[],
+  now: string,
+): void {
   const file = catalogPath(paths);
   const temporary = path.join(paths.backups, `catalog.${process.pid}.${Date.now()}.tmp`);
   const payload: BackupCatalogFile = {
@@ -128,31 +185,102 @@ function writeBackupCatalog(paths: StoragePaths, entries: readonly BackupCatalog
   }
 }
 
+/** 创建路径登记新档案；同 id 已存在时不覆盖任何既有基准。 */
 export function upsertBackupCatalogEntry(
   paths: StoragePaths,
   entry: BackupCatalogEntry,
   now: string,
 ): void {
-  upsertBackupCatalogEntries(paths, [entry], now);
+  const entries = readBackupCatalog(paths);
+  if (entries.some((item) => item.id === entry.id)) return;
+  entries.push(entry);
+  writeBackupCatalog(paths, entries, now);
 }
 
-/** 批量补登记（目录先行于 generation 行）：已存在的 id 不覆盖。 */
+/**
+ * 把当前 generation 的 backup_record（可信创建记录）导入目录。
+ *
+ * - 目录无该 id：新增 created 条目（DB hash 即创建基准）。
+ * - 目录条目标记为 discovered 且 hash 不同：DB 创建记录优先，替换为 created；
+ *   这正是 BK-S05-003 的修复点：目录丢失后扫描得到的当前 hash 不得压过 DB 原 hash。
+ * - 目录/DB 都是 created 且 hash 不同：保留目录原基准，标记 conflict（不静默选择）。
+ * - hash 相同：保留原条目；若原为 discovered，升级为 created（获得可信创建记录）。
+ *
+ * 返回变更条数（新增/升级/冲突标记）。
+ */
 export function upsertBackupCatalogEntries(
   paths: StoragePaths,
   entries: readonly BackupCatalogEntry[],
   now: string,
 ): number {
-  const existing = readBackupCatalog(paths);
-  const known = new Set(existing.map((entry) => entry.id));
-  let added = 0;
-  for (const entry of entries) {
-    if (!isCatalogEntry(entry) || known.has(entry.id)) continue;
-    existing.push(entry);
-    known.add(entry.id);
-    added += 1;
+  const current = readBackupCatalog(paths);
+  const byId = new Map(current.map((entry) => [entry.id, entry]));
+  let changed = 0;
+  for (const candidate of entries) {
+    if (candidate.origin !== 'created') continue;
+    const existing = byId.get(candidate.id);
+    if (candidate.integrity !== 'ok') {
+      // 当前 generation 已把该条标为冲突（failed）：目录丢失时也要保留冲突，不得降级为可信。
+      if (!existing) {
+        byId.set(candidate.id, {
+          ...candidate,
+          origin: 'created',
+          integrity: 'conflict',
+          conflictCode: candidate.conflictCode ?? CATALOG_CONFLICT_DB_HASH,
+          conflictingHash: candidate.conflictingHash,
+        });
+        changed += 1;
+      }
+      continue;
+    }
+    if (!existing) {
+      byId.set(candidate.id, {
+        ...candidate,
+        origin: 'created',
+        integrity: 'ok',
+        conflictCode: null,
+        conflictingHash: null,
+      });
+      changed += 1;
+      continue;
+    }
+    if (existing.archiveHash === candidate.archiveHash) {
+      if (existing.origin !== 'created') {
+        byId.set(existing.id, {
+          ...existing,
+          origin: 'created',
+          conflictCode: existing.integrity === 'ok' ? null : existing.conflictCode,
+          conflictingHash: existing.integrity === 'ok' ? null : existing.conflictingHash,
+        });
+        changed += 1;
+      }
+      continue;
+    }
+    if (existing.origin === 'discovered' && existing.integrity === 'ok') {
+      // 扫描暂存的当前 hash 不是创建基准；DB 创建记录优先。
+      byId.set(existing.id, {
+        ...candidate,
+        origin: 'created',
+        integrity: 'ok',
+        conflictCode: null,
+        conflictingHash: null,
+      });
+      changed += 1;
+      continue;
+    }
+    if (existing.integrity !== 'conflict') {
+      byId.set(existing.id, {
+        ...existing,
+        integrity: 'conflict',
+        conflictCode: CATALOG_CONFLICT_DB_HASH,
+        conflictingHash: candidate.archiveHash,
+        updatedAt: now,
+      });
+      changed += 1;
+    }
   }
-  if (added > 0) writeBackupCatalog(paths, existing, now);
-  return added;
+  if (changed > 0) writeBackupCatalog(paths, [...byId.values()], now);
+  return changed;
 }
 
 export function removeBackupCatalogEntry(paths: StoragePaths, id: string, now: string): void {
@@ -162,6 +290,7 @@ export function removeBackupCatalogEntry(paths: StoragePaths, id: string, now: s
 
 export function catalogEntryFromRow(row: BackupRecordRow): BackupCatalogEntry | null {
   if (row.archive_hash === null || row.archive_ref === null) return null;
+  const completed = row.status === 'completed';
   return {
     id: row.id,
     ledgerId: row.ledger_id,
@@ -177,6 +306,11 @@ export function catalogEntryFromRow(row: BackupRecordRow): BackupCatalogEntry | 
     version: row.version,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
+    origin: 'created',
+    // 已标记 failed 的目录冲突行不是可信创建基准；目录丢失时也要保留其冲突状态。
+    integrity: completed ? 'ok' : 'conflict',
+    conflictCode: completed ? null : (row.error_code ?? CATALOG_CONFLICT_DB_HASH),
+    conflictingHash: null,
   };
 }
 
@@ -186,17 +320,18 @@ interface RawManifest {
   dbSchemaVersion?: unknown;
   appVersion?: unknown;
   createdAt?: unknown;
-  snapshotRevision?: unknown;
 }
 
-/** 从孤儿档案读取内嵌 manifest（只读、无任意路径输入）。 */
+/** 从无创建记录的独立档案读取内嵌 manifest；当前 hash 仅作为该档案的发现基准。 */
 function discoverEntry(paths: StoragePaths, id: string): BackupCatalogEntry | null {
   const archivePath = backupArchivePath(paths, id);
   let db: SqliteDb | null = null;
   try {
     db = openSqlite(archivePath, { readonly: true, fileMustExist: true });
     const row = db
-      .prepare<{ payload_json: string }>(`SELECT payload_json FROM ${BACKUP_MANIFEST_TABLE} WHERE id = 'manifest'`)
+      .prepare<{ payload_json: string }>(
+        `SELECT payload_json FROM ${BACKUP_MANIFEST_TABLE} WHERE id = 'manifest'`,
+      )
       .get();
     if (!row) return null;
     const manifest = JSON.parse(row.payload_json) as RawManifest;
@@ -228,6 +363,10 @@ function discoverEntry(paths: StoragePaths, id: string): BackupCatalogEntry | nu
       version: 1,
       createdAt: manifest.createdAt,
       updatedAt: manifest.createdAt,
+      origin: 'discovered',
+      integrity: 'ok',
+      conflictCode: null,
+      conflictingHash: null,
     };
   } catch {
     return null;
@@ -246,8 +385,8 @@ export interface CatalogReconcileResult {
 }
 
 /**
- * 扫描 backups/*.bkdb，把尚未登记但 manifest 可读的档案补进目录。
- * 坏档案不加入（无合法 manifest），已有条目保留以便预览阶段报告错误。
+ * 扫描 backups/*.bkdb，仅为目录中尚无记录的独立档案补登记（origin=discovered）。
+ * 已登记 id 一律跳过：已有创建基准（含 conflict）不得被扫描结果改写。
  */
 export function reconcileBackupCatalog(paths: StoragePaths, now: string): CatalogReconcileResult {
   const entries = readBackupCatalog(paths);
@@ -276,6 +415,7 @@ export function reconcileBackupCatalog(paths: StoragePaths, now: string): Catalo
 /**
  * 把独立目录合并进当前 generation 的 backup_record（仅维护元数据）。
  * 使用当前 ledgerId 满足外键；不写交易/审计，不超范围改档案内容。
+ * conflict 条目以 failed + 错误码登记，避免 UI/预览把它当可恢复。
  */
 export function mergeCatalogIntoDatabase(
   db: SqliteDb,
@@ -291,20 +431,24 @@ export function mergeCatalogIntoDatabase(
   );
   return runInTransaction(db, () => {
     let merged = 0;
-    for (const entry of entries) {
-      if (!isCatalogEntry(entry)) continue;
+    for (const raw of entries) {
+      const entry = parseCatalogEntry(raw);
+      if (!entry) continue;
+      const conflict = entry.integrity === 'conflict';
+      const status: BackupStatus = conflict ? 'failed' : entry.status;
+      const errorCode = conflict ? (entry.conflictCode ?? CATALOG_CONFLICT_DB_HASH) : entry.errorCode;
       try {
         const result = insert.run(
           entry.id,
           ledgerId,
           entry.kind,
-          entry.status,
+          status,
           entry.manifestVersion,
           entry.dbSchemaVersion,
           entry.appVersion,
           entry.archiveHash,
           entry.archiveRef,
-          entry.errorCode,
+          errorCode,
           entry.finishedAt,
           entry.version,
           entry.createdAt,

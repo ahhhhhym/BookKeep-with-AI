@@ -36,6 +36,7 @@ import {
   stageArchiveDatabase,
 } from '../storage/backup-archive';
 import {
+  readBackupCatalog,
   removeBackupCatalogEntry,
   upsertBackupCatalogEntry,
   type BackupCatalogEntry,
@@ -184,6 +185,10 @@ export function createBackupFiles(env: BackupEnvironment, kind: BackupKind): Cre
     version: 1,
     createdAt: now,
     updatedAt: now,
+    origin: 'created',
+    integrity: 'ok',
+    conflictCode: null,
+    conflictingHash: null,
   };
   try {
     upsertBackupCatalogEntry(env.paths, entry, now);
@@ -292,7 +297,18 @@ export class BackupService {
 
   list(): BackupListResult {
     const env = this.deps.env();
-    return { records: listBackupRows(env.db).map((row) => backupRecordView(env.paths, row)) };
+    const conflicts = new Set(
+      readBackupCatalog(env.paths)
+        .filter((entry) => entry.integrity === 'conflict')
+        .map((entry) => entry.id),
+    );
+    return {
+      records: listBackupRows(env.db).map((row) => {
+        const view = backupRecordView(env.paths, row);
+        // 目录/DB hash 冲突：不可恢复；不伪造 artifact 可用。
+        return conflicts.has(row.id) ? { ...view, artifact: null } : view;
+      }),
+    };
   }
 
   preview(backupId: string): BackupRestorePreviewResult {
@@ -300,9 +316,19 @@ export class BackupService {
     if (!isUuidV4(backupId)) {
       throw new AppError('BACKUP_INVALID', { details: { reason: 'BACKUP_ID' } });
     }
+    const catalogEntry = readBackupCatalog(env.paths).find((entry) => entry.id === backupId);
+    if (catalogEntry?.integrity === 'conflict') {
+      throw new AppError('BACKUP_INVALID', {
+        details: { reason: catalogEntry.conflictCode ?? 'CATALOG_HASH_CONFLICT' },
+      });
+    }
     const row = getBackupRow(env.db, backupId);
     if (!row || row.status !== 'completed') {
       throw new AppError('NOT_FOUND', { details: { reason: 'BACKUP_RECORD' } });
+    }
+    if (catalogEntry && catalogEntry.archiveHash !== row.archive_hash) {
+      // 目录与 DB 都是可信记录却 hash 不一致：明确拒绝，不由读取顺序选择。
+      throw new AppError('BACKUP_INVALID', { details: { reason: 'CATALOG_DB_HASH_MISMATCH' } });
     }
     const archivePath = this.requireArchivePath(row);
     if (row.archive_hash === null) {
@@ -387,12 +413,21 @@ export class BackupService {
     if (payload.e !== commitFacts.epoch || payload.r !== commitFacts.revision) {
       throw new AppError('TOKEN_EXPIRED', { details: { reason: 'RESTORE_CONTEXT_STALE' } });
     }
+    const catalogEntry = readBackupCatalog(env.paths).find((entry) => entry.id === payload.b);
+    if (catalogEntry?.integrity === 'conflict') {
+      throw new AppError('BACKUP_INVALID', {
+        details: { reason: catalogEntry.conflictCode ?? 'CATALOG_HASH_CONFLICT' },
+      });
+    }
     const row = getBackupRow(env.db, payload.b);
     if (!row || row.status !== 'completed' || row.archive_hash === null) {
       throw new AppError('NOT_FOUND', { details: { reason: 'BACKUP_RECORD' } });
     }
     if (row.archive_hash !== payload.h) {
       throw new AppError('HASH_MISMATCH', { details: { reason: 'TOKEN_HASH' } });
+    }
+    if (catalogEntry && catalogEntry.archiveHash !== row.archive_hash) {
+      throw new AppError('BACKUP_INVALID', { details: { reason: 'CATALOG_DB_HASH_MISMATCH' } });
     }
     const archivePath = this.requireArchivePath(row);
     if (sha256File(archivePath) !== row.archive_hash) {

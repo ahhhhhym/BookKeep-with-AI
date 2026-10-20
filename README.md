@@ -4,12 +4,13 @@
 迁移、默认账本与 34 个分类种子、分类/交易仓储与受限 IPC、版本冲突、软删除与审计、
 一致快照备份与恢复基础。统计、真实识图、审核入账与 CSV 导出尚未实现（S06 起）。
 
-- 完成状态：S05 自测通过（`npm test` 143 例、Electron 自检 28/28、重启幂等通过；S05-R1
-  修复回放 revision 倒退与恢复后备份目录丢失两项返工），
+- 完成状态：S05 自测通过（`npm test` 148 例、Electron 自检 28/28、重启幂等通过；S05-R1/R2
+  修复回放 revision 倒退、恢复后备份目录丢失与目录重建覆盖原始 hash 三项返工），
   **不是业务验收**；G1～G6 均未执行，AC01～AC22 软件用例仍未执行。
 - 规格来源：`docs/PRD.md`、`docs/ARCHITECTURE.md`、`docs/CONTRACTS.md`、`docs/UX.md`、
   `docs/ICON-MAP.md`、`docs/FIXTURES.md`、`docs/DECISIONS.md`。
-- 本步骤交接：`tasks/S05.md`、`handoff/S05/HANDOFF.md`、`evidence/S05/`。
+- 本步骤交接：`tasks/S05.md`、`handoff/S05/HANDOFF.md`、`handoff/S05/REWORK-R1.md`、
+  `handoff/S05/REWORK-R2.md`、`evidence/S05/`、`evidence/S05-R1/`、`evidence/S05-R2/`。
 
 ## 1. 技术栈与锁定版本
 
@@ -94,6 +95,8 @@ mock 两场景、DeepSeek 能力 `unverified`、better-sqlite3 在 Electron ABI 
 - 备份：`backups/<backupId>.bkdb` 为 `VACUUM INTO` 一致快照 + `bk-backup.v1` 清单；
   `backups/catalog.json` 为独立保留目录，恢复旧账本后仍可发现/校验/再次恢复已保留档案
   （包括所选档案、较新档案与 pre_restore；合并只重建维护元数据，不复制交易/审计）；
+  已知创建 hash 是校验基准，目录丢失/扫描/恢复不得用档案当前 hash 覆盖；DB 与目录冲突时
+  明确标错并拒绝恢复；
   **不含密钥/日志**。恢复前校验 hash、清单、schema 与完整性，失败不切换、不覆盖当前数据；
   成功切换 generation 并更换 `dataEpoch`，旧 generation 与 pre_restore 快照保留。
 - 迁移：当前 schema v1；未来升级先做 pre_migration 备份，失败回滚并标记
@@ -139,7 +142,7 @@ src/main/storage/  generation/active 指针、备份档案、恢复日志
 src/preload/     受限 preload（contextBridge，无 ipcRenderer 原生对象）
 src/renderer/    React 渲染层：8 个页面，分类维护与备份/恢复读取真实 IPC
 src/shared/      契约常量、错误码、DTO、通道路由、金额/日期/文本域、分类/图标种子
-tests/unit/      单元 + 集成测试（143 例；`tests/unit/db/` 为 SQLite 真实文件测试）
+tests/unit/      单元 + 集成测试（148 例；`tests/unit/db/` 为 SQLite 真实文件测试）
 scripts/         构建、开发、自检、打包、核验、图标/许可脚本
 resources/       第三方许可与图标 slug 清单
 build/           应用图标（原创生成，scripts/make-icon.mjs）

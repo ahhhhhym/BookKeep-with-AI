@@ -238,6 +238,18 @@ describe('备份恢复：校验、切换、epoch 与失败保护', () => {
     openWritable(databasePath, (db) => {
       db.prepare('UPDATE backup_record SET archive_hash = ? WHERE id = ?').run(forgedHash, backupId);
     });
+    // 同步伪造独立目录，使“档案/DB/目录一致性”成立，从而测到 schema 检查而不是 hash 冲突分支。
+    const catalogPath = path.join(layout.backups, 'catalog.json');
+    const catalog = JSON.parse(readFileSync(catalogPath, 'utf8')) as {
+      entries: Array<Record<string, unknown>>;
+    };
+    const entry = catalog.entries.find((item) => item.id === backupId);
+    if (!entry) throw new Error('catalog entry missing');
+    entry.archiveHash = forgedHash;
+    entry.integrity = 'ok';
+    entry.conflictCode = null;
+    entry.conflictingHash = null;
+    writeFileSync(catalogPath, `${JSON.stringify(catalog, null, 2)}\n`, 'utf8');
 
     const reopened = LedgerStore.open(storeOptions(layout, clock.clock));
     try {

@@ -363,13 +363,14 @@ export class LedgerStore {
       recoveryReason,
       tokenSecret,
     });
-    // 独立备份目录：扫描未登记档案，并把当前 generation 已有记录补登记到目录。
+    // 独立备份目录：先把当前 generation 的可信创建记录导入目录，再扫描未知档案。
+    // 顺序不可颠倒：扫描得到的当前文件 hash 不能抢在 DB 原 hash 之前成为基准。
     try {
-      reconcileBackupCatalog(paths, nowIso(clock));
       const databaseEntries = listBackupRows(db)
         .map(catalogEntryFromRow)
         .filter((entry): entry is BackupCatalogEntry => entry !== null);
       upsertBackupCatalogEntries(paths, databaseEntries, nowIso(clock));
+      reconcileBackupCatalog(paths, nowIso(clock));
       mergeCatalogIntoDatabase(db, ledger.id, readBackupCatalog(paths), nowIso(clock));
     } catch (error) {
       console.warn(
@@ -617,6 +618,11 @@ export class LedgerStore {
       recoveryReason: this.recoveryReason,
     };
     const now = nowIso(this.clock);
+    // 切换前先读取“当前账本”的备份创建记录：即使运行中 catalog 被删，
+    // 这些已知基准也必须进入重建目录，不能被随后的档案扫描覆盖（BK-S05-003）。
+    const previousDatabaseEntries = listBackupRows(this.db)
+      .map(catalogEntryFromRow)
+      .filter((entry): entry is BackupCatalogEntry => entry !== null);
     let newDb: SqliteDb | null = null;
     let oldClosed = false;
     try {
@@ -677,12 +683,14 @@ export class LedgerStore {
         appliedBackupHash: plan.backupHash,
         replayed: false,
       };
-      // 独立备份目录先于切换即可读；把它合并进新 generation，保证 B1/B2/P 恢复后仍可操作。
-      reconcileBackupCatalog(this.paths, now);
+      // 独立备份目录先于切换即可读；先导入旧快照与切换前账本的可信记录，再扫描未知档案。
+      // 这样扫描不会用档案当前 hash 覆盖目录/DB 中既有的创建基准（BK-S05-003）。
+      upsertBackupCatalogEntries(this.paths, previousDatabaseEntries, now);
       const restoredDatabaseEntries = listBackupRows(openedDb)
         .map(catalogEntryFromRow)
         .filter((entry): entry is BackupCatalogEntry => entry !== null);
       upsertBackupCatalogEntries(this.paths, restoredDatabaseEntries, now);
+      reconcileBackupCatalog(this.paths, now);
       const catalogEntries = readBackupCatalog(this.paths);
       runInTransaction(openedDb, () => {
         mergeCatalogIntoDatabase(openedDb, ledger.id, catalogEntries, now);
