@@ -4,9 +4,14 @@
 迁移、默认账本与 34 个分类种子、分类/交易仓储与受限 IPC、版本冲突、软删除与审计、
 一致快照备份与恢复基础。统计、真实识图、审核入账与 CSV 导出尚未实现（S06 起）。
 
-- 完成状态：S05 自测通过（`npm test` 148 例、Electron 自检 28/28、重启幂等通过；S05-R1/R2
-  修复回放 revision 倒退、恢复后备份目录丢失与目录重建覆盖原始 hash 三项返工），
-  **不是业务验收**；G1～G6 均未执行，AC01～AC22 软件用例仍未执行。
+- 完成状态：S01～S03文档、S04工程骨架、S05数据/仓储已通过对应阶段接收，最新为
+  [S05-R2接收](handoff/S05/ACCEPTANCE-R2.md)。该轮148项测试、13项定向回归及两次28/28启动自检
+  属于已有接收证据，本次未重跑；AC只有相关子层证据，G1～G6均未通过。
+- 后续负责人：**S06～S20全部交给Codex**，包括编程、测试、修复、验收、构建打包与说明；
+  DSH保留S04/S05历史实现归属。见[AGENTS](AGENTS.md)、[决策D43](docs/DECISIONS.md)和
+  [分步中文提示词](分步中文提示词.md)。从S06继续，本次仅调整方案/文档，S06尚未开始。
+- 实现自测与S08/S17/S19验收分轮，验收固定版本且当轮不改被验代码；失败返回对应Codex实现步骤。
+  同一会话兼任实现/验收须披露；人类仍提供样本/真值、本地密钥、必要补验并决定最终发布。
 - 规格来源：`docs/PRD.md`、`docs/ARCHITECTURE.md`、`docs/CONTRACTS.md`、`docs/UX.md`、
   `docs/ICON-MAP.md`、`docs/FIXTURES.md`、`docs/DECISIONS.md`。
 - 本步骤交接：`tasks/S05.md`、`handoff/S05/HANDOFF.md`、`handoff/S05/REWORK-R1.md`、

@@ -1,12 +1,14 @@
 # 固定验收数据与逐项操作预期
 
+2026-10-20职责变更（DECISIONS D43）：S01～S05已通过对应阶段接收，S06～S20全部由Codex负责，包括编程、测试、修复、验收和打包。DSH仅保留S04/S05历史归属；旧文档中的后续DSH指派由D43覆盖。历史阶段的“本次/未执行/待验收”描述保留当时证据边界，当前进度以执行看板及S05-R2接收记录为准。业务/接口口径不因本次分工调整改变。
+
 版本：S03-1.0｜2026-10-20｜作者：Codex｜状态：数据文字规格已复算；软件用例全部未执行
 
 ## 1. 来源、隔离与标识
 
 F01金额来自开发方案§2.1及图1的三笔数值（完整日期由本规格合成）；F02六笔名称/分类/金额/日期来自开发方案§2.3、PRD§4.4和ACCEPTANCE。F03～F06是本次为边界验收新增的人工合成数据及故障操作，不是真实消费、真实图片标签或准确率样本。references五图只作视觉来源，不直接上传、裁切成生产图标或训练/评测素材。图中948.41/3693.31/123.11/百分比均不是期望值。文件来源指纹见[evidence/S03/INPUTS.sha256](../evidence/S03/INPUTS.sha256)，手算与命令复核见[REVIEW](../evidence/S03/REVIEW.md)。
 
-每个F及每个F03子分支使用独立测试数据目录/恢复的隔离快照，均只有一个“默认账本”；不是在产品UI加多个账本入口。不得把F01/F03/F04金额加进F02后仍验965.30。真实用户目录不能灌演示数据。DSH负责实现fixture装载器、受控测试时钟/故障注入和测试程序，本步没有JSON/SQL/代码/图片夹具。纯桌面验收无法冻结日期时，记录实际上海今天并另算当前分母，不能假改用户系统时钟后不恢复。
+每个F及每个F03子分支使用独立测试数据目录/恢复的隔离快照，均只有一个“默认账本”；不是在产品UI加多个账本入口。不得把F01/F03/F04金额加进F02后仍验965.30。真实用户目录不能灌演示数据。Codex负责后续实现fixture装载器、受控测试时钟/故障注入和测试程序，本步没有JSON/SQL/代码/图片夹具。纯桌面验收无法冻结日期时，记录实际上海今天并另算当前分母，不能假改用户系统时钟后不恢复。
 
 默认验收时钟T0=2026-10-20 12:00:00 Asia/Shanghai（UTC 04:00），用于可复现自动化。所有F01～F03正式行source=manual、currency=CNY、deletedAt=null、version=1、merchant/note=null，时间未知者occurredTime=null/timePrecision=date。categoryId按ICON-MAP，名称与分类不可从图标猜。原始金额用分整数，表中元只作人读。无说明时createdAt=2026-10-01T00:00:00.000Z、updatedAt同createdAt，不把该时间当发生时间。
 
@@ -126,7 +128,7 @@ T231=10-19午餐/cat_food/1000分；T232=10-20晚餐/cat_food/2000分；T233=10-
 
 ## 5. F04 识图候选、队列和审核（合成文字/后续mock）
 
-以下识别图尚未制作/上传；DSH S09/S10须自行绘制有权无隐私合成图并登记hash、可见事实、provider/prompt/schema版本。mock实现必须使用同一schema且显著标mock，不能把本表当G2证据。无真实消费截图，无实际模型权重训练。候选初始pending_review、version=1、job=completed、无正式关联；未列的optional字段按CONTRACTS完整显式null/空数组补齐（DSH负责完整运行时fixture）。每个非null事实须附本合成图对应证据，证据source=image；测试人工改正写human审计，不改proposal。
+以下识别图尚未制作/上传；Codex S09/S10须自行绘制有权无隐私合成图并登记hash、可见事实、provider/prompt/schema版本。mock实现必须使用同一schema且显著标mock，不能把本表当G2证据。无真实消费截图，无实际模型权重训练。候选初始pending_review、version=1、job=completed、无正式关联；未列的optional字段按CONTRACTS完整显式null/空数组补齐（Codex负责完整运行时fixture）。每个非null事实须附本合成图对应证据，证据source=image；测试人工改正写human审计，不改proposal。
 
 ### F04-A～G 字段与计数
 

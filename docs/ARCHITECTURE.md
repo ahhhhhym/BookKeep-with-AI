@@ -1,8 +1,10 @@
 # BookKeepAI 架构与数据字典
 
-版本：S02-1.2（S05-R1复验补充）｜日期：2026-10-20｜负责人：Codex｜状态：原S02已接收；§11含hash基准澄清，S05-R1仍待返工
+2026-10-20职责变更（DECISIONS D43）：S01～S05已通过对应阶段接收，S06～S20全部由Codex负责，包括编程、测试、修复、验收和打包。DSH仅保留S04/S05历史归属；旧文档中的后续DSH指派由D43覆盖。历史阶段的“本次/未执行/待验收”描述保留当时证据边界，当前进度以执行看板及S05-R2接收记录为准。业务/接口口径不因本次分工调整改变。
 
-本文件是规范性文字，不是运行时schema、SQL、源码或实现证明。输入为开发方案v1.0、S01-1.0 PRD/ACCEPTANCE及S01交接；S01接收结论见[接收记录](../evidence/S02/S01-RECEIPT.md)。接口以[CONTRACTS](CONTRACTS.md)为准，细化理由及影响见[DECISIONS](DECISIONS.md)。具体依赖版本、数据库DDL、校验器、自动化测试及构建由DSH后续实现。
+版本：S02-1.2（含hash基准澄清）｜日期：2026-10-20｜负责人：Codex｜状态：原S02已接收；S05-R2阶段复验通过，限制见§11及RECEIPT-S05-R2
+
+本文件是规范性文字，不是运行时schema、SQL、源码或实现证明。输入为开发方案v1.0、S01-1.0 PRD/ACCEPTANCE及S01交接；S01接收结论见[接收记录](../evidence/S02/S01-RECEIPT.md)。接口以[CONTRACTS](CONTRACTS.md)为准，细化理由及影响见[DECISIONS](DECISIONS.md)。S04/S05历史实现归属保留；后续依赖维护、数据库DDL、校验器、自动化测试及构建由Codex实现。
 
 ## 1. 组件职责与信任边界
 
@@ -11,7 +13,7 @@
 | Electron主进程 | 单实例/数据目录锁、启动及迁移、IPC身份和载荷校验、业务事务、附件、系统加密、HTTP、备份恢复、任务调度；返回受限DTO | 不把凭证、完整请求头、图片base64、任意路径或原始provider文本返回UI；S04骨架、S05持久化、S09/10/11业务 |
 | 受限preload | 每个白名单操作一个类型化入口，传递普通数据、脱敏错误；只订阅明确的进度事件 | 不暴露ipcRenderer/send/invoke本体、Node、SQL、shell、任意channel/文件/URL；S04 |
 | React渲染 | 表单、日期分组、筛选、图表呈现、原图证据与候选并排、人工确认；UI内存状态 | 关闭nodeIntegration，开启contextIsolation和sandbox；不直接读DB/文件/密钥，不做最终金额/状态裁定；密码输入例外见§8 |
-| TypeScript | DSH实现各层编译期类型及受限DTO；运行时仍双端校验且主进程最终负责 | 类型断言不能替代不可信模型/IPC校验；S04～S13 |
+| TypeScript | Codex接续实现各层编译期类型及受限DTO；运行时仍双端校验且主进程最终负责 | 类型断言不能替代不可信模型/IPC校验；S04～S13 |
 | SQLite仓储 | 主进程唯一写入边界、外键/检查/唯一约束、事务、版本条件写入、迁移；正式交易为统计唯一事实源 | 不由renderer直连、不将图表缓存当账本；better-sqlite3为建议，版本/ABI由S04核实 |
 | 统计服务 | 同一筛选语义和只读快照计算小计、序列、总额、日均、排行与Top3 | ECharts只画已计算点/提示，不在UI重算另一套排序或金额；S07 |
 | provider适配器 | 主进程内把已授权预处理图片与分类转换为外部请求，映射脱敏错误；输出本项目规范化结果 | 无数据库入账权、无文件任意访问、无模型工具执行权、不得全量上传账本；DeepSeek/mock必须标来源 |
@@ -37,13 +39,13 @@
 | 文本 | 长度按Unicode码点；保存前NFC、首尾空白去除，空可选文本转null；拒绝NUL及除备注/证据内换行Tab外的控制字符。name交易1～100、商户1～100可null、分类名1～20、账本名1～40、备注0～500可null；图标key 1～64 ASCII白名单 |
 | 列表/结构 | 缺少必需键是格式错误，nullable未知值显式null；空数组为[]。补丁中省略表示不改，null表示清空且须字段可空。禁止未知键、原型相关键及任意嵌套对象；模型输出限制见CONTRACTS§7 |
 | Hash/VersionTag | SHA-256小写64位十六进制字符串；schema/prompt/provider/dataset版本为1～64 ASCII标识，首版契约版本bookkeep.v1、候选schema bk-candidate.v1；不等同Row.version或DB schemaVersion |
-| 布尔/枚举 | IPC为真布尔，不接受0/1字符串；SQLite映射由DSH实现；枚举严格白名单，未知状态拒绝而不默认为成功 |
+| 布尔/枚举 | IPC为真布尔，不接受0/1字符串；SQLite映射由Codex维护/实现；枚举严格白名单，未知状态拒绝而不默认为成功 |
 
 交易有效日期范围允许已明确的未来日期，不自动改为今天；当前统计只取截至今天的已到来范围，未来记录仍可在日期筛选列表/CSV找到。不得因此把未来日期的候选直接认定已发生，人工须明确核实日期。UI提示“所选日期在未来，当前周期统计尚不计入”，由S03固化。
 
 ## 3. 实体字典、关系与约束
 
-表内“非空”即不可null；“可空”即显式null。JSON结构只代表逻辑存储域，DSH负责正式表/JSON校验与索引实现。
+表内“非空”即不可null；“可空”即显式null。JSON结构只代表逻辑存储域，Codex负责后续正式表/JSON校验与索引实现。
 
 ### 3.1 Ledger、Category、Transaction
 
@@ -88,7 +90,7 @@ Usage非空时：inputTokens/outputTokens为非负安全整数或null、costAmou
 
 DatasetSample.labels沿用Proposal业务域，只有人工标签的Evidence.source允许human，此时text必填（说明人工真值依据），region可null；模型输出仍只能image。DatasetVersion创建时快照化整份样本，不靠可变行的旧version号恢复旧标签。Sample复核通过及版本发布必须再次核对当前授权；同意撤回优先于任何旧快照中的grant。
 
-所有外键启用校验；启动/恢复执行引用与业务不变量检查。实体主键唯一；实体间循环关联候选/交易由同事务延迟校验或等效约束实现，DSH须证明不存在半关联。默认不物理清除交易/候选/审核事件。审计是本地操作记录，不声称防系统管理员篡改。
+所有外键启用校验；启动/恢复执行引用与业务不变量检查。实体主键唯一；实体间循环关联候选/交易由同事务延迟校验或等效约束实现，Codex须证明不存在半关联。默认不物理清除交易/候选/审核事件。审计是本地操作记录，不声称防系统管理员篡改。
 
 warningResolutions.atVersion为处理时写入后的Candidate.version，只供追溯；有效性由inputDigest绑定该warning涉及的字段/证据/组成员状态，后续无关warning处理不使先前有效处理全部失效。inputDigest为主进程SHA-256，客户端不能指定；任何相关字段、重复集合或组成员状态变化重新派生blocking，不沿用旧resolved。
 
@@ -162,9 +164,9 @@ AI批准将current的金额/日期/时间/精度/名称/商户/分类复制到Tr
 
 AISettings（含安全模式元数据）属于本机secrets配置，独立于账本generation及可移机DB备份；secretRef不可出现在账本DB/backup。恢复后重新从本机解密能力派生configured，不采用备份的旧模式标志。仅安全设置变更事件可以进入账本审计，不记录key/密文。
 
-启动：取得锁→检查恢复/迁移切换日志→验证active→开启外键/事务持久性→迁移→幂等默认账本→UI。建议WAL及充分持久写入，由DSH验证实际配置与崩溃恢复；不能以裸拷贝打开中的db文件做备份。短事务串行、busy等待上限5秒，之后DB_BUSY，可同幂等键重试；provider/文件对话框不占DB长事务。
+启动：取得锁→检查恢复/迁移切换日志→验证active→开启外键/事务持久性→迁移→幂等默认账本→UI。建议WAL及充分持久写入，由Codex验证实际配置与崩溃恢复；不能以裸拷贝打开中的db文件做备份。短事务串行、busy等待上限5秒，之后DB_BUSY，可同幂等键重试；provider/文件对话框不占DB长事务。
 
-迁移按单调dbSchemaVersion逐级执行，有checksum/适用app版本，不允许静默降级；发现比应用新的schema报SCHEMA_TOO_NEW，只读诊断及换正确版本，不初始化空库覆盖。迁移前在线一致快照+附件清单备份并验证可读；失败回滚事务/切回旧generation，标recovery_required并停止业务写入。不可事务化变更在staging新generation完成再切换；DSH提供N-1→N及故障注入结果。未获支持的旧版SCHEMA_UNSUPPORTED，当前首版仅schema=1；后续支持版本显式列入迁移清单。
+迁移按单调dbSchemaVersion逐级执行，有checksum/适用app版本，不允许静默降级；发现比应用新的schema报SCHEMA_TOO_NEW，只读诊断及换正确版本，不初始化空库覆盖。迁移前在线一致快照+附件清单备份并验证可读；失败回滚事务/切回旧generation，标recovery_required并停止业务写入。不可事务化变更在staging新generation完成再切换；Codex提供后续N-1→N及故障注入结果。未获支持的旧版SCHEMA_UNSUPPORTED，当前首版仅schema=1；后续支持版本显式列入迁移清单。
 
 备份清单bk-backup.v1：backupId、createdAt、appVersion、dbSchemaVersion、contractVersion、ledgerId、snapshotRevision、files数组（受限相对path、size、sha256），及数据集授权/撤回版本摘要；不包含备份自身、secret/DSH配置/logs/temp、运行ZIP。包含一致数据库、所有被引用原图/预处理图、候选/审计、已获同意的本地数据集登记与附件；默认不包含未获同意的额外真实样本。备份复制用户数据须明确告知敏感内容，本地保管，不自动上传。
 
@@ -190,7 +192,7 @@ S04只搭安全IPC及明确NOT_IMPLEMENTED/UNSUPPORTED stub、不保存真实密
 
 ## 9. 实现验证与证据计划
 
-| 责任步骤/需求 | DSH须提供的实现证据；Codex后续复核 |
+| 责任步骤/需求 | Codex须提供的实现自测证据；另设验收轮复核 |
 |---|---|
 | S04；REQ-001/022/028/030 | 版本锁/Windows兼容/原生ABI、单实例锁、preload越权拒绝、ZIP骨架启动；不等于正式软件G6 |
 | S05/06→S08；REQ-002～007/023/024 | 1与999999999分边界/非法数/超精度、重启和CAS冲突、软删恢复、默认幂等、停用旧分类、CSV公式/中文、迁移回滚 |
@@ -200,7 +202,7 @@ S04只搭安全IPC及明确NOT_IMPLEMENTED/UNSUPPORTED stub、不保存真实密
 | S12/13→S14；REQ-025～027 | 授权隔离、撤回、分组锁test、合成/真实分列、seed/版本重现、unsupported训练；缺真实数据不报质量达标 |
 | S17/18/19/20；REQ-024/028/029/030 | G5失败修复后重验，正式ZIP绑定SHA256；干净Win10/11、中文空格路径、离线、附件/原生SQLite/备份，敏感排除和最终人类决定 |
 
-本次只有文档及哈希检查，没有执行上述软件用例。S03还需完整UI流程/分类图标映射/固定数据/缩放矩阵；它不应再改变本文件金额、状态、排序、权限及原子边界。任何实现疑点交Codex先补契约，再由DSH编程。
+本次只有文档及哈希检查，没有执行上述软件用例。S03还需完整UI流程/分类图标映射/固定数据/缩放矩阵；它不应再改变本文件金额、状态、排序、权限及原子边界。任何实现疑点由Codex先补契约，再编程与回归；验收轮保持被验版本只读，修复另轮复验。
 
 ## 10. 已读官方来源与证据边界
 
@@ -208,12 +210,12 @@ S04只搭安全IPC及明确NOT_IMPLEMENTED/UNSUPPORTED stub、不保存真实密
 
 ## 11. S04/S05 接收补充（2026-10-20）
 
-本节更新当前工程事实；前文“未实现/未锁定”是 S02 历史时点。当前 S04 工程骨架已接收，S05 代码存在但返工；本次实际复跑和限制见 evidence/RECEIPT-S04-S05/RECEIPT.md，G1～G6 不因本节通过。
+本节更新当前工程事实；前文“未实现/未锁定”是 S02 历史时点。当前 S04 工程骨架已接收，S05经R1/R2修复后阶段接收通过；最新实际复跑和限制见 evidence/RECEIPT-S05-R2/RECEIPT.md，G1～G6不因本节通过。
 
 当前账本修订号以持久 Ledger.dataRevision 为事实源。MutationReceipt 内部 revision_at_commit 保存历史提交值，不能回写当前 store 水位；IPC 当前信封和恢复令牌使用当前事实源，历史提交值作为独立 committedRevision 元数据。输出映射及回归要求见 CONTRACTS §10.1、BK-S05-001。
 
 备份档案及其可发现目录属于独立保留的维护资源。恢复旧账本后仍须可发现、校验并选择此前保留的所选档案、较新档案和 pre_restore；不得靠合并交易/旧审计来保留备份目录。实现可将目录与 generation 分离或采用受限校验重建等效方案，需证明路径受限、坏档案不伪造成功。见 CONTRACTS §10.2、BK-S05-002。
 
-R1新增目录重建不能削弱hash校验：已知创建hash须作为基准持续保留，扫描当前内容hash只能比较，不能压过DB/目录中已有基准。已知元数据冲突需明确拒绝/标错，不能因恢复到更早generation而让不匹配文件变成新基准。见CONTRACTS§10.2、DECISIONS D41和BK-S05-003；本轮组合故障路径为静态发现，待DSH补真实SQLite回归。
+R1新增目录重建不能削弱hash校验：已知创建hash须作为基准持续保留，扫描当前内容hash只能比较，不能压过DB/目录中已有基准。已知元数据冲突需明确拒绝/标错，不能因恢复到更早generation而让不匹配文件变成新基准。见CONTRACTS§10.2、DECISIONS D41/D42和BK-S05-003；R1静态发现的问题已由DSH补真实SQLite回归，R2本次复跑5项通过并关闭。
 
 S05 的 DB-only .bkdb、内部 backupId 选择与全量目录仅作为基础阶段适配；S15 统一最终文件格式、分页、外部选择 token、恢复操作状态核实、孤儿补偿和故障恢复，需兼容或明确转换已有档案。S11 前 sourceCandidateId 仅唯一约束预留，候选外键/批准关联后补；这些阶段边界不等于 AC11/16 已通过。

@@ -1,8 +1,10 @@
 # BookKeepAI IPC、provider与候选契约
 
-版本：S02-1.2（S05-R1复验补充）｜日期：2026-10-20｜作者：Codex｜状态：原S02已接收；§10含hash保留澄清，S05-R1仍待返工
+2026-10-20职责变更（DECISIONS D43）：S01～S05已通过对应阶段接收，S06～S20全部由Codex负责，包括编程、测试、修复、验收和打包。DSH仅保留S04/S05历史归属；旧文档中的后续DSH指派由D43覆盖。历史阶段的“本次/未执行/待验收”描述保留当时证据边界，当前进度以执行看板及S05-R2接收记录为准。业务/接口口径不因本次分工调整改变。
 
-本文件仅用文字、表格及不可执行的数据例子定义接口；不是TypeScript声明、JSON Schema、SQL或HTTP示例代码。DSH编写并验证正式schema。基础域、实体和事务见[ARCHITECTURE](ARCHITECTURE.md)，有冲突先登记[DECISIONS](DECISIONS.md)再改实现。方案§3.3全部操作保留；补充CSV/批量审核/数据维护入口以落实已确认功能，不开放通用文件、SQL或HTTP能力。
+版本：S02-1.2（含hash保留澄清）｜日期：2026-10-20｜作者：Codex｜状态：原S02已接收；S05-R2实现复验通过，阶段限制见§10及RECEIPT-S05-R2
+
+本文件仅用文字、表格及不可执行的数据例子定义接口；不是TypeScript声明、JSON Schema、SQL或HTTP示例代码。Codex接续编写并验证正式schema。基础域、实体和事务见[ARCHITECTURE](ARCHITECTURE.md)，有冲突先登记[DECISIONS](DECISIONS.md)再改实现。方案§3.3全部操作保留；补充CSV/批量审核/数据维护入口以落实已确认功能，不开放通用文件、SQL或HTTP能力。
 
 ## 1. 通用信封、版本、权限与重试
 
@@ -135,7 +137,7 @@ dataset同意不存在时允许显示“未加入数据集”和同意入口，�
 
 dataset.export选sampleIds子集时，输出独立subsetManifestHash和parentDatasetVersionId、实际sample/group清单及范围标签，不将子集哈希宣称为原完整版本哈希；不得拆散duplicateGroup，同组只选部分报DATASET_INVALID。未选择子集时manifestHash必须等于完整版本规范化清单哈希。锁定版本的快照含当时标签/预测/许可，不靠可变样本重建；但当前撤回优先，撤回后不再导出/评测旧版本，给新版本重新选范围。
 
-所有用于版本比较的manifest/digest使用确定性规范化数据：UTF-8无BOM，JSON对象键按Unicode码点升序、无多余空白，有限数字最短十进制、null显式保留；样本/文件/group清单按稳定Id或相对path升序，候选/证据保留ordinal顺序；排除本次导出路径/新时间/散列字段自身。SHA-256作用于这些规范化字节；文件内容hash另按原字节。DSH提供规范化夹具与重复导出hash相等证据，不由UI自行拼接摘要。备份清单同规则但包含固定备份时createdAt，备份ZIP hash与manifestHash分开。
+所有用于版本比较的manifest/digest使用确定性规范化数据：UTF-8无BOM，JSON对象键按Unicode码点升序、无多余空白，有限数字最短十进制、null显式保留；样本/文件/group清单按稳定Id或相对path升序，候选/证据保留ordinal顺序；排除本次导出路径/新时间/散列字段自身。SHA-256作用于这些规范化字节；文件内容hash另按原字节。Codex提供规范化夹具与重复导出hash相等证据，不由UI自行拼接摘要。备份清单同规则但包含固定备份时createdAt，备份ZIP hash与manifestHash分开。
 
 备份restore是维护操作：任务和事务静止后切换；进度通过同类task事件只报真实阶段。archive不含key；恢复后epoch变化，重试commit必须先重读settings.ai确认账本/epoch和恢复结果，不能再次覆盖。恢复切换日志持久保留restore mutationId/backupHash/结果（不含secret），主进程可在新epoch通过同档案preview返回lastAppliedRestoreId供核实。文件输出的幂等收据若成功但目标文件被用户删/移，返回原artifact及ARTIFACT_MISSING提示，不再自动重新导出；用户明确新操作新id。
 
@@ -234,13 +236,13 @@ DB提交失败如已拿到有效provider结果，可在本次主进程内暂存�
 
 ## 10. S04/S05 接收补充（2026-10-20，修订 S02-1.1）
 
-本节是 Codex 对 DSH 交接缺口的文字裁定，优先于前文同项简写；不代表现有代码已满足。bookkeep.v1 保留，以下给出显式输出映射及阶段适配，DSH 按 tasks/S05-REWORK.md 修复后复验。
+本节是 Codex 对 DSH 交接缺口的文字裁定，优先于前文同项简写。bookkeep.v1 保留，以下给出显式输出映射及阶段适配。S05经R1/R2修复后已由Codex接收通过，见evidence/RECEIPT-S05-R2/RECEIPT.md；此接收不升级AC整项或G门，后续步骤要求仍按本节执行。
 
 ### 10.1 原提交修订号与当前水位
 
 MutationReceipt 可以有内部 revision_at_commit，回放原对象/version 时不得将该值赋给当前账本水位。成功/失败信封 dataRevision 表示响应时当前持久账本修订号；同 epoch 内不能因回放倒退。恢复后的新 epoch 可有较低 revision，客户端须按 epoch 分开处理。
 
-§3 的 Category/Transaction 变更输出简写正式映射为 data 对象：分别含 category 或 transaction、replayed:boolean、committedRevision:非负安全整数。首次提交与同键回放的 committedRevision 均为该次原提交值；业务对象仍为原提交快照。这样既保留幂等结果，又不将历史修订号混入当前信封。category.list 的 revision、transaction.list 的 snapshotRevision 仍是各自读取的当前快照，不因其他请求回放而降低。此新增元数据由 DSH 补实现，不将本次静态审查视为已通过。
+§3 的 Category/Transaction 变更输出简写正式映射为 data 对象：分别含 category 或 transaction、replayed:boolean、committedRevision:非负安全整数。首次提交与同键回放的 committedRevision 均为该次原提交值；业务对象仍为原提交快照。这样既保留幂等结果，又不将历史修订号混入当前信封。category.list 的 revision、transaction.list 的 snapshotRevision 仍是各自读取的当前快照，不因其他请求回放而降低。该元数据已由DSH在R1实现，本次R2重复回归通过；完整IPC写入交错仍未动态执行。
 
 恢复令牌的 epoch/revision 必须与 commit 时当前持久事实源比较；缓存只能在可证明同步时使用，不能由历史收据回写。预览后任何业务变更即使随后回放旧请求，也必须重新预览。成功恢复后旧 epoch 请求按原规则 STALE_EPOCH；不要为了“幂等”允许旧确认跨 epoch 覆盖。
 
@@ -248,7 +250,7 @@ MutationReceipt 可以有内部 revision_at_commit，回放原对象/version 时
 
 S05 基础阶段允许 backup.create 在应用内部 backups 目录生成 DB-only 档案，仍必须 containsPrivateDataAcknowledged=true；backup.restore preview 暂以已登记 backupId 选择，commit 仍需 restoreToken/currentDataWillBeReplaced=true/mutationId。这些内部操作只需 W/R 校验；§6 的对外保存/选择 token 流程和 F 权限仍是 S15 完整目标，不接受任意路径参数。
 
-backup.list 正式登记为受限只读操作；S05 暂可空输入返回现有 records，输出与实体同名字段对应且不含任意路径。该全量目录是阶段例外，S15 须按 §2 分页，不能静默截断或因此删除备份；分页规格由 Codex 在 S15 任务书固化，不由 DSH 自定。
+backup.list 正式登记为受限只读操作；S05 暂可空输入返回现有 records，输出与实体同名字段对应且不含任意路径。该全量目录是阶段例外，S15 须按 §2 分页，不能静默截断或因此删除备份；分页规格由Codex在S15任务书先固化，再实现与回归，不静默改变契约。
 
 独立备份目录不应随账本回退而不可访问：恢复后必须保留所选备份、较新备份及 pre_restore 的可发现/可校验/可选择状态；坏档案显示错误，不能伪造可恢复。不得通过合并旧交易/审计来保留目录。此项适用于 S05 基础验收，见 BK-S05-002。
 

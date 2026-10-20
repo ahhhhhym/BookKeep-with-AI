@@ -1,8 +1,10 @@
 # BookKeepAI 桌面交互规格
 
+2026-10-20职责变更（DECISIONS D43）：S01～S05已通过对应阶段接收，S06～S20全部由Codex负责，包括编程、测试、修复、验收和打包。DSH仅保留S04/S05历史归属；旧文档中的后续DSH指派由D43覆盖。历史阶段的“本次/未执行/待验收”描述保留当时证据边界，当前进度以执行看板及S05-R2接收记录为准。业务/接口口径不因本次分工调整改变。
+
 版本：S03-1.0｜日期：2026-10-20｜作者：Codex｜状态：文档自查完成，待S04接收
 
-本文件是DSH实现输入，不是界面代码或可运行原型。前置S01/S02接收见[RECEIPT](../evidence/S03/RECEIPT.md)。业务字段、状态、版本和错误语义严格继承[PRD](PRD.md)、[ARCHITECTURE](ARCHITECTURE.md)、[CONTRACTS](CONTRACTS.md)；图标与数据分别见[ICON-MAP](ICON-MAP.md)、[FIXTURES](FIXTURES.md)。所有本页操作均为待实施/待执行的验收规格。
+本文件是后续Codex实现输入，不是界面代码或可运行原型。前置S01/S02接收见[RECEIPT](../evidence/S03/RECEIPT.md)。业务字段、状态、版本和错误语义严格继承[PRD](PRD.md)、[ARCHITECTURE](ARCHITECTURE.md)、[CONTRACTS](CONTRACTS.md)；图标与数据分别见[ICON-MAP](ICON-MAP.md)、[FIXTURES](FIXTURES.md)。所有本页操作均为待实施/待执行的验收规格。
 
 ## 1. 视觉来源与信息架构
 
@@ -199,7 +201,7 @@ REQ-025～027；AC17～19。数据管理下“样本与评测”独立页：授�
 
 状态文案：“尚无已授权样本。”“正在读取样本版本…”；“缺少许可或脱敏复核，暂不能导出。”“此版本含已撤回样本，请建立新版本后重试。”“test版本已锁定，不能原地修改。”“评测规范尚未就绪，当前仅检查结构，不代表识别质量。”“已取消评测，已完成部分仅供参考。”；网络失败保留本地标签，重试收费需新同意；版本冲突刷新再人工合并；取消导出对话框不出文件，取消评测先失效generation。S12补标注/指标/划分细则，S13实现；不能在S03编造质量门槛通过。
 
-## 12. 跨页面状态与DSH实现验收清单
+## 12. 跨页面状态与Codex实现验收清单
 
 所有错误优先字段旁说明+页内可保留错误条，短toast不能作为唯一错误证据；危险文本按纯文本、受限长度显示，错误关联ID可复制，绝不原样渲染provider HTML/stack。提交超时是否成功未知时，先状态查询/原键重发；不能直接提示“失败所以再新增一笔”。事件/刷新晚到只接收当前epoch和不旧于当前revision的结果。
 
@@ -215,7 +217,7 @@ REQ-025～027；AC17～19。数据管理下“样本与评测”独立页：授�
 | P08导出恢复 | F05 | §10 | 无数据/校验/hash/空间/维护/epoch | 本地离线、对话框取消、pre_restore |
 | P09数据集 | F06 | §11 | 缺许可/撤回/锁test/规范未就绪 | 授权独立、取消评测/部分报告 |
 
-某状态只在关联对象适用：P03不人为制造缺字段表单或收费取消，P02不假装存在网络超时，P07不展示消费重复；共用状态不是每页都添加无意义按钮。上述每页均给正常与真实异常路径。DSH须按表留实际截图/操作与命令结果；AC01～AC22当前全部软件未执行，G1～G6均未通过。
+某状态只在关联对象适用：P03不人为制造缺字段表单或收费取消，P02不假装存在网络超时，P07不展示消费重复；共用状态不是每页都添加无意义按钮。上述每页均给正常与真实异常路径。Codex须按表留实际截图/操作与命令结果；AC01～AC22当前全部软件未执行，G1～G6均未通过。
 
 ## 13. 页面动作与既有契约对照
 
@@ -232,4 +234,4 @@ REQ-025～027；AC17～19。数据管理下“样本与评测”独立页：授�
 | CSV/完整备份/恢复预览提交 | transaction.exportCsv、backup.create、backup.restore(preview/commit)；原生保存/选择对话框及受限token |
 | 数据登记/版本/导出/撤回/评测 | consent.record(dataset)、dataset.sampleList/sampleUpsert/versionCreate/validate/export、evaluation.run/status/cancel；首版训练submit/status返回UNSUPPORTED |
 
-此表只作文字绑定，不新增运行时schema/IPC。不存在的实现报NOT_IMPLEMENTED，不能通过UI演示值掩盖。字段规范冲突先回DECISIONS/CONTRACTS，由Codex记录、DSH编码。
+此表只作文字绑定，不新增运行时schema/IPC。不存在的实现报NOT_IMPLEMENTED，不能通过UI演示值掩盖。字段规范冲突先回DECISIONS/CONTRACTS，由Codex先记录并统一规格，再编码与回归。

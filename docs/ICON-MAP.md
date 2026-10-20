@@ -1,18 +1,20 @@
 # 分类稳定ID与本地图标规格
 
+2026-10-20职责变更（DECISIONS D43）：S01～S05已通过对应阶段接收，S06～S20全部由Codex负责，包括编程、测试、修复、验收和打包。DSH仅保留S04/S05历史归属；旧文档中的后续DSH指派由D43覆盖。历史阶段的“本次/未执行/待验收”描述保留当时证据边界，当前进度以执行看板及S05-R2接收记录为准。业务/接口口径不因本次分工调整改变。
+
 版本：S03-1.0｜2026-10-20｜作者：Codex｜状态：文档自查完成，待S04接收
 
 依据：[PRD §4.2](PRD.md)、[架构分类域](ARCHITECTURE.md)、参考图2（已查看）。本文件定义种子数据和语义，不是图标源码/运行时白名单。DSH在S04锁定图标依赖并本地打包，S05落种子；不裁切参考图，不热链CDN，不使用emoji代替生产分类图标。
 
 ## 1. 身份与许可
 
-采用Lucide SVG图标，作为随应用离线分发的本地资源。2026-10-20实际读取[官方许可](https://lucide.dev/license)与[上游LICENSE](https://raw.githubusercontent.com/lucide-icons/lucide/main/LICENSE)：主体为ISC，包含Feather衍生图标的MIT条款。DSH须随锁定版本保存完整原文（两个部分及版权声明），在应用/源码ZIP的第三方许可中提供；不要仅标“免费”。本步只选择资源方案和语义，没有下载生产SVG、安装依赖或编写图标组件。S04必须记录实际包版本/来源commit/许可文件hash，逐项验证下列slug存在，S18检查断网资源及许可入包。版本变化导致重命名时先登记映射变更，不能悄悄改持久iconKey。
+采用Lucide SVG图标，作为随应用离线分发的本地资源。2026-10-20实际读取[官方许可](https://lucide.dev/license)与[上游LICENSE](https://raw.githubusercontent.com/lucide-icons/lucide/main/LICENSE)：主体为ISC，包含Feather衍生图标的MIT条款。后续由Codex核对锁定版本的完整许可原文（两个部分及版权声明），在应用/源码ZIP的第三方许可中提供；不要仅标“免费”。本步只选择资源方案和语义，没有下载生产SVG、安装依赖或编写图标组件。S04必须记录实际包版本/来源commit/许可文件hash，逐项验证下列slug存在，S18检查断网资源及许可入包。版本变化导致重命名时先登记映射变更，不能悄悄改持久iconKey。
 
 Category.id按下表固定；systemKey等于id去掉`cat_`前缀，唯一(ledgerId,systemKey)播种，不能用中文名或随机UUID代替系统ID。默认enabled=true、version=1；sortOrder为下表序号×10。改名/图标/排序/停用不改id或systemKey。自定义分类主进程生成UUID，systemKey=null，初始sortOrder=350，其后按10递增；到域上限需重新排序，不溢出。用户排序不同不改变金额并列时的id ASCII升序。
 
 iconKey固定为`lucide:<slug>`，作为本地白名单别名；Category.iconKey与Category.id分开，不把图标名称当外键。24×24坐标、2逻辑像素细线、圆角端点；界面显示20～24逻辑像素，点击目标至少36×36；图标随文字缩放，分类名常显。默认深灰线，选中浅蓝底+深蓝线并有勾选/边框，不能只靠颜色。没有图标资源时显示本地通用占位+原分类名，并报资源错误，不更改交易类别。
 
-本步以[上游树02eb9161b57917ccaa262f1bf070507cddde3b08](https://github.com/lucide-icons/lucide/tree/02eb9161b57917ccaa262f1bf070507cddde3b08/icons)核对35个映射slug实际存在（34类+设置），未复制SVG。首次核对发现旧名称book-marked已不存在，已在落库前改用book-bookmark。S04可选覆盖本表的正式版本或本地所选SVG集，但须记录确切来源、许可与哈希；依赖包导出别名不必等于持久iconKey，适配由DSH实现且留映射，不能以图标改名为由改变分类ID。
+本步以[上游树02eb9161b57917ccaa262f1bf070507cddde3b08](https://github.com/lucide-icons/lucide/tree/02eb9161b57917ccaa262f1bf070507cddde3b08/icons)核对35个映射slug实际存在（34类+设置），未复制SVG。首次核对发现旧名称book-marked已不存在，已在落库前改用book-bookmark。S04可选覆盖本表的正式版本或本地所选SVG集，但须记录确切来源、许可与哈希；依赖包导出别名不必等于持久iconKey，后续适配由Codex实现且留映射，不能以图标改名为由改变分类ID。
 
 ## 2. 完整分类表（33+其他）
 
@@ -59,7 +61,7 @@ iconKey固定为`lucide:<slug>`，作为本地白名单别名；Category.iconKey
 
 分类页默认按sortOrder/id排序，已停用项独立区仍可搜索及启用；旧记录/统计以当前名称和图标显示并带“已停用”，关联和金额不变。其他允许改名换图标但不可停用（按cat_other身份保护，不能靠名称识别）。新增/改名1～20码点，NFC及首尾去空白，停用类也占名；最多500类（含停用）。图标选择只允许本地白名单，不能上传SVG或任意链接。
 
-操作验收：首次及二次初始化均34类且无设置类；逐项选择后显示对应中文及稳定ID；餐饮改名“用餐”后旧交易仍cat_food；停用后新建不可选、旧编辑未改categoryId可保留、恢复原记录可保留；cat_other停用报CATEGORY_PROTECTED；任意非法iconKey报ICON_INVALID，原数据不变。AC01/04/21/22由DSH S05/06实现、Codex S08/S17/S19验收，当前均未执行。
+操作验收：首次及二次初始化均34类且无设置类；逐项选择后显示对应中文及稳定ID；餐饮改名“用餐”后旧交易仍cat_food；停用后新建不可选、旧编辑未改categoryId可保留、恢复原记录可保留；cat_other停用报CATEGORY_PROTECTED；任意非法iconKey报ICON_INVALID，原数据不变。AC01/04/21/22涉及历史DSH S05实现及后续Codex S06实现、S08/S17/S19验收；整项状态以执行看板和当前接收证据为准。
 
 ## 4. S04 导航资源接收补充（2026-10-20）
 

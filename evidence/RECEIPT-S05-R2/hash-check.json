@@ -1,0 +1,14 @@
+[
+  {
+    "Manifest": "evidence/S05-R2/INPUTS.sha256",
+    "Count": 13,
+    "Matching": 13,
+    "Mismatches": []
+  },
+  {
+    "Manifest": "evidence/S05-R2/OUTPUTS.sha256",
+    "Count": 25,
+    "Matching": 25,
+    "Mismatches": []
+  }
+]
