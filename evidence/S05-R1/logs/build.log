@@ -1,0 +1,8 @@
+npm warn Unknown env config "side-effects-cache". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.
+
+> bookkeepai@0.1.0 build
+> node scripts/build.mjs
+
+[bookkeep] icon slugs verified: 42/42 (34 分类 + 导航), lucide-static 1.60.0
+[bookkeep] licenses collected: 12 packages -> resources\licenses
+[bookkeep] build complete: dist/{main,preload,renderer}

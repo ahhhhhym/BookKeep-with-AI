@@ -1,0 +1,2 @@
+npm warn Unknown env config "side-effects-cache". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.
+JSON report written to D:/BookKeep with AI/evidence/S05-R1/regression-after-fix.json

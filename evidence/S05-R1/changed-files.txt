@@ -1,0 +1,11 @@
+M	README.md
+M	src/main/services/backup-service.ts
+M	src/main/services/ledger-service.ts
+M	src/main/services/ledger-store.ts
+A	src/main/storage/backup-catalog.ts
+M	src/renderer/pages/DataPage.tsx
+M	src/shared/entities.ts
+M	src/shared/errors.ts
+A	tests/unit/db/rework-regression.test.ts
+A	handoff/S05/REWORK-R1.md
+A	evidence/S05-R1/ (本目录)

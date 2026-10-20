@@ -1,0 +1,39 @@
+npm warn Unknown env config "side-effects-cache". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.
+
+> bookkeepai@0.1.0 test
+> vitest run
+
+
+ RUN  v5.0.5 D:/BookKeep with AI
+
+ ✓ tests/unit/db/amount-date.test.ts (7 tests) 29ms
+ ✓ tests/unit/ipc-spec.test.ts (26 tests) 22ms
+ ✓ tests/unit/security.test.ts (6 tests) 9ms
+ ✓ tests/unit/mock-provider.test.ts (7 tests) 18ms
+ ✓ tests/unit/candidate.test.ts (11 tests) 16ms
+ ✓ tests/unit/validation.test.ts (8 tests) 12ms
+ ✓ tests/unit/categories.test.ts (6 tests) 15ms
+ ✓ tests/unit/db/ledger-init.test.ts (5 tests) 523ms
+ ✓ tests/unit/boundaries.test.ts (5 tests) 11ms
+ ✓ tests/unit/contract.test.ts (6 tests) 10ms
+ ✓ tests/unit/icons.test.ts (4 tests) 14ms
+ ✓ tests/unit/db/category.test.ts (6 tests) 627ms
+ ✓ tests/unit/sender.test.ts (5 tests) 9ms
+ ✓ tests/unit/paths.test.ts (4 tests) 9ms
+ ✓ tests/unit/db/migration.test.ts (6 tests) 1253ms
+   ✓ 数据库迁移：版本、备份与失败恢复 (6)
+     ✓ 升级前自动备份、升级后数据保留，且已应用版本不重复记录 327ms
+     ✓ 迁移失败回滚并进入 recovery_required：旧数据可读、写入被拒绝、可恢复到迁移前备份 320ms
+ ✓ tests/unit/db/transaction.test.ts (15 tests) 1283ms
+ ✓ tests/unit/db/backup.test.ts (8 tests) 1357ms
+   ✓ 备份恢复：校验、切换、epoch 与失败保护 (7)
+     ✓ 恢复回滚数据并更换 dataEpoch，保留 pre_restore 与旧 generation；重启保持新状态 419ms
+ ✓ tests/unit/db/rework-regression.test.ts (8 tests) 1758ms
+   ✓ BK-S05-002 恢复后备份目录仍可发现/校验/恢复 (5)
+     ✓ 恢复 B1 后 B1、B2 与 pre_restore 仍在列表中，且可再次预览/恢复 B2 499ms
+
+ Test Files  18 passed (18)
+      Tests  143 passed (143)
+   Start at  21:53:04
+   Duration  2.43s (tests 74%, transform 13%, import 11%, worker 2%)
+
