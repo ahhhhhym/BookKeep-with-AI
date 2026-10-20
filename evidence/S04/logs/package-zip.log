@@ -1,0 +1,25 @@
+npm warn Unknown env config "side-effects-cache". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.
+
+> bookkeepai@0.1.0 package:zip
+> node scripts/package-zip.mjs
+
+[bookkeep] icon slugs verified: 42/42 (34 分类 + 导航), lucide-static 1.60.0
+[bookkeep] licenses collected: 12 packages -> resources\licenses
+[bookkeep] build complete: dist/{main,preload,renderer}
+  • electron-builder  version=26.15.3 os=10.0.19045
+  • loaded configuration  file=D:\BookKeep with AI\electron-builder.yml
+  • skipped dependencies rebuild  reason=npmRebuild is set to false
+  • packaging       platform=win32 arch=x64 electron=44.9.1 appOutDir=release\win-unpacked
+  • downloaded      label=electron progress=100%
+  • downloaded electron zip extracted successfully  output=D:\BookKeep with AI\release\win-unpacked
+  • searching for node modules  pm=npm searchDir=D:\BookKeep with AI
+  • updating asar integrity executable resource  executablePath=release\win-unpacked\BookKeepAI.exe
+  • signing with signtool.exe  path=release\win-unpacked\BookKeepAI.exe
+  • building        target=zip arch=x64 file=release\BookKeepAI-0.1.0-win-x64.zip
+[bookkeep] artifact: release\BookKeepAI-0.1.0-win-x64.zip
+[bookkeep] bytes: 154459657
+[bookkeep] sha256: 3B15315A7D0AFDDB530F5188E2A547262B4E1221685451B6FEFC8F6385A5B013
+[bookkeep] entries: 134
+[bookkeep] asar top-level: dist, node_modules, package.json
+[bookkeep] native entries: resources/app.asar.unpacked/node_modules/better-sqlite3/, resources/app.asar.unpacked/node_modules/better-sqlite3/lib/, resources/app.asar.unpacked/node_modules/better-sqlite3/lib/binding.js, resources/app.asar.unpacked/node_modules/better-sqlite3/lib/darwin-arm64.js, resources/app.asar.unpacked/node_modules/better-sqlite3/lib/darwin-x64.js, resources/app.asar.unpacked/node_modules/better-sqlite3/lib/database.js, resources/app.asar.unpacked/node_modules/better-sqlite3/lib/index.js, resources/app.asar.unpacked/node_modules/better-sqlite3/lib/linux-arm64.js, resources/app.asar.unpacked/node_modules/better-sqlite3/lib/linux-x64.js, resources/app.asar.unpacked/node_modules/better-sqlite3/lib/linuxmusl-arm64.js, resources/app.asar.unpacked/node_modules/better-sqlite3/lib/linuxmusl-x64.js, resources/app.asar.unpacked/node_modules/better-sqlite3/lib/methods/, resources/app.asar.unpacked/node_modules/better-sqlite3/lib/methods/aggregate.js, resources/app.asar.unpacked/node_modules/better-sqlite3/lib/methods/backup.js, resources/app.asar.unpacked/node_modules/better-sqlite3/lib/methods/explain.js, resources/app.asar.unpacked/node_modules/better-sqlite3/lib/methods/function.js, resources/app.asar.unpacked/node_modules/better-sqlite3/lib/methods/inspect.js, resources/app.asar.unpacked/node_modules/better-sqlite3/lib/methods/pragma.js, resources/app.asar.unpacked/node_modules/better-sqlite3/lib/methods/serialize.js, resources/app.asar.unpacked/node_modules/better-sqlite3/lib/methods/table.js, resources/app.asar.unpacked/node_modules/better-sqlite3/lib/methods/transaction.js, resources/app.asar.unpacked/node_modules/better-sqlite3/lib/methods/wrappers.js, resources/app.asar.unpacked/node_modules/better-sqlite3/lib/sqlite-error.js, resources/app.asar.unpacked/node_modules/better-sqlite3/lib/util.js, resources/app.asar.unpacked/node_modules/better-sqlite3/lib/win32-arm64.js, resources/app.asar.unpacked/node_modules/better-sqlite3/lib/win32-x64.js, resources/app.asar.unpacked/node_modules/better-sqlite3/LICENSE, resources/app.asar.unpacked/node_modules/better-sqlite3/package.json, resources/app.asar.unpacked/node_modules/better-sqlite3/prebuilds/, resources/app.asar.unpacked/node_modules/better-sqlite3/prebuilds/win32-x64.node, resources/licenses/better-sqlite3/, resources/licenses/better-sqlite3/LICENSE
+[bookkeep] package:zip PASSED

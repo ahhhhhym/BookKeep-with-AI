@@ -1,0 +1,8 @@
+npm warn Unknown env config "side-effects-cache". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.
+
+> bookkeepai@0.1.0 capture:ui
+> node scripts/capture-ui.mjs
+
+
+[bookkeep] captured 8 pages -> D:\BookKeep with AI\evidence\S04\screens
+[bookkeep] captured 8 screens -> evidence\S04\screens
