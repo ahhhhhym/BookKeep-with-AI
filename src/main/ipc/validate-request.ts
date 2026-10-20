@@ -88,8 +88,20 @@ export function validateIpcRequest<TPayload>(
   const payload = request.payload as Record<string, unknown>;
   if (spec.request.validatePayload) {
     const semanticIssues = spec.request.validatePayload(payload);
-    // 语义/字段取值问题用 FIELD_INVALID；信封与键结构问题用 PAYLOAD_INVALID。
-    if (semanticIssues.length > 0) reject(semanticIssues, 'FIELD_INVALID');
+    // 取值/语义问题用 FIELD_INVALID；嵌套键结构问题仍按 PAYLOAD_INVALID 处理。
+    const structuralCodes = new Set([
+      'MISSING_KEY',
+      'UNKNOWN_KEY',
+      'PROTOTYPE_KEY',
+      'EXPECTED_OBJECT',
+      'EXPECTED_ARRAY',
+    ]);
+    if (semanticIssues.length > 0) {
+      reject(
+        semanticIssues,
+        semanticIssues.some((issue) => structuralCodes.has(issue.code)) ? 'PAYLOAD_INVALID' : 'FIELD_INVALID',
+      );
+    }
   }
 
   const cast = spec.request.cast ? spec.request.cast(payload) : (payload as unknown as TPayload);

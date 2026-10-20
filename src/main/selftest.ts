@@ -7,8 +7,13 @@ import type { BrowserWindow } from 'electron';
 import { writeFileSync } from 'node:fs';
 import { APP_ORIGIN, CONTRACT_VERSION } from '../shared/constants';
 import { REQUIRED_PRODUCTION_DIRECTIVES } from '../shared/csp';
+import { ALL_CHANNELS } from '../shared/ipc';
 import { loadBetterSqlite3 } from './native';
+import { isInsideDirectory } from './paths';
 import type { SecureWebPreferences } from './security/window-options';
+import type { LedgerStoreSnapshot } from './services/ledger-store';
+
+const UUID_V4 = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/;
 
 export interface SelfTestCheck {
   readonly id: string;
@@ -34,6 +39,8 @@ export interface SelfTestDependencies {
   readonly allowedOrigins: readonly string[];
   readonly registeredChannels: readonly string[];
   readonly devServerUrl: string | null;
+  readonly database: LedgerStoreSnapshot;
+  readonly programPath: string;
 }
 
 interface RendererIsolationFacts {
@@ -167,8 +174,48 @@ export async function runSelfTest(deps: SelfTestDependencies): Promise<SelfTestR
     check(
       'preload.bridgeSurface',
       isolation.bridgeType === 'object' &&
-        isolation.bridgeKeys.join(',') === 'contractVersion,provider,settings,skeleton,skeletonStage',
+        isolation.bridgeKeys.join(',') ===
+          'backup,category,contractVersion,ledger,provider,settings,skeleton,skeletonStage,transaction',
       { bridgeType: isolation.bridgeType, bridgeKeys: isolation.bridgeKeys },
+    ),
+  );
+
+  const database = deps.database;
+  checks.push(
+    check(
+      'db.schemaAndLocation',
+      database.databaseExists &&
+        database.dbSchemaVersion >= 1 &&
+        database.databaseRelativePath.startsWith('data/generations/') &&
+        deps.storageRoot !== null &&
+        !isInsideDirectory(deps.storageRoot, deps.programPath),
+      {
+        schemaVersion: database.dbSchemaVersion,
+        databaseRelativePath: database.databaseRelativePath,
+        databaseExists: database.databaseExists,
+        outsideProgramDirectory:
+          deps.storageRoot !== null && !isInsideDirectory(deps.storageRoot, deps.programPath),
+      },
+    ),
+  );
+  checks.push(
+    check(
+      'db.defaultLedgerSeed',
+      database.ledgerCount === 1 &&
+        database.categoryCount >= 34 &&
+        database.categoryCount <= 500 &&
+        !database.recoveryRequired &&
+        UUID_V4.test(database.dataEpoch),
+      {
+        ledgerId: database.ledgerId,
+        dataEpoch: database.dataEpoch,
+        categoryCount: database.categoryCount,
+        ledgerCount: database.ledgerCount,
+        transactionCount: database.transactionCount,
+        dataRevision: database.dataRevision,
+        generationId: database.generationId,
+        migrationState: database.migrationState,
+      },
     ),
   );
 
@@ -224,11 +271,18 @@ export async function runSelfTest(deps: SelfTestDependencies): Promise<SelfTestR
   );
   const readAiData = (readAi.data ?? {}) as Record<string, unknown>;
   checks.push(
-    check('ipc.settingsAi', readAi.ok === true && readAiData.readiness === 'stub', {
-      ok: readAi.ok,
-      readiness: readAiData.readiness ?? null,
-      model: readAiData.model ?? null,
-    }),
+    check(
+      'ipc.settingsAi',
+      readAi.ok === true &&
+        readAiData.readiness === 'stub' &&
+        readAiData.ledgerId === deps.database.ledgerId,
+      {
+        ok: readAi.ok,
+        readiness: readAiData.readiness ?? null,
+        model: readAiData.model ?? null,
+        ledgerIdMatches: readAiData.ledgerId === deps.database.ledgerId,
+      },
+    ),
   );
 
   const readStatus = await evaluate<BridgeResultLike>(
@@ -317,10 +371,88 @@ export async function runSelfTest(deps: SelfTestDependencies): Promise<SelfTestR
     ),
   );
 
+  const ensureDefault = await evaluate<BridgeResultLike>(
+    window,
+    `(async () => window.bookkeep.ledger.ensureDefault())()`,
+  );
+  const ensureData = (ensureDefault.data ?? {}) as Record<string, unknown>;
+  const ensureCategories = (ensureData.categories ?? []) as Array<Record<string, unknown>>;
+  const categoryIds = ensureCategories.map((category) => String(category.id));
+  const systemKeys = ensureCategories
+    .map((category) => category.systemKey)
+    .filter((key): key is string => typeof key === 'string');
+  checks.push(
+    check(
+      'ipc.ledgerEnsureDefault',
+      ensureDefault.ok === true &&
+        ensureCategories.length === deps.database.categoryCount &&
+        ensureCategories.length >= 34 &&
+        new Set(categoryIds).size === ensureCategories.length &&
+        systemKeys.length === 34 &&
+        new Set(systemKeys).size === 34 &&
+        categoryIds.every((id) => id !== 'nav_settings') &&
+        (ensureData.ledger as Record<string, unknown> | undefined)?.id === deps.database.ledgerId,
+      {
+        ok: ensureDefault.ok,
+        categories: ensureCategories.length,
+        uniqueCategoryIds: new Set(categoryIds).size,
+        uniqueSystemKeys: new Set(systemKeys).size,
+        hasSettingsEntry: categoryIds.includes('nav_settings'),
+      },
+    ),
+  );
+
+  const categoryList = await evaluate<BridgeResultLike>(
+    window,
+    `(async () => window.bookkeep.category.list({ includeDisabled: true }))()`,
+  );
+  const categoryListData = (categoryList.data ?? {}) as Record<string, unknown>;
+  const listedCategories = (categoryListData.categories ?? []) as Array<Record<string, unknown>>;
+  checks.push(
+    check(
+      'ipc.categoryList',
+      categoryList.ok === true &&
+        listedCategories.length === deps.database.categoryCount &&
+        listedCategories.every((category) => typeof category.iconKey === 'string' && category.iconKey.startsWith('lucide:')),
+      { ok: categoryList.ok, categories: listedCategories.length },
+    ),
+  );
+
+  const transactionList = await evaluate<BridgeResultLike>(
+    window,
+    `(async () => window.bookkeep.transaction.list({
+      filter: { dateStart: null, dateEnd: null, categoryIds: [], nameQuery: null, deleted: 'active' },
+      page: { limit: 5, cursor: null }
+    }))()`,
+  );
+  const transactionListData = (transactionList.data ?? {}) as Record<string, unknown>;
+  checks.push(
+    check(
+      'ipc.transactionList',
+      transactionList.ok === true &&
+        Array.isArray(transactionListData.items) &&
+        typeof transactionListData.totalCount === 'number' &&
+        transactionListData.totalCount === deps.database.transactionCount,
+      {
+        ok: transactionList.ok,
+        totalCount: transactionListData.totalCount ?? null,
+        filteredTotalFen: transactionListData.filteredTotalFen ?? null,
+      },
+    ),
+  );
+
+  const backups = await evaluate<BridgeResultLike>(
+    window,
+    `(async () => window.bookkeep.backup.list())()`,
+  );
+  checks.push(
+    check('ipc.backupList', backups.ok === true, { ok: backups.ok }),
+  );
+
   checks.push(
     check(
       'ipc.channelWhitelist',
-      deps.registeredChannels.length === 5 &&
+      deps.registeredChannels.length === ALL_CHANNELS.length &&
         !deps.registeredChannels.some((channel) => channel.startsWith('ipcRenderer')),
       { channels: [...deps.registeredChannels] },
     ),

@@ -42,9 +42,9 @@ export function NavShell({ current, onNavigate, open, onClose }: NavShellProps):
         ))}
         <div className="nav-spacer" />
         <p className="nav-footnote">
-          S04 工程骨架
+          S05 本地账本
           <br />
-          本地数据 · 无需联网
+          数据落库 · 无需联网
         </p>
       </nav>
     </>

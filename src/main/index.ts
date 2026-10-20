@@ -1,14 +1,15 @@
-/** 主进程入口：单实例、硬化、受限 IPC、窗口与骨架自检。 */
+/** 主进程入口：单实例、硬化、受限 IPC、账本存储启动、窗口与自检。 */
 
 import { app, BrowserWindow, dialog, safeStorage, session } from 'electron';
-import { randomUUID } from 'node:crypto';
 import { APP_DISPLAY_NAME, APP_ORIGIN } from '../shared/constants';
+import { AppError } from '../shared/errors';
 import { capturePages } from './capture';
 import { createIpcRouter } from './ipc/registry';
 import { registerIpcHandlers } from './ipc/handlers';
 import { resolveStorageLayout } from './paths';
 import { registerAppScheme, serveRendererAssets } from './protocol';
 import { runSelfTest, writeSelfTestReport } from './selftest';
+import { LedgerStore } from './services/ledger-store';
 import { isAllowedNavigation } from './security/window-options';
 import {
   createMainWindow,
@@ -34,14 +35,9 @@ if (captureDir) {
 const devServerUrl = process.env.BOOKKEEP_DEV_SERVER_URL?.trim() || null;
 const allowedOrigins = devServerUrl ? [new URL(devServerUrl).origin] : [APP_ORIGIN];
 const storage = resolveStorageLayout(process.env);
-/**
- * S04 会话世代：没有数据库，因此每次启动生成一个 UUID 作为 dataEpoch，
- * 只用于验证「非启动操作必须携带当前世代」的 IPC 边界。
- * S05 起由 AppMeta.dataEpoch 持久化并提供恢复后的新世代。
- */
-const sessionDataEpoch = randomUUID();
 
 let mainWindow: BrowserWindow | null = null;
+let store: LedgerStore | null = null;
 
 app.setAppUserModelId('ai.bookkeep.desktop');
 if (storage.ok) {
@@ -76,6 +72,46 @@ function waitForRenderer(window: BrowserWindow, timeoutMs = 30_000): Promise<boo
   });
 }
 
+function startupErrorText(error: unknown): string {
+  const code = error instanceof AppError ? error.code : 'INTERNAL_ERROR';
+  switch (code) {
+    case 'SCHEMA_TOO_NEW':
+      return '账本数据库版本比当前应用新。请使用更新版本的应用，或先备份后从备份恢复；不会创建空账本覆盖现有数据。';
+    case 'SCHEMA_UNSUPPORTED':
+      return '账本数据库版本不受当前应用支持。请确认应用版本；现有数据未被修改。';
+    case 'RECOVERY_REQUIRED':
+      return '检测到需要恢复的账本状态（数据库指针/迁移/完整性）。业务写入已停止，请使用备份恢复；不会覆盖或重建账本。';
+    case 'INTEGRITY_ERROR':
+      return '账本数据库完整性检查失败。请先保留数据目录并从备份恢复，不要删除或重建账本。';
+    case 'MIGRATION_FAILED':
+      return '数据库迁移失败，旧数据未被覆盖。请从迁移前备份恢复后重试。';
+    case 'BACKUP_FAILED':
+      return '迁移前备份失败，因此没有执行数据库迁移。请检查磁盘空间/权限后重试。';
+    case 'STORAGE_UNAVAILABLE':
+      return '无法访问本地数据目录（%LOCALAPPDATA%\\BookKeepAI）。请检查系统环境后重试。';
+    default:
+      return '账本初始化失败，现有数据未被删除。请查看本地日志或从备份恢复。';
+  }
+}
+
+function reportStartupFailure(error: unknown): void {
+  const code = error instanceof AppError ? error.code : 'INTERNAL_ERROR';
+  console.error(`[bookkeep] startup database failure: ${code}`);
+  if (selfTestMode) {
+    const report = {
+      ok: false,
+      generatedAt: new Date().toISOString(),
+      environment: {},
+      checks: [{ id: 'startup.database', ok: false, detail: { code } }],
+    };
+    if (reportPath) writeSelfTestReport(report, reportPath);
+    app.exit(1);
+    return;
+  }
+  dialog.showErrorBox(`${APP_DISPLAY_NAME} 账本无法打开`, startupErrorText(error));
+  app.exit(1);
+}
+
 async function bootstrap(): Promise<void> {
   hardenSession(session.defaultSession);
 
@@ -98,6 +134,15 @@ async function bootstrap(): Promise<void> {
     return;
   }
 
+  try {
+    store = LedgerStore.open({ layout: storage.layout, appVersion: app.getVersion() });
+    // 启动幂等兜底：不同启动次数/不同 mutationId 都不会产生第二个默认账本或重复分类。
+    store.ensureDefault();
+  } catch (error) {
+    reportStartupFailure(error);
+    return;
+  }
+
   if (!devServerUrl) {
     serveRendererAssets(resolveRendererDir(__dirname));
   }
@@ -105,8 +150,8 @@ async function bootstrap(): Promise<void> {
   const router = createIpcRouter({
     expectedOrigins: allowedOrigins,
     getSenderWebContentsId: () => mainWindow?.webContents.id ?? null,
-    dataEpoch: sessionDataEpoch,
-    dataRevision: 0,
+    getDataEpoch: () => store?.currentEpoch ?? null,
+    getDataRevision: () => store?.currentRevision ?? 0,
     onRejectedSender: (reason) => {
       console.warn(`[bookkeep] rejected IPC sender: ${reason}`);
     },
@@ -115,6 +160,7 @@ async function bootstrap(): Promise<void> {
     },
   });
   registerIpcHandlers(router, {
+    store,
     encryptionAvailable: () => safeStorage.isEncryptionAvailable(),
   });
 
@@ -144,6 +190,15 @@ async function bootstrap(): Promise<void> {
 
   if (!selfTestMode) {
     if (loaded) window.show();
+    if (store.snapshot().recoveryRequired) {
+      void dialog.showMessageBox(window, {
+        type: 'warning',
+        title: `${APP_DISPLAY_NAME} 恢复模式`,
+        message: '账本当前处于恢复模式',
+        detail: '检测到迁移或完整性状态需要处理，业务写入已停止。可在“数据管理”中从备份恢复；现有数据不会被自动覆盖。',
+        buttons: ['知道了'],
+      });
+    }
     return;
   }
 
@@ -158,6 +213,8 @@ async function bootstrap(): Promise<void> {
     allowedOrigins,
     registeredChannels: router.registeredChannels(),
     devServerUrl,
+    database: store.snapshot(),
+    programPath: app.getAppPath(),
   });
   if (reportPath) writeSelfTestReport(report, reportPath);
   console.log(
@@ -167,6 +224,7 @@ async function bootstrap(): Promise<void> {
     if (!entry.ok) console.error(`[bookkeep] self-test check failed: ${entry.id} ${JSON.stringify(entry.detail ?? {})}`);
   }
   router.dispose();
+  store.close();
   app.exit(report.ok ? 0 : 1);
 }
 
@@ -175,6 +233,11 @@ app.on('second-instance', () => {
   if (mainWindow.isMinimized()) mainWindow.restore();
   mainWindow.show();
   mainWindow.focus();
+});
+
+app.on('will-quit', () => {
+  store?.close();
+  store = null;
 });
 
 const singleInstanceLocked = app.requestSingleInstanceLock();

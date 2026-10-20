@@ -1,13 +1,14 @@
-# BookKeepAI（S04 工程骨架）
+# BookKeepAI（S05 本地账本与持久化）
 
-中文 Windows 桌面 AI 辅助记账软件。**当前提交只是 S04 工程骨架**：可运行、可构建、
-可打包 Windows x64 ZIP，安全边界与 mock provider 已生效；账本、统计、真实识图与
-审核业务尚未实现（S05 起逐步落地）。
+中文 Windows 桌面 AI 辅助记账软件。**当前提交为 S05**：在 S04 安全骨架之上加入 SQLite
+迁移、默认账本与 34 个分类种子、分类/交易仓储与受限 IPC、版本冲突、软删除与审计、
+一致快照备份与恢复基础。统计、真实识图、审核入账与 CSV 导出尚未实现（S06 起）。
 
-- 完成状态：骨架自测通过（22/22，含解压后 ZIP 运行），**不是业务验收**；G1～G6 均未执行。
+- 完成状态：S05 自测通过（`npm test` 135 例、Electron 自检 28/28、重启幂等通过），
+  **不是业务验收**；G1～G6 均未执行，AC01～AC22 软件用例仍未执行。
 - 规格来源：`docs/PRD.md`、`docs/ARCHITECTURE.md`、`docs/CONTRACTS.md`、`docs/UX.md`、
   `docs/ICON-MAP.md`、`docs/FIXTURES.md`、`docs/DECISIONS.md`。
-- 本步骤交接：`tasks/S04.md`、`handoff/S04/HANDOFF.md`、`evidence/S04/`。
+- 本步骤交接：`tasks/S05.md`、`handoff/S05/HANDOFF.md`、`evidence/S05/`。
 
 ## 1. 技术栈与锁定版本
 
@@ -61,30 +62,39 @@ npm run dev
 | 命令 | 作用 |
 |---|---|
 | `npm run typecheck` | 主进程 / 渲染层 / 测试三套 tsconfig 类型检查 |
-| `npm test` | Vitest 单元测试（契约、校验、安全边界、mock provider 等） |
+| `npm test` | Vitest 单元/集成测试（契约、校验、安全边界、mock provider、SQLite 迁移/仓储/备份） |
 | `npm run verify:icons` | 核验 42 个 Lucide slug 存在，写 `resources/licenses/lucide/ICON-SLUGS.sha256` |
 | `npm run licenses` | 收集第三方许可原文到 `resources/licenses/` |
 | `npm run build` | 构建 `dist/main`、`dist/preload`、`dist/renderer`，并刷新许可/图标清单 |
-| `npm run smoke:electron` | 启动真实 Electron 执行 22 项骨架自检，报告写入 `.tmp/selftest-dev.json` |
+| `npm run smoke:electron` | 连续两次启动真实 Electron 执行 28 项自检，并比较重启后默认账本/dataEpoch 是否稳定 |
 | `npm run verify` | 上述检查的串联（不含打包） |
-| `npm run capture:ui` | 启动窗口逐页截图到 `evidence/S04/screens/`（开发自检证据） |
+| `npm run capture:ui` | 启动窗口逐页截图到 `evidence/S05/screens/`（可传入目录参数覆盖；开发自检证据） |
 | `npm run package:zip` | 构建 + electron-builder 生成 `release/BookKeepAI-0.1.0-win-x64.zip` 并核验 |
 | `npm run smoke:packaged` | 把 ZIP 解压到 `.tmp/unpacked-smoke`，从解压结果启动 EXE 自检 |
 | `npm run verify:zip` | 单独核验最新 ZIP 的必需产物、禁止项与 asar 顶层清单 |
 | `npm run clean` | 删除 `dist`、`release`、`.tmp`、`coverage` |
 
 自检覆盖（`src/main/selftest.ts`）：renderer 无 `require/process/module/global`、无
-`ipcRenderer`、preload 仅暴露 4 个命名空间、CSP 生效、样式生效、8 个导航项、
+`ipcRenderer`、preload 仅暴露白名单命名空间、CSP 生效、样式生效、8 个导航项、
 `settings.ai`/`readStatus` 真实返回、未知载荷被拒、`saveSecret` 明确 `NOT_IMPLEMENTED`、
 mock 两场景、DeepSeek 能力 `unverified`、better-sqlite3 在 Electron ABI 下建表查询、
+默认账本 34 分类、`ledger.ensureDefault`/`category.list`/`transaction.list`/`backup.list`
+真实返回、数据库位于 `data/generations/<id>/ledger.db` 且不在程序目录、
 `window.open` 与远端导航被拦截、单实例锁。
 
-## 6. 运行期数据位置
+## 6. 运行期数据位置与恢复
 
 - 数据根目录固定 `%LOCALAPPDATA%\BookKeepAI`（`data/`、`secrets/`、`backups/`、`logs/`、
-  `temp/` 及 Chromium 状态 `shell/`）。**不写入程序解压目录**。
-- S04 只创建 `shell/`（Electron 自身状态），没有数据库、附件或真实账本。
-- 移动或重新解压程序不会移动账本；跨设备使用备份（S05/S15 实现）。
+  `temp/` 及 Chromium 状态 `shell/`）。**不写入程序解压目录**；自检会断言二者不重叠。
+- `data/active.json` 指向当前 generation；`data/generations/<uuid>/ledger.db` 为账本数据库
+  （WAL、外键、`synchronous=FULL`），`data/restore-log.jsonl` 为恢复切换日志。
+- 默认账本与 34 个分类（33 消费分类 + “其他”）在首次启动同一事务内建立；重启只读取，
+  不会重复插入，也不会重置用户改名/停用。
+- 备份：`backups/<backupId>.bkdb` 为 `VACUUM INTO` 一致快照 + `bk-backup.v1` 清单；
+  **不含密钥/日志**。恢复前校验 hash、清单、schema 与完整性，失败不切换、不覆盖当前数据；
+  成功切换 generation 并更换 `dataEpoch`，旧 generation 与 pre_restore 快照保留。
+- 迁移：当前 schema v1；未来升级先做 pre_migration 备份，失败回滚并标记
+  `recovery_required`（业务写入停止，可用备份恢复）。检测到比应用更新的 schema 拒绝启动。
 
 ## 7. 安全边界（骨架已生效）
 
@@ -92,9 +102,11 @@ mock 两场景、DeepSeek 能力 `unverified`、better-sqlite3 在 Electron ABI 
   禁止新窗口与远端导航、拒绝全部权限请求、拒绝浏览器下载。
 - 生产页面通过自定义协议 `bookkeep://app/` 提供，拒绝目录穿越与未知文件；CSP
   `default-src 'none'` + 仅本地脚本、无外部连接。
-- 渲染层只能访问 preload 白名单：`settings.readAi/readStatus/saveSecret`、
-  `provider.capabilities`、`skeleton.mockRecognition`；每次都校验发送方（主窗口主 frame +
-  来源白名单 + 当前 dataEpoch）、信封、契约版本、载荷键与取值。
+- 渲染层只能访问 preload 白名单：`settings.*`、`provider.capabilities`、`ledger.ensureDefault`、
+  `category.list/create/update/disable`、`transaction.create/update/softDelete/restore/list`、
+  `backup.create/list/restore`、`skeleton.mockRecognition`；每次都校验发送方（主窗口主 frame +
+  来源白名单 + 当前 dataEpoch）、信封、契约版本、载荷键与取值。所有变更走主进程事务，
+  渲染层不能指定 source/sourceCandidateId/状态/版本。
 - UI 不接触密钥：S04 的 `settings.saveSecret` 校验载荷后返回 `NOT_IMPLEMENTED`，不保存、
   不回显；密码框提交后立即清空。真实加密存储与探针由 S09 实现。
 - mock provider 明确标注“本地模拟，不代表真实识图”，`actualModel=null`，不出网、不写库。
@@ -117,11 +129,14 @@ mock 两场景、DeepSeek 能力 `unverified`、better-sqlite3 在 Electron ABI 
 ## 9. 目录
 
 ```text
-src/main/        主进程：单实例、协议、窗口硬化、IPC 路由与校验、provider、自检
+src/main/        主进程：单实例、协议、窗口硬化、IPC 路由与校验、provider、自检、SQLite 存储
+src/main/db/     schema/迁移、连接、分类/交易/审计/幂等收据仓储、完整性检查
+src/main/services/ 账本事务边界、签名 token/游标、备份恢复、存储生命周期
+src/main/storage/  generation/active 指针、备份档案、恢复日志
 src/preload/     受限 preload（contextBridge，无 ipcRenderer 原生对象）
-src/renderer/    React 渲染层：导航空壳、8 个页面、mock 演示
-src/shared/      契约常量、错误码、DTO、通道白名单、分类/图标种子、候选 schema
-tests/unit/      单元测试（77 例）
+src/renderer/    React 渲染层：8 个页面，分类维护与备份/恢复读取真实 IPC
+src/shared/      契约常量、错误码、DTO、通道路由、金额/日期/文本域、分类/图标种子
+tests/unit/      单元 + 集成测试（135 例；`tests/unit/db/` 为 SQLite 真实文件测试）
 scripts/         构建、开发、自检、打包、核验、图标/许可脚本
 resources/       第三方许可与图标 slug 清单
 build/           应用图标（原创生成，scripts/make-icon.mjs）

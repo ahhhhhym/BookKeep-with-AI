@@ -18,9 +18,9 @@ export interface RouterContext {
   readonly expectedOrigins: readonly string[];
   /** 主窗口 webContents.id；窗口未创建时返回 null。 */
   readonly getSenderWebContentsId: () => number | null;
-  /** 当前数据世代；S04 无数据库恒为 null。 */
-  readonly dataEpoch: string | null;
-  readonly dataRevision: number;
+  /** 当前数据世代；启动完成前为 null，恢复成功后更换。 */
+  readonly getDataEpoch: () => string | null;
+  readonly getDataRevision: () => number;
   readonly onRejectedSender?: (reason: string) => void;
   readonly onInternalError?: (error: unknown) => void;
 }
@@ -76,23 +76,23 @@ export function createIpcRouter(context: RouterContext): IpcRouter {
   return {
     handle<TPayload, TResult>(spec: ChannelSpec<TPayload>, handler: IpcHandler<TPayload, TResult>): void {
       ipcMain.handle(spec.channel, async (event, raw): Promise<unknown> => {
-        const base: EnvelopeBase = {
+        const envelopeBase = (): EnvelopeBase => ({
           requestId: requestIdOf(raw),
           contractVersion: CONTRACT_VERSION,
-          dataEpoch: context.dataEpoch,
-          dataRevision: context.dataRevision,
-        };
+          dataEpoch: context.getDataEpoch(),
+          dataRevision: context.getDataRevision(),
+        });
         try {
           const decision = evaluateSender(senderFacts(event, context));
           if (!decision.ok) {
             context.onRejectedSender?.(decision.reason);
             throw new AppError('PERMISSION_DENIED', { details: { reason: decision.reason } });
           }
-          const request = validateIpcRequest(spec, raw, { expectedEpoch: context.dataEpoch });
+          const request = validateIpcRequest(spec, raw, { expectedEpoch: context.getDataEpoch() });
           const data = await handler(request);
-          return buildOkEnvelope(base, data);
+          return buildOkEnvelope(envelopeBase(), data);
         } catch (error) {
-          return buildErrorEnvelope(base, toErrorPayload(error, context.onInternalError));
+          return buildErrorEnvelope(envelopeBase(), toErrorPayload(error, context.onInternalError));
         }
       });
       registered.push(spec.channel);

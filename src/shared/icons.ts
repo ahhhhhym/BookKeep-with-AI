@@ -75,6 +75,15 @@ export function isKnownIconKey(value: unknown): value is string {
   return typeof value === 'string' && ICON_KEY_SET.has(value);
 }
 
+/** 分类只能使用 34 个分类图标；“设置”等导航图标不是分类图标。 */
+export function isCategoryIconKey(value: unknown): value is string {
+  return (
+    typeof value === 'string' &&
+    value.startsWith(ICON_KEY_PREFIX) &&
+    CATEGORY_ICON_SLUGS.includes(value.slice(ICON_KEY_PREFIX.length))
+  );
+}
+
 export function iconSlug(iconKey: string): string | null {
   if (!iconKey.startsWith(ICON_KEY_PREFIX)) return null;
   const slug = iconKey.slice(ICON_KEY_PREFIX.length);

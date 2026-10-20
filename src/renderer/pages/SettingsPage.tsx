@@ -100,7 +100,7 @@ export function SettingsPage({ ai, secret, capabilities, onNavigate, onError }: 
           ))}
         </ul>
         <Notice>
-          S04 不实现真实 HTTP 调用；DeepSeek 适配器返回 NOT_IMPLEMENTED，mock 结果显著标记为本地模拟。真实图片探针与 JSON 组合在 S09 用本地密钥验证。
+          S05 不实现真实 HTTP 调用；DeepSeek 适配器返回 NOT_IMPLEMENTED，mock 结果显著标记为本地模拟。真实图片探针与 JSON 组合在 S09 用本地密钥验证。
         </Notice>
       </Panel>
 
@@ -176,7 +176,7 @@ export function SettingsPage({ ai, secret, capabilities, onNavigate, onError }: 
       <Panel title="关于">
         <MetaList
           entries={[
-            ['应用', 'BookKeepAI 0.1.0（S04 工程骨架）'],
+            ['应用', 'BookKeepAI 0.1.0（S05 本地账本与持久化）'],
             ['契约版本', CONTRACT_VERSION],
             ['AI 状态', '实验性：真实识别质量尚未验收'],
             ['第三方许可', 'Electron / React / Lucide（ISC + MIT）等，见随包 licenses 目录'],

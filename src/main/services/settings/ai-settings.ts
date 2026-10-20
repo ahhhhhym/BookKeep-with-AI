@@ -12,20 +12,22 @@ import type { SaveSecretInput } from '../../../shared/ipc';
 export interface SettingsEnvironment {
   /** 由主进程调用 safeStorage.isEncryptionAvailable() 得到，不接受渲染层传入。 */
   readonly encryptionAvailable: boolean;
+  /** 当前默认账本；启动读取时允许为 null（首次初始化前）。 */
+  readonly ledgerId?: string | null;
 }
 
-export function readAiSettings(_env: SettingsEnvironment): AiSettingsView {
+export function readAiSettings(env: SettingsEnvironment): AiSettingsView {
   return {
     provider: 'deepseek',
     model: DEEPSEEK_MODEL,
     promptVersion: PROMPT_VERSION,
     schemaVersion: CANDIDATE_SCHEMA_VERSION,
-    // 真实识图/JSON 组合尚未验证，S04 一律 stub；不得展示为 ready。
+    // 真实识图/JSON 组合尚未验证，S04/S05 一律 stub；不得展示为 ready。
     readiness: 'stub',
     secretMode: 'absent',
     configured: false,
     settingsVersion: 0,
-    ledgerId: null,
+    ledgerId: env.ledgerId ?? null,
   };
 }
 

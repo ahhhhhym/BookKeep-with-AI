@@ -10,7 +10,7 @@ export function captureUi({ targetDir } = {}) {
   if (!existsSync(path.join(DIST, 'main', 'index.cjs'))) {
     throw new Error('缺少 dist/main/index.cjs，请先运行 npm run build');
   }
-  const directory = targetDir ?? path.join(ROOT, 'evidence', 'S04', 'screens');
+  const directory = targetDir ?? path.join(ROOT, 'evidence', 'S05', 'screens');
   mkdirSync(directory, { recursive: true });
 
   const status = spawnSync(
@@ -33,7 +33,7 @@ export function captureUi({ targetDir } = {}) {
 }
 
 if (import.meta.url === pathToFileURL(process.argv[1] ?? '').href) {
-  const result = captureUi();
+  const result = captureUi({ targetDir: process.argv[2] ? path.resolve(process.argv[2]) : undefined });
   if (!result.ok) {
     log(`capture failed (exit ${result.exitCode}, ${result.files.length} files)`);
     process.exit(1);
