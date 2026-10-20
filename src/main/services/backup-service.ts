@@ -29,11 +29,17 @@ import { findReceipt, insertReceipt } from '../db/receipt-repo';
 import { collectBusinessViolations } from '../db/integrity';
 import { openSqlite, runInTransaction, type SqliteDb } from '../db/sqlite';
 import {
+  BACKUP_MANIFEST_VERSION,
   createBackupArchive,
   inspectBackupArchive,
   sha256File,
   stageArchiveDatabase,
 } from '../storage/backup-archive';
+import {
+  removeBackupCatalogEntry,
+  upsertBackupCatalogEntry,
+  type BackupCatalogEntry,
+} from '../storage/backup-catalog';
 import { backupArchivePath, backupArchiveRef, generationDatabasePath, type StoragePaths } from '../storage/layout';
 import { findLastCommittedRestore, readRestoreLog } from '../storage/restore-log';
 import { hashPayload } from './canonical';
@@ -50,6 +56,16 @@ export interface BackupEnvironment {
 
 function nowIso(clock: () => number): string {
   return new Date(clock()).toISOString();
+}
+
+/** 恢复令牌只信任持久事实源（AppMeta epoch + Ledger.dataRevision），不用 store 缓存。 */
+function currentBackupFacts(db: SqliteDb, ledgerId: string): { epoch: string; revision: number } {
+  const meta = readAppMeta(db);
+  const ledger = getDefaultLedger(db);
+  if (!meta || !ledger || ledger.id !== ledgerId) {
+    throw new AppError('INTEGRITY_ERROR', { details: { reason: 'LEDGER_FACTS_MISSING' } });
+  }
+  return { epoch: meta.dataEpoch, revision: ledger.data_revision };
 }
 
 const BACKUP_COLUMNS = `id, ledger_id, kind, status, manifest_version, db_schema_version, app_version,
@@ -73,11 +89,13 @@ export function listBackupRows(db: SqliteDb): BackupRecordRow[] {
 function artifactFor(paths: StoragePaths, row: BackupRecordRow): BackupArtifactView | null {
   if (row.archive_hash === null || row.archive_ref === null) return null;
   const archivePath = backupArchivePath(paths, row.id);
+  // 文件缺失时返回 null：目录条目仍可见，但 UI 必须显示不可恢复，不能伪造大小/可用。
+  if (!existsSync(archivePath)) return null;
   let byteSize = 0;
   try {
-    if (existsSync(archivePath)) byteSize = statSync(archivePath).size;
+    byteSize = statSync(archivePath).size;
   } catch {
-    byteSize = 0;
+    return null;
   }
   return {
     artifactId: row.id,
@@ -150,6 +168,29 @@ export function createBackupFiles(env: BackupEnvironment, kind: BackupKind): Cre
     contractVersion: CONTRACT_VERSION,
     now,
   });
+  // 独立目录先于 generation 内记录落盘：恢复旧 generation 后目录仍可重建。
+  const entry: BackupCatalogEntry = {
+    id: backupId,
+    ledgerId: ledger.id,
+    kind,
+    status: 'completed',
+    manifestVersion: BACKUP_MANIFEST_VERSION,
+    dbSchemaVersion: meta.dbSchemaVersion,
+    appVersion: env.appVersion,
+    archiveHash: archive.sha256,
+    archiveRef: archive.archiveRef,
+    errorCode: null,
+    finishedAt: now,
+    version: 1,
+    createdAt: now,
+    updatedAt: now,
+  };
+  try {
+    upsertBackupCatalogEntry(env.paths, entry, now);
+  } catch {
+    removeArchive(env.paths, backupId);
+    throw new AppError('BACKUP_FAILED', { details: { step: 'catalog' } });
+  }
   try {
     runInTransaction(env.db, () => {
       insertBackupRecord(env.db, {
@@ -164,6 +205,11 @@ export function createBackupFiles(env: BackupEnvironment, kind: BackupKind): Cre
       });
     });
   } catch {
+    try {
+      removeBackupCatalogEntry(env.paths, backupId, now);
+    } catch {
+      // 目录补偿失败时保留条目；档案随后删除，预览会明确失败，不伪造可恢复。
+    }
     removeArchive(env.paths, backupId);
     throw new AppError('BACKUP_FAILED', { details: { step: 'record' }, retryable: true });
   }
@@ -198,8 +244,6 @@ export interface BackupServiceDeps {
   readonly latestSchemaVersion: number;
   readonly migrations: readonly Migration[];
   readonly tokenCodec: TokenCodec;
-  readonly epoch: () => string;
-  readonly revision: () => number;
   readonly ledgerId: () => string;
   /** store 负责关闭旧库、原子切换 active 指针、打开新库并登记恢复结果。 */
   readonly switchToStagedGeneration: (plan: StagedRestorePlan) => BackupRestoreResult;
@@ -280,13 +324,14 @@ export class BackupService {
         ? 'current'
         : 'needs_migration';
     const expiresAt = env.clock() + RESTORE_TOKEN_TTL_MS;
+    const facts = currentBackupFacts(env.db, this.deps.ledgerId());
     const restoreToken = this.deps.tokenCodec.sign({
       v: 1,
       k: 'restore',
       b: backupId,
       h: row.archive_hash,
-      e: this.deps.epoch(),
-      r: this.deps.revision(),
+      e: facts.epoch,
+      r: facts.revision,
       x: expiresAt,
     });
     const lastAppliedRestoreId = findLastCommittedRestore(
@@ -338,7 +383,8 @@ export class BackupService {
     if (payload.k !== 'restore' || typeof payload.b !== 'string' || typeof payload.h !== 'string') {
       throw new AppError('TOKEN_EXPIRED', { details: { reason: 'RESTORE_TOKEN_KIND' } });
     }
-    if (payload.e !== this.deps.epoch() || payload.r !== this.deps.revision()) {
+    const commitFacts = currentBackupFacts(env.db, this.deps.ledgerId());
+    if (payload.e !== commitFacts.epoch || payload.r !== commitFacts.revision) {
       throw new AppError('TOKEN_EXPIRED', { details: { reason: 'RESTORE_CONTEXT_STALE' } });
     }
     const row = getBackupRow(env.db, payload.b);

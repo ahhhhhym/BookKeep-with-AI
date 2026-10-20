@@ -185,14 +185,15 @@ export function DataPage(): JSX.Element {
                   <td>{formatTime(record.createdAt)}</td>
                   <td>{KIND_TEXT[record.kind]}</td>
                   <td>{record.dbSchemaVersion}</td>
-                  <td>{formatSize(record.artifact?.byteSize ?? 0)}</td>
-                  <td>{record.status === 'completed' ? '可用' : record.status}</td>
+                  <td>{record.artifact ? formatSize(record.artifact.byteSize) : '文件缺失'}</td>
+                  <td>{record.status === 'completed' ? (record.artifact ? '可用' : '不可恢复') : record.status}</td>
                   <td title={record.archiveHash ?? ''}>{record.archiveHash?.slice(0, 12) ?? '—'}…</td>
                   <td>
                     <button
                       type="button"
                       className="button button-small"
-                      disabled={pending || record.status !== 'completed'}
+                      disabled={pending || record.status !== 'completed' || record.artifact === null}
+                      title={record.artifact === null ? '备份文件缺失，无法恢复' : undefined}
                       onClick={() => void previewRestore(record)}
                     >
                       校验并恢复

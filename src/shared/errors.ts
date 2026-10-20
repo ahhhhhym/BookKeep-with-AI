@@ -120,6 +120,8 @@ const SAFE_DETAIL_KEYS: ReadonlySet<string> = new Set([
   'capability',
   'step',
   'reason',
+  'operation',
+  'counter',
 ]);
 
 export interface FieldIssue {

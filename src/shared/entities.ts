@@ -163,10 +163,14 @@ export type MutationReplayed = { replayed: boolean };
 
 export interface TransactionMutationResult extends MutationReplayed {
   transaction: TransactionView;
+  /** 该次原提交的 revision；回放不改变当前账本水位（CONTRACTS §10.1）。 */
+  committedRevision: number;
 }
 
 export interface CategoryMutationResult extends MutationReplayed {
   category: CategoryView;
+  /** 该次原提交的 revision；回放不改变当前账本水位（CONTRACTS §10.1）。 */
+  committedRevision: number;
 }
 
 export interface BackupArtifactView {

@@ -54,6 +54,14 @@ import {
   writeActivePointer,
 } from '../storage/active-pointer';
 import {
+  catalogEntryFromRow,
+  mergeCatalogIntoDatabase,
+  readBackupCatalog,
+  reconcileBackupCatalog,
+  upsertBackupCatalogEntries,
+  type BackupCatalogEntry,
+} from '../storage/backup-catalog';
+import {
   backupArchivePath,
   ensureStorageDirectories,
   generationDatabasePath,
@@ -65,6 +73,7 @@ import {
   BackupService,
   copyBackupRecordToNewDatabase,
   createPreMigrationBackup,
+  listBackupRows,
   type BackupEnvironment,
   type StagedRestorePlan,
 } from './backup-service';
@@ -189,8 +198,6 @@ export class LedgerStore {
       latestSchemaVersion: this.latestSchemaVersion,
       migrations: this.migrations,
       tokenCodec: this.tokenCodec,
-      epoch: () => this.epoch,
-      revision: () => this.revision,
       ledgerId: () => this.ledgerId,
       switchToStagedGeneration: (plan) => this.switchToStagedGeneration(plan),
     });
@@ -356,6 +363,19 @@ export class LedgerStore {
       recoveryReason,
       tokenSecret,
     });
+    // 独立备份目录：扫描未登记档案，并把当前 generation 已有记录补登记到目录。
+    try {
+      reconcileBackupCatalog(paths, nowIso(clock));
+      const databaseEntries = listBackupRows(db)
+        .map(catalogEntryFromRow)
+        .filter((entry): entry is BackupCatalogEntry => entry !== null);
+      upsertBackupCatalogEntries(paths, databaseEntries, nowIso(clock));
+      mergeCatalogIntoDatabase(db, ledger.id, readBackupCatalog(paths), nowIso(clock));
+    } catch (error) {
+      console.warn(
+        `[bookkeep] backup catalog reconciliation skipped: ${error instanceof Error ? error.message : 'unknown'}`,
+      );
+    }
     if (createdFresh) {
       store.appendStartupAudit();
     }
@@ -405,8 +425,20 @@ export class LedgerStore {
     }
   }
 
-  private trackMutation<T extends { replayed: boolean }>(result: ServiceResult<T>): T {
-    this.revision = result.revision;
+  /** 当前水位只以持久 Ledger.dataRevision 为事实源；缓存仅作关闭/异常时兜底。 */
+  private currentRevisionFromDb(): number {
+    try {
+      return readDataRevision(this.db, this.ledgerId);
+    } catch {
+      return this.revision;
+    }
+  }
+
+  private trackMutation<T extends { replayed: boolean; committedRevision: number }>(
+    result: ServiceResult<T>,
+  ): T {
+    // 回放返回历史 committedRevision，但当前水位必须重新读取持久值，绝不回退。
+    this.revision = this.currentRevisionFromDb();
     return { ...result.data, replayed: result.replayed };
   }
 
@@ -416,7 +448,7 @@ export class LedgerStore {
   }
 
   get currentRevision(): number {
-    return this.revision;
+    return this.currentRevisionFromDb();
   }
 
   get currentLedgerId(): string {
@@ -433,7 +465,7 @@ export class LedgerStore {
       dbSchemaVersion: this.schemaVersion,
       ledgerId: this.ledgerId,
       dataEpoch: this.epoch,
-      dataRevision: this.revision,
+      dataRevision: this.currentRevisionFromDb(),
       categoryCount: countCategories(this.db, this.ledgerId),
       ledgerCount: countLedgers(this.db),
       transactionCount: countTransactions(this.db, this.ledgerId),
@@ -538,8 +570,12 @@ export class LedgerStore {
   createAiTransaction(input: AiTransactionInput): TransactionMutationResult {
     this.assertWritable();
     const result = createAiTransaction(this.context(), input);
-    this.revision = result.revision;
-    return { transaction: result.transaction, replayed: result.alreadyExisted };
+    this.revision = this.currentRevisionFromDb();
+    return {
+      transaction: result.transaction,
+      replayed: result.alreadyExisted,
+      committedRevision: result.alreadyExisted ? this.revision : result.revision,
+    };
   }
 
   /* ------------------------------- 备份 -------------------------------- */
@@ -641,7 +677,15 @@ export class LedgerStore {
         appliedBackupHash: plan.backupHash,
         replayed: false,
       };
+      // 独立备份目录先于切换即可读；把它合并进新 generation，保证 B1/B2/P 恢复后仍可操作。
+      reconcileBackupCatalog(this.paths, now);
+      const restoredDatabaseEntries = listBackupRows(openedDb)
+        .map(catalogEntryFromRow)
+        .filter((entry): entry is BackupCatalogEntry => entry !== null);
+      upsertBackupCatalogEntries(this.paths, restoredDatabaseEntries, now);
+      const catalogEntries = readBackupCatalog(this.paths);
       runInTransaction(openedDb, () => {
+        mergeCatalogIntoDatabase(openedDb, ledger.id, catalogEntries, now);
         copyBackupRecordToNewDatabase(openedDb, plan.preRestore.row, now, ledger.id);
         insertAuditEvent(openedDb, {
           ledgerId: ledger.id,

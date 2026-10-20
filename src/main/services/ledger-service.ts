@@ -149,7 +149,7 @@ interface MutationOutcome<T> {
   readonly changed: boolean;
 }
 
-function runMutation<T>(
+function runMutation<T extends { replayed: boolean; committedRevision: number }>(
   ctx: LedgerServiceContext,
   operation: string,
   mutationId: string | null,
@@ -166,9 +166,17 @@ function runMutation<T>(
       if (existing.payload_hash !== payloadHash) {
         throw new AppError('IDEMPOTENCY_CONFLICT', { details: { operation } });
       }
+      const stored = JSON.parse(existing.result_snapshot_json) as T & {
+        committedRevision?: number;
+      };
+      const committedRevision =
+        typeof stored.committedRevision === 'number'
+          ? stored.committedRevision
+          : existing.revision_at_commit;
+      // 回放返回原提交的 committedRevision；当前账本水位由 store 独立读取，绝不写回。
       return {
-        data: JSON.parse(existing.result_snapshot_json) as T,
-        revision: existing.revision_at_commit,
+        data: { ...stored, committedRevision, replayed: true },
+        revision: committedRevision,
         replayed: true,
       };
     }
@@ -177,6 +185,7 @@ function runMutation<T>(
     const revision = outcome.changed
       ? bumpRevision(ctx.db, ctx.ledgerId, now)
       : readDataRevision(ctx.db, ctx.ledgerId);
+    const data = { ...outcome.data, replayed: false, committedRevision: revision } as T;
     insertReceipt(ctx.db, {
       ledgerId: ctx.ledgerId,
       operation,
@@ -184,11 +193,11 @@ function runMutation<T>(
       payloadHash,
       resultType: outcome.resultType,
       resultIds: outcome.resultIds,
-      snapshot: outcome.data,
+      snapshot: data,
       revision,
       now,
     });
-    return { data: outcome.data, revision, replayed: false };
+    return { data, revision, replayed: false };
   });
 }
 
@@ -355,7 +364,7 @@ export function createCategory(
       now,
     });
     return {
-      data: { category: mapCategory(row), replayed: false },
+      data: { category: mapCategory(row), replayed: false, committedRevision: 0 },
       resultIds: [id],
       resultType: 'category',
       changed: true,
@@ -409,7 +418,7 @@ export function updateCategory(
     }
     if (Object.keys(updates).length === 0) {
       return {
-        data: { category: mapCategory(current), replayed: false },
+        data: { category: mapCategory(current), replayed: false, committedRevision: 0 },
         resultIds: [current.id],
         resultType: 'category',
         changed: false,
@@ -453,7 +462,7 @@ export function updateCategory(
       now,
     });
     return {
-      data: { category: mapCategory(updated), replayed: false },
+      data: { category: mapCategory(updated), replayed: false, committedRevision: 0 },
       resultIds: [updated.id],
       resultType: 'category',
       changed: true,
@@ -476,7 +485,7 @@ export function disableCategory(
     assertVersion(current.version, input.expectedVersion);
     if (current.enabled !== 1) {
       return {
-        data: { category: mapCategory(current), replayed: false },
+        data: { category: mapCategory(current), replayed: false, committedRevision: 0 },
         resultIds: [current.id],
         resultType: 'category',
         changed: false,
@@ -505,7 +514,7 @@ export function disableCategory(
       now,
     });
     return {
-      data: { category: mapCategory(updated), replayed: false },
+      data: { category: mapCategory(updated), replayed: false, committedRevision: 0 },
       resultIds: [updated.id],
       resultType: 'category',
       changed: true,
@@ -680,7 +689,7 @@ export function createManualTransaction(
       now,
     });
     return {
-      data: { transaction: mapTransaction(row), replayed: false },
+      data: { transaction: mapTransaction(row), replayed: false, committedRevision: 0 },
       resultIds: [id],
       resultType: 'transaction',
       changed: true,
@@ -745,7 +754,7 @@ export function updateTransaction(
 
     if (Object.keys(update).length === 0) {
       return {
-        data: { transaction: mapTransaction(current), replayed: false },
+        data: { transaction: mapTransaction(current), replayed: false, committedRevision: 0 },
         resultIds: [current.id],
         resultType: 'transaction',
         changed: false,
@@ -791,7 +800,7 @@ export function updateTransaction(
       now,
     });
     return {
-      data: { transaction: mapTransaction(updated), replayed: false },
+      data: { transaction: mapTransaction(updated), replayed: false, committedRevision: 0 },
       resultIds: [updated.id],
       resultType: 'transaction',
       changed: true,
@@ -827,7 +836,7 @@ export function softDeleteTransaction(
       now,
     });
     return {
-      data: { transaction: mapTransaction(updated), replayed: false },
+      data: { transaction: mapTransaction(updated), replayed: false, committedRevision: 0 },
       resultIds: [updated.id],
       resultType: 'transaction',
       changed: true,
@@ -863,7 +872,7 @@ export function restoreTransaction(
       now,
     });
     return {
-      data: { transaction: mapTransaction(updated), replayed: false },
+      data: { transaction: mapTransaction(updated), replayed: false, committedRevision: 0 },
       resultIds: [updated.id],
       resultType: 'transaction',
       changed: true,
