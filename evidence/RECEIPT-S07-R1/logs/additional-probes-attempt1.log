@@ -1,0 +1,15 @@
+PASS UI-fourth-transaction-in-total-but-top3-truncated
+PASS UI-multiple-category-filter-year-point-ledger-and-return
+locator.waitFor: Timeout 12000ms exceeded.
+Call log:
+  - waiting for getByText('用餐验收（已停用）', { exact: true }) to be visible
+    27 × locator resolved to hidden <label>…</label>
+
+    at D:\BookKeep with AI\evidence\RECEIPT-S07-R1\acceptance-probes.mjs:129:50 {
+  log: [
+    "  - waiting for getByText('用餐验收（已停用）', { exact: true }) to be visible",
+    '    27 × locator resolved to hidden <label>…</label>'
+  ],
+  name: 'TimeoutError'
+}
+S07 additional checks 2; ok=false

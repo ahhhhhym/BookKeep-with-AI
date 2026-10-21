@@ -1,0 +1,112 @@
+[
+  {
+    "file": "执行看板.md",
+    "target": "handoff/RESPONSIBILITY-CODEX-20261020/HANDOFF.md",
+    "exists": true
+  },
+  {
+    "file": "README.md",
+    "target": "handoff/S07/ACCEPTANCE-R1.md",
+    "exists": true
+  },
+  {
+    "file": "README.md",
+    "target": "handoff/S07/HANDOFF.md",
+    "exists": true
+  },
+  {
+    "file": "README.md",
+    "target": "handoff/S05/ACCEPTANCE-R2.md",
+    "exists": true
+  },
+  {
+    "file": "README.md",
+    "target": "AGENTS.md",
+    "exists": true
+  },
+  {
+    "file": "README.md",
+    "target": "docs/DECISIONS.md",
+    "exists": true
+  },
+  {
+    "file": "README.md",
+    "target": "分步中文提示词.md",
+    "exists": true
+  },
+  {
+    "file": "开始阅读.md",
+    "target": "handoff/S07/ACCEPTANCE-R1.md",
+    "exists": true
+  },
+  {
+    "file": "开始阅读.md",
+    "target": "AGENTS.md",
+    "exists": true
+  },
+  {
+    "file": "开始阅读.md",
+    "target": "执行看板.md",
+    "exists": true
+  },
+  {
+    "file": "开始阅读.md",
+    "target": "开发方案.md",
+    "exists": true
+  },
+  {
+    "file": "开始阅读.md",
+    "target": "handoff/S07/ACCEPTANCE-R1.md",
+    "exists": true
+  },
+  {
+    "file": "开始阅读.md",
+    "target": "handoff/S07/HANDOFF.md",
+    "exists": true
+  },
+  {
+    "file": "开始阅读.md",
+    "target": "tasks/S07.md",
+    "exists": true
+  },
+  {
+    "file": "开始阅读.md",
+    "target": "handoff/S06/ACCEPTANCE-R1.md",
+    "exists": true
+  },
+  {
+    "file": "开始阅读.md",
+    "target": "分步中文提示词.md",
+    "exists": true
+  },
+  {
+    "file": "开始阅读.md",
+    "target": "交接与验收.md",
+    "exists": true
+  },
+  {
+    "file": "开始阅读.md",
+    "target": "docs/DECISIONS.md",
+    "exists": true
+  },
+  {
+    "file": "handoff\\S07\\ACCEPTANCE-R1.md",
+    "target": "../../evidence/RECEIPT-S07-R1/RECEIPT.md",
+    "exists": true
+  },
+  {
+    "file": "handoff\\S07\\ACCEPTANCE-R1.md",
+    "target": "../../evidence/RECEIPT-S07-R1/freeze.json",
+    "exists": true
+  },
+  {
+    "file": "handoff\\S07\\ACCEPTANCE-R1.md",
+    "target": "../../evidence/RECEIPT-S07-R1/additional-probes.json",
+    "exists": true
+  },
+  {
+    "file": "handoff\\S07\\ACCEPTANCE-R1.md",
+    "target": "../../evidence/RECEIPT-S07-R1/final-check.json",
+    "exists": true
+  }
+]

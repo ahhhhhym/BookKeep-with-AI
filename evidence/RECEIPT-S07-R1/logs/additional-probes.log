@@ -1,0 +1,8 @@
+PASS UI-fourth-transaction-in-total-but-top3-truncated
+PASS UI-multiple-category-filter-year-point-ledger-and-return
+PASS UI-renamed-disabled-category-retains-history-and-selected-filter
+PASS independent-integer-oracle-120-scopes-through-real-preload
+PASS real-IPC-rejects-invalid-fields-dates-future-point-and-stale-revision
+PASS real-backup-restore-changes-epoch-and-refreshes-filtered-UI
+PASS SQL-native-integrity-offline-no-overlay-or-runtime-errors
+S07 additional checks 7; ok=true
