@@ -1,0 +1,238 @@
+{
+  "ok": true,
+  "kind": "S06 stage receipt rerun; not S08 or G1",
+  "localAppData": "C:\\Users\\Administrator\\AppData\\Local\\Temp\\BookKeepAI S06 中文 JIJH50",
+  "checks": [
+    {
+      "id": "empty-ledger-real-db",
+      "ok": true,
+      "detail": {}
+    },
+    {
+      "id": "keyboard-ctrl-n-focus-trap-esc-unsaved-and-preserved-invalid-input",
+      "ok": true,
+      "detail": {}
+    },
+    {
+      "id": "F01-create-stable-order-collapse",
+      "ok": true,
+      "detail": {
+        "displayed": "符合筛选 3 笔 · ¥33.30"
+      }
+    },
+    {
+      "id": "edit-delete-confirm-restore-immediate-totals",
+      "ok": true,
+      "detail": {
+        "editedFen": 3350,
+        "afterDeleteFen": 1850,
+        "restoredFen": 3350,
+        "finalFen": 3330
+      }
+    },
+    {
+      "id": "name-search-empty-result-date-inclusive",
+      "ok": true,
+      "detail": {}
+    },
+    {
+      "id": "category-management-entry-and-persistent-return",
+      "ok": true,
+      "detail": {}
+    },
+    {
+      "id": "actual-process-restart-and-sql-display-reconciliation",
+      "ok": true,
+      "detail": {
+        "active": {
+          "count": 3,
+          "totalFen": 3330
+        },
+        "rows": [
+          {
+            "name": "午餐",
+            "amount_fen": 1350,
+            "occurred_date": "2026-09-27",
+            "occurred_time": "12:00",
+            "time_precision": "minute",
+            "deleted_at": null,
+            "version": 1
+          },
+          {
+            "name": "双荟",
+            "amount_fen": 480,
+            "occurred_date": "2026-09-27",
+            "occurred_time": "18:00",
+            "time_precision": "minute",
+            "deleted_at": null,
+            "version": 3
+          },
+          {
+            "name": "晚餐",
+            "amount_fen": 1500,
+            "occurred_date": "2026-09-27",
+            "occurred_time": "19:00",
+            "time_precision": "minute",
+            "deleted_at": null,
+            "version": 3
+          }
+        ],
+        "ledgerCount": 1,
+        "categories": 34,
+        "quickCheck": [
+          {
+            "quick_check": "ok"
+          }
+        ],
+        "foreignKeys": []
+      }
+    },
+    {
+      "id": "real-save-pending-response-loss-same-mutation-id-replay",
+      "ok": true,
+      "detail": {
+        "retries": [
+          {
+            "mutationId": "53f19442-33a8-441a-ae75-e696ae0fed93",
+            "dataEpoch": "da86889c-da57-4ef9-9dee-e26178415589",
+            "replayed": false
+          },
+          {
+            "mutationId": "53f19442-33a8-441a-ae75-e696ae0fed93",
+            "dataEpoch": "da86889c-da57-4ef9-9dee-e26178415589",
+            "replayed": true
+          }
+        ]
+      }
+    },
+    {
+      "id": "real-version-conflict-preserved-input-explicit-rebase",
+      "ok": true,
+      "detail": {}
+    },
+    {
+      "id": "real-restore-old-form-bound-epoch-rejected-after-preload-updated",
+      "ok": true,
+      "detail": {
+        "newDataEpoch": "e4848787-b71b-4854-b424-7d37bdb7a395",
+        "active": {
+          "count": 3,
+          "totalFen": 3330
+        }
+      }
+    },
+    {
+      "id": "disabled-original-category-kept-on-real-edit",
+      "ok": true,
+      "detail": {}
+    },
+    {
+      "id": "controlled-renderer-clock-shanghai-midnight-cross-year-refresh",
+      "ok": true,
+      "detail": {}
+    },
+    {
+      "id": "viewport-1280x720",
+      "ok": true,
+      "detail": {
+        "width": 1280,
+        "height": 720,
+        "horizontalOverflow": false
+      }
+    },
+    {
+      "id": "viewport-640x480",
+      "ok": true,
+      "detail": {
+        "width": 640,
+        "height": 480,
+        "horizontalOverflow": false
+      }
+    },
+    {
+      "id": "long-name-cross-year-unknown-time-and-200-percent-form-scroll",
+      "ok": true,
+      "detail": {
+        "x": 193,
+        "y": 175.1999969482422,
+        "right": 278.5999984741211,
+        "bottom": 211.1999969482422,
+        "width": 320,
+        "height": 240,
+        "dialogWidth": 286
+      }
+    }
+  ],
+  "consoleErrors": [],
+  "finalDisplayed": "符合筛选 5 笔 · ¥35.30",
+  "finalDatabase": {
+    "active": {
+      "count": 5,
+      "totalFen": 3530
+    },
+    "rows": [
+      {
+        "name": "上海午夜刷新",
+        "amount_fen": 100,
+        "occurred_date": "2026-12-31",
+        "occurred_time": null,
+        "time_precision": "date",
+        "deleted_at": null,
+        "version": 1
+      },
+      {
+        "name": "午餐",
+        "amount_fen": 1350,
+        "occurred_date": "2026-09-27",
+        "occurred_time": "12:00",
+        "time_precision": "minute",
+        "deleted_at": null,
+        "version": 1
+      },
+      {
+        "name": "双荟",
+        "amount_fen": 480,
+        "occurred_date": "2026-09-27",
+        "occurred_time": "18:00",
+        "time_precision": "minute",
+        "deleted_at": null,
+        "version": 5
+      },
+      {
+        "name": "响应丢失测试",
+        "amount_fen": 100,
+        "occurred_date": "2026-09-27",
+        "occurred_time": null,
+        "time_precision": "date",
+        "deleted_at": "2026-10-21T04:51:22.159Z",
+        "version": 2
+      },
+      {
+        "name": "晚餐",
+        "amount_fen": 1500,
+        "occurred_date": "2026-09-27",
+        "occurred_time": "19:00",
+        "time_precision": "minute",
+        "deleted_at": null,
+        "version": 3
+      },
+      {
+        "name": "跨年长名称验证跨年长名称验证跨年长名称验证跨年长名称验证跨年长名称验证跨年长名称验证跨年长名称验证跨年长名称验证跨年长名称验证跨年长名称验证跨年长名称验证跨年长名称验证",
+        "amount_fen": 100,
+        "occurred_date": "2024-12-31",
+        "occurred_time": null,
+        "time_precision": "date",
+        "deleted_at": null,
+        "version": 1
+      }
+    ],
+    "ledgerCount": 1,
+    "categories": 34,
+    "quickCheck": [
+      {
+        "quick_check": "ok"
+      }
+    ],
+    "foreignKeys": []
+  }
+}

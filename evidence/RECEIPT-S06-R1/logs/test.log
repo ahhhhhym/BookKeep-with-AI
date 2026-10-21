@@ -1,0 +1,64 @@
+
+> bookkeepai@0.1.0 test
+> vitest run
+
+
+ RUN  v5.0.5 D:/BookKeep with AI
+
+ ✓ tests/unit/mock-provider.test.ts (7 tests) 27ms
+ ✓ tests/unit/ipc-spec.test.ts (26 tests) 28ms
+ ✓ tests/unit/db/amount-date.test.ts (7 tests) 48ms
+ ✓ tests/unit/categories.test.ts (6 tests) 15ms
+ ✓ tests/unit/contract.test.ts (6 tests) 12ms
+ ✓ tests/unit/candidate.test.ts (11 tests) 21ms
+ ✓ tests/unit/boundaries.test.ts (5 tests) 13ms
+ ✓ tests/unit/sender.test.ts (5 tests) 13ms
+ ✓ tests/unit/security.test.ts (6 tests) 15ms
+ ✓ tests/unit/validation.test.ts (8 tests) 14ms
+ ✓ tests/unit/paths.test.ts (4 tests) 8ms
+ ✓ tests/unit/db/ledger-init.test.ts (5 tests) 876ms
+   ✓ 默认账本与 34 个分类的幂等初始化 (5)
+     ✓ 首次启动建立唯一默认账本、33+其他分类与 dataEpoch 537ms
+ ✓ tests/unit/db/category.test.ts (6 tests) 937ms
+   ✓ 分类维护与引用安全 (6)
+     ✓ 新建自定义分类使用 UUID、systemKey=null、初始 sortOrder=350 并按 10 递增 565ms
+ ✓ tests/unit/icons.test.ts (4 tests) 12ms
+ ✓ tests/unit/db/s06-ledger.test.ts (8 tests) 1574ms
+   ✓ S06 表单与真实SQLite联动 (4)
+     ✓ F01 输入→分→显示→编辑→软删→恢复→关闭重开始终一致，原键不重复 598ms
+   ✓ S06 快照读取及日期 (4)
+     ✓ 超过一页同日记录合并组头，第一页小计即为完整组总额 418ms
+ ✓ tests/unit/db/migration.test.ts (6 tests) 1593ms
+   ✓ 数据库迁移：版本、备份与失败恢复 (6)
+     ✓ 迁移记录与默认数据在多次重启后不重复插入 572ms
+     ✓ 迁移失败回滚并进入 recovery_required：旧数据可读、写入被拒绝、可恢复到迁移前备份 498ms
+ ✓ tests/unit/db/transaction.test.ts (15 tests) 1692ms
+   ✓ 正式交易：金额、日期精度、来源与审计 (4)
+     ✓ 接受 0.01 元与上限金额，拒绝 0/负数/小数/超上限且不产生半条记录 529ms
+ ✓ tests/unit/db/backup.test.ts (8 tests) 1796ms
+   ✓ 备份创建与清单 (1)
+     ✓ 创建一致快照：记录 completed、档案存在、hash 可复算，重复 mutationId 回放原结果 616ms
+   ✓ 备份恢复：校验、切换、epoch 与失败保护 (7)
+     ✓ 恢复回滚数据并更换 dataEpoch，保留 pre_restore 与旧 generation；重启保持新状态 358ms
+ ✓ tests/unit/db/rework2-regression.test.ts (5 tests) 2559ms
+   ✓ BK-S05-003 目录重建的 hash 基准 (5)
+     ✓ 目录丢失后重建必须保留数据库原始 hash，不采纳档案当前 hash 798ms
+     ✓ B1→B2→合法改 B2 金额→目录丢失→重启→恢复 B1→再预览 B2 仍拒绝 555ms
+     ✓ 目录记录与 DB 记录 hash 冲突时明确标错并拒绝，不按读取顺序选择 329ms
+     ✓ 运行中删除目录再恢复 B1：仍保留切换前账本的 B2 原 hash，拒绝改动档案 612ms
+ ✓ tests/unit/db/rework-regression.test.ts (8 tests) 2684ms
+   ✓ BK-S05-001 回放旧收据不得回退当前 revision (3)
+     ✓ 回放后当前 revision 保持持久水位；回放结果保留原 committedRevision 548ms
+   ✓ BK-S05-002 恢复后备份目录仍可发现/校验/恢复 (5)
+     ✓ 恢复 B1 后 B1、B2 与 pre_restore 仍在列表中，且可再次预览/恢复 B2 620ms
+     ✓ 重启后备份目录保持，损坏档案在预览时拒绝且不覆盖当前数据 308ms
+     ✓ 缺失档案仍保留目录条目但显示不可恢复，预览明确拒绝 489ms
+
+ Test Files  20 passed (20)
+      Tests  156 passed (156)
+   Start at  12:50:58
+   Duration  3.69s (tests 76%, import 11%, transform 10%, worker 3%)
+
+    Isolate  20 workers spawned · ~451ms startup each (spawn + environment, per file)
+             at least ~369ms faster with isolate: false — reuses workers across files instead of one per file
+

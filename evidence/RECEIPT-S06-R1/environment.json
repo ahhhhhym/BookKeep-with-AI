@@ -1,0 +1,21 @@
+{
+  "date": "2026-10-21",
+  "pwsh": "7.6.5",
+  "edition": "Core",
+  "head": "c431de8b61384062e8967808ff40cec691e906a2",
+  "branch": "main",
+  "node": "v24.19.0",
+  "npm": "11.17.0",
+  "os": {
+    "Caption": "Microsoft Windows 10 专业版",
+    "Version": "10.0.19045",
+    "BuildNumber": "19045",
+    "OSArchitecture": "64 位"
+  },
+  "uiCommands": [
+    "node evidence/RECEIPT-S06-R1/replay-s06.mjs",
+    "node evidence/RECEIPT-S06-R1/acceptance-probes.mjs",
+    "node evidence/RECEIPT-S06-R1/startup-probe.mjs"
+  ],
+  "qaNodeModules": "C:\\Users\\Administrator\\.cache\\codex-runtimes\\codex-primary-runtime\\dependencies\\node\\node_modules"
+}

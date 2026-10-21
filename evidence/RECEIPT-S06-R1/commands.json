@@ -1,0 +1,30 @@
+[
+  {
+    "command": "npm run typecheck",
+    "exitCode": 0,
+    "started": "2026-10-21T12:50:46.7278792+08:00",
+    "finished": "2026-10-21T12:50:55.2498681+08:00",
+    "log": "evidence\\RECEIPT-S06-R1\\logs\\typecheck.log"
+  },
+  {
+    "command": "npm run test",
+    "exitCode": 0,
+    "started": "2026-10-21T12:50:55.2548521+08:00",
+    "finished": "2026-10-21T12:51:01.8005499+08:00",
+    "log": "evidence\\RECEIPT-S06-R1\\logs\\test.log"
+  },
+  {
+    "command": "npm run verify:icons",
+    "exitCode": 0,
+    "started": "2026-10-21T12:51:01.8009316+08:00",
+    "finished": "2026-10-21T12:51:02.4715094+08:00",
+    "log": "evidence\\RECEIPT-S06-R1\\logs\\verify-icons.log"
+  },
+  {
+    "command": "npm run build",
+    "exitCode": 0,
+    "started": "2026-10-21T12:51:02.4719385+08:00",
+    "finished": "2026-10-21T12:51:04.7003354+08:00",
+    "log": "evidence\\RECEIPT-S06-R1\\logs\\build.log"
+  }
+]

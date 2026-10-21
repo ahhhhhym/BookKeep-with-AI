@@ -1,0 +1,18 @@
+{
+  "time": "2026-10-21T12:57:14.9996358+08:00",
+  "frozenCount": 143,
+  "frozenMismatchCount": 0,
+  "head": "c431de8b61384062e8967808ff40cec691e906a2",
+  "status": [
+    " M AGENTS.md",
+    " M docs/ACCEPTANCE.md",
+    " M \"\\346\\211\\247\\350\\241\\214\\347\\234\\213\\346\\235\\277.md\"",
+    "?? evidence/RECEIPT-S06-R1/",
+    "?? handoff/S06/ACCEPTANCE-R1.md",
+    "?? issues/BK-S06-004.md"
+  ],
+  "processes": [],
+  "noProductChanges": true,
+  "oldEvidenceUnchanged": true,
+  "phase": "接收文档及证据提交前终检；提交后以git状态和本文件历史记录核验"
+}
