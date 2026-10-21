@@ -1,12 +1,18 @@
 # 依赖与构建产物（DSH 编写；不提交开发依赖或打包结果）
 /node_modules/
 /dist/
+/build/
 /release/
 /out/
 /coverage/
 /.vite/
 /.tmp/
 *.tsbuildinfo
+node_modules/
+venv/
+.venv/
+__pycache__/
+*.py[cod]
 
 # 本地环境与凭证（任何情况下不得提交）
 .env
@@ -21,6 +27,21 @@
 *.db
 *.db-wal
 *.db-shm
+*.sqlite
+*.sqlite3
+*.sqlite-wal
+*.sqlite-shm
+*.sqlite3-wal
+*.sqlite3-shm
+*.db-journal
+*.sqlite-journal
+*.sqlite3-journal
+/logs/
+/backups/
+/old/
+*.bak
+*.backup
+*~
 
 # 编辑器与系统临时文件
 .vscode/
@@ -46,6 +67,10 @@ npm-debug.log*
 /执行看板.md
 /文件清单.sha256
 /BookKeepAI-开发资料-*.zip*
+*.zip
+*.7z
+*.exe
+*.msi
 
 # 阶段取证、截图及真实收费探针脚本仅供本地使用
 /scripts/capture-ui.mjs

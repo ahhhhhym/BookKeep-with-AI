@@ -129,7 +129,7 @@ export function renderIcon(size = SIZE) {
 }
 
 if (import.meta.url === pathToFileURL(process.argv[1] ?? '').href) {
-  const targetDir = path.join(ROOT, 'build');
+  const targetDir = path.join(ROOT, 'assets', 'app');
   mkdirSync(targetDir, { recursive: true });
   const target = path.join(targetDir, 'icon.png');
   writeFileSync(target, renderIcon());
