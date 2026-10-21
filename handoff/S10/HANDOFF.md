@@ -2,6 +2,8 @@
 
 2026-10-21｜Codex｜**实现自测完成，待本阶段单列接收**。同一Codex实现、修复、自测；不声称不同作者独立审查。未执行S11/G3、S17/S19。
 
+源码/自测提交 `113effee0609bdbd1d621799392d2d7746e1c9d0`。
+
 起点 `d1dcc337954f2800128a8efb0704770d9d607480`；交付分支 `codex/s10-image-queue`，base为实际默认 `main`，无前置开放PR依赖。实现源码/构建固定清单在 [SOURCE](../../evidence/S10/SOURCE.sha256)、[BUILD](../../evidence/S10/BUILD.sha256)；本轮提交与PR另记[DELIVERY](DELIVERY.md)，避免自引用commit哈希。原有D51规则变更逐字保留，只暂存本轮状态/决策内容。
 
 ## 输入已核实
