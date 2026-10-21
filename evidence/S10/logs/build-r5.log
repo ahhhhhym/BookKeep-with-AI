@@ -1,7 +1,0 @@
-
-> bookkeepai@0.1.0 build
-> node scripts/build.mjs
-
-[bookkeep] icon slugs verified: 42/42 (34 分类 + 导航), lucide-static 1.60.0
-[bookkeep] licenses collected: 14 packages -> resources\licenses
-[bookkeep] build complete: dist/{main,preload,renderer}

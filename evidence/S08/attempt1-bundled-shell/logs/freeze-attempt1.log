@@ -1,1 +1,0 @@
-Preflight attempt 1: git ls-files default quoted non-ASCII paths; Get-FileHash rejected quoted ZIP path. No source/test/build command ran. Retry uses git -c core.quotepath=false ls-files.
