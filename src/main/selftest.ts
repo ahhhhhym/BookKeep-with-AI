@@ -177,7 +177,7 @@ export async function runSelfTest(deps: SelfTestDependencies): Promise<SelfTestR
       'preload.bridgeSurface',
       isolation.bridgeType === 'object' &&
         isolation.bridgeKeys.join(',') ===
-          'backup,category,contractVersion,ledger,provider,settings,skeleton,skeletonStage,statistics,transaction' &&
+          'backup,candidate,category,contractVersion,image,ledger,provider,recognition,settings,skeleton,skeletonStage,statistics,transaction' &&
         isolation.statisticsKeys.join(',') === 'series,summary,topCategories,topTransactions',
       { bridgeType: isolation.bridgeType, bridgeKeys: isolation.bridgeKeys, statisticsKeys: isolation.statisticsKeys },
     ),

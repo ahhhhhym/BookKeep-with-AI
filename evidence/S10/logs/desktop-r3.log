@@ -1,0 +1,13 @@
+PASS UI-native-selection-entry-content-validation-prepared-preview-and-hash
+PASS UI-loading-follows-actual-pending-request-and-upload-consent
+PASS UI-multiple-persisted-candidates-source-evidence-and-no-approval-control
+PASS exact-hash-reuse-no-second-HTTP
+PASS illegal-JSON-failed-persisted-zero-partial-draft
+PASS UI-cancel-generation-fence-drops-abort-ignoring-late-success
+PASS offline-max3-persisted-attempts-bounded-real-backoff
+PASS actual-File-WebP-through-webUtils-drop-token-and-IPC
+PASS drop-rejects-path-string-masquerading-as-File
+PASS real-process-restart-persists-pending-failed-cancelled-and-interrupted-no-charge-resume
+PASS native-SQLite-schema2-source-FKs-quickcheck-and-6-96530-after-restart
+PASS week-month-year-ranking-Top3-and-average-through-preload-ignore-drafts-and-failed-jobs
+PASS 640x600-no-horizontal-overflow

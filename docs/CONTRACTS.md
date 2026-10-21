@@ -284,3 +284,6 @@ settings.saveSecret落实§6：expectedVersion为必填非负安全整数；密�
 provider.probe为S09诊断接口（U）：payload固定fixtureId=s09-receipt-v1、uploadConsent=true、possibleChargeAccepted=true；mutationId必填，epoch必需；本窗口受信主frame，每次重新动作新id，单在途/无自动重试。相同id返回同Promise/报告，错误也不自动重复付费。只发内置无隐私合成PNG，不从UI接受URL/path/base64/模型/key；每次发送前从主进程安全配置读取。响应ProbeReport有限字段，原始provider文本丢弃；结果不作为候选或正式交易，不改变数据revision。readiness仅本会话真实图片+JSON+schema+真值全通过时ready，能力verified绑定同一报告id；重启后needs_probe，不能以mock升级。404/不支持等真实错误如实记录，不自动尝试其它模型。
 
 DeepSeek内部transport以受控Buffer接收图片（≤10MiB），固定HTTPS endpoint、90秒超时覆盖正文、响应≤1MiB、redirect=error，不内嵌重试。HTTP 401/403/402/400/404/422/429/5xx分别映射安全错误；其它异常NETWORK_ERROR，解析/空/截断/schema坏均拒绝。原始异常、头、请求/响应正文及图片编码不进日志。用量仅保留非负整数，actualModel限定安全标识。
+
+## S10 实施补充（D52）
+落点与影响见[S10-IMPLEMENTATION](S10-IMPLEMENTATION.md)。新增image.select（原生选择器）、preload image.drop(File[])、recognition.resume（queued重确认）；候选只读list。原§4各限制、单次90秒、最多3次、人工审核规则不变。

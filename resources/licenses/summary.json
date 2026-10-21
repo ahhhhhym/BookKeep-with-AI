@@ -2,6 +2,24 @@
   "generatedBy": "scripts/collect-licenses.mjs",
   "packages": [
     {
+      "name": "sharp",
+      "version": "0.35.5",
+      "license": "Apache-2.0",
+      "fileName": "sharp/LICENSE",
+      "sha256": "73BA74DFAA520B49A401B5D21459A8523A146F3B7518A833EEA5EFA85130BF68",
+      "scope": "runtime",
+      "purpose": "本地图片内容校验与裁剪遮盖"
+    },
+    {
+      "name": "@img/sharp-win32-x64",
+      "version": "0.35.5",
+      "license": "Apache-2.0 AND LGPL-3.0-or-later",
+      "fileName": "@img/sharp-win32-x64/LICENSE",
+      "sha256": "DC1F5D2D43C5531DFE0ACAF4E950EA5DBE3E61E1850CF0E983BDA7EFC10D6693",
+      "scope": "runtime",
+      "purpose": "Sharp Windows x64 原生解码及 libvips"
+    },
+    {
       "name": "electron",
       "version": "44.9.1",
       "license": "MIT",

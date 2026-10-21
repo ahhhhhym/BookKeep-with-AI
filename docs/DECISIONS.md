@@ -184,3 +184,7 @@ R1前的决策/契约/架构和看板原字节保存在evidence/RECEIPT-S05-R1/b
 - 影响：CONTRACTS §6/§11、主进程settings/provider、IPC/preload/DTO、SettingsPage、自检、测试和构建资源复制；无依赖/数据库迁移，无AC范围变更。加密入口/UI及HTTP错误测试是实现自测，真实图成功另列；无key/余额/网络则G2未通过。
 
 D50实现结果：先后共3次真实单请求，无自动重试。v1两次OUTPUT_SCHEMA_INVALID；安全诊断定位missingFields未知枚举，v2只加强提示、不放宽schema；真实75e4eb46通过G2。确切字段/模型/用量及失败报告在evidence/S09。配置状态同步至页面和全局状态条，重开页面会刷新，不误显旧配置。所有实现与测试在S09，不当作S08/S17/S19独立验收，不自动启动S10。
+
+## 18. D52：S10图片与持久化队列实施（2026-10-21）
+
+本轮由用户明确启动S10，G2前置已核验。实现前固化的落点/影响清单见[S10-IMPLEMENTATION](S10-IMPLEMENTATION.md)；schema升至v2，保留v1迁移校验和。新增原生选择/真实File换token、只读资源token、queued重确认resume；业务prompt独立bk-receipt.s10.v1。只写候选，拒绝/批准交S11。原DB-only备份遇附件明确拒绝，完整附件备份仍交S15。实现自测和真实API另列；本轮不执行S11/G3或S17验收，AC07-C最终状态不升级。

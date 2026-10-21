@@ -956,3 +956,21 @@ select, textarea { font: inherit; color: inherit; }
 .sr-only { position:absolute; width:1px; height:1px; padding:0; margin:-1px; overflow:hidden; clip:rect(0,0,0,0); white-space:nowrap; border:0; }
 @media(max-width:700px) { .category-ranking li { grid-template-columns:20px minmax(30px,1fr) auto; gap:8px; } .category-ranking li > span:last-of-type { grid-column:3; } .point-total { font-size:16px; } }
 @media(max-height:480px) { .app[data-nav="statistics"] .statusbar { max-height:20vh; overflow:auto; } }
+/* S10 import/queue: bounded local images, real task states and keyboard geometry. */
+.image-editor { display: grid; gap: 14px; min-width: 0; }
+.image-workspace { overflow: auto; max-height: 520px; max-width: 100%; border: 1px solid var(--border, #d8e0dc); background: #e9eeeb; padding: 12px; }
+.image-workspace canvas { display: block; max-width: none; touch-action: none; cursor: crosshair; }
+.image-workspace .fit-image { width: auto; max-width: 100%; max-height: 480px; height: auto; }
+.rect-fields { display: flex; gap: 12px; flex-wrap: wrap; border: 1px solid #d8e0dc; border-radius: 8px; padding: 12px; }
+.rect-fields label { display: grid; gap: 4px; width: 110px; }
+.rect-fields input { width: 100%; }
+.import-assets, .upload-previews { display: flex; flex-wrap: wrap; gap: 12px; }
+.upload-previews .receipt-preview { max-width: 150px; max-height: 170px; }
+.image-compare { display: grid; grid-template-columns: repeat(2, minmax(0,1fr)); gap: 20px; margin-top: 16px; }
+.receipt-preview { display: block; max-width: 100%; max-height: 500px; object-fit: contain; }
+.task-row { display: grid; grid-template-columns: 100px minmax(0,1fr) auto; gap: 18px; padding: 20px 0; border-bottom: 1px solid #dde5e0; }
+.task-thumb .receipt-preview { max-height: 130px; }
+.candidate-card { border-bottom: 1px solid #dde5e0; padding: 12px 0 24px; }
+.hash-text { overflow-wrap: anywhere; }
+.check-row { display:flex; gap:8px; align-items:center; margin:12px 0; }
+@media (max-width: 800px) { .task-row { grid-template-columns:70px minmax(0,1fr); } .task-row>.form-actions { grid-column:2; } }

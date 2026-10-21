@@ -9,6 +9,8 @@ import { registerIpcHandlers } from './ipc/handlers';
 import { resolveStorageLayout } from './paths';
 import { registerAppScheme, serveRendererAssets } from './protocol';
 import { runSelfTest, writeSelfTestReport } from './selftest';
+import { ImageService } from './services/image-service';
+import { RecognitionService } from './services/recognition-service';
 import { LedgerStore } from './services/ledger-store';
 import { SecretStore } from './services/settings/ai-settings';
 import { ProbeService } from './services/providers/probe';
@@ -116,6 +118,7 @@ function reportStartupFailure(error: unknown): void {
   app.exit(1);
 }
 
+let recognition: RecognitionService | null = null;
 async function bootstrap(): Promise<void> {
   hardenSession(session.defaultSession);
 
@@ -147,8 +150,9 @@ async function bootstrap(): Promise<void> {
     return;
   }
 
+  const images=new ImageService(store,()=>mainWindow?.webContents.id??null);
   if (!devServerUrl) {
-    serveRendererAssets(resolveRendererDir(__dirname));
+    serveRendererAssets(resolveRendererDir(__dirname),token=>images.readResource(token));
   }
 
   const router = createIpcRouter({
@@ -165,9 +169,12 @@ async function bootstrap(): Promise<void> {
   });
   secrets = new SecretStore(storage.layout.secrets, safeStorage);
   const probe = new ProbeService(secrets, path.join(__dirname, 'probe/s09-receipt-v1.png'), storage.layout.logs);
+  recognition=new RecognitionService(store,images,secrets);
   registerIpcHandlers(router, {
     store,
-    secrets, probe,
+    secrets, probe, images, get recognition(){return recognition!;},
+    onRestored:()=>{recognition?.shutdown();recognition=new RecognitionService(store!,images,secrets!);},
+    selectImages: async()=>{ const result=await dialog.showOpenDialog(mainWindow!,{title:"选择消费图片",properties:["openFile","multiSelections"],filters:[{name:"JPEG / PNG / WebP",extensions:["jpg","jpeg","png","webp"]}]}); return result.canceled?[]:result.filePaths; },
   });
 
   const created = createMainWindow({
@@ -242,6 +249,7 @@ app.on('second-instance', () => {
 });
 
 app.on('will-quit', () => {
+  recognition?.shutdown();
   secrets?.clearSession();
   store?.close();
   store = null;

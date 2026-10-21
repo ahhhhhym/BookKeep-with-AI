@@ -1,0 +1,3270 @@
+{
+  "ok": true,
+  "kind": "AC07-C S10 prerequisite implementation self-test; synthetic transport + REAL persistent SQLite; rejection/approval G3 not executed",
+  "sql": [
+    {
+      "sql": "PRAGMA quick_check",
+      "rows": [
+        {
+          "quick_check": "ok"
+        }
+      ]
+    },
+    {
+      "sql": "PRAGMA foreign_key_check",
+      "rows": []
+    },
+    {
+      "sql": "SELECT review_state,count(*) count,sum(json_extract(current_json,'$.amountFen')) amountFen FROM candidate GROUP BY review_state",
+      "rows": [
+        {
+          "review_state": "pending_review",
+          "count": 1,
+          "amountFen": 9900
+        }
+      ]
+    },
+    {
+      "sql": "SELECT status,error_code,attempt,candidate_count FROM import_job ORDER BY created_at,id",
+      "rows": [
+        {
+          "status": "failed",
+          "error_code": "OUTPUT_SCHEMA_INVALID",
+          "attempt": 1,
+          "candidate_count": 0
+        },
+        {
+          "status": "completed",
+          "error_code": null,
+          "attempt": 1,
+          "candidate_count": 1
+        }
+      ]
+    },
+    {
+      "sql": "SELECT count(*) count,sum(amount_fen) totalFen FROM \"transaction\" WHERE deleted_at IS NULL",
+      "rows": [
+        {
+          "count": 6,
+          "totalFen": 96530
+        }
+      ]
+    },
+    {
+      "sql": "SELECT occurred_date,sum(amount_fen) totalFen FROM \"transaction\" WHERE deleted_at IS NULL GROUP BY occurred_date",
+      "rows": [
+        {
+          "occurred_date": "2026-09-08",
+          "totalFen": 4426
+        },
+        {
+          "occurred_date": "2026-09-09",
+          "totalFen": 92104
+        }
+      ]
+    },
+    {
+      "sql": "SELECT c.id candidateId,c.job_id jobId,c.image_asset_id assetId,c.prepared_hash preparedHash FROM candidate c JOIN import_job j ON j.id=c.job_id JOIN image_asset a ON a.id=c.image_asset_id WHERE c.prepared_hash=j.prepared_hash AND j.prepared_hash=a.prepared_hash",
+      "rows": [
+        {
+          "candidateId": "ea74d068-5c12-416d-b45c-606f2c0d38d7",
+          "jobId": "67e78917-0aac-4b81-bfd8-e527a716df6b",
+          "assetId": "97c32293-6649-45eb-992c-b9c1103e476a",
+          "preparedHash": "d1974422926bb87dae5225b1ae9847a70ac91f3d9c6af86fbb1dd26cc44deb55"
+        }
+      ]
+    }
+  ],
+  "checks": [
+    "real9900pending+failedSQL",
+    "pending source→job→asset/hash",
+    "six formal96530",
+    "all dayGroups/week/month/year/rank/Top3/averages identical",
+    "process store close/reopen persistence",
+    "restart zero network"
+  ],
+  "baseline": {
+    "list": {
+      "items": [
+        {
+          "id": "4942d9fc-6b12-4ba5-bfc3-cfb30711341d",
+          "ledgerId": "218c795a-8d34-4b9d-a1c6-95859a0c8cc3",
+          "amountFen": 85000,
+          "currency": "CNY",
+          "occurredDate": "2026-09-09",
+          "occurredTime": null,
+          "timePrecision": "date",
+          "name": "iPad维修",
+          "categoryId": "cat_repair",
+          "merchant": null,
+          "note": null,
+          "source": "manual",
+          "sourceCandidateId": null,
+          "deletedAt": null,
+          "version": 1,
+          "createdAt": "2026-10-21T04:00:00.000Z",
+          "updatedAt": "2026-10-21T04:00:00.000Z"
+        },
+        {
+          "id": "8a0cfa05-f2e0-4f71-8eaa-79e7f107e169",
+          "ledgerId": "218c795a-8d34-4b9d-a1c6-95859a0c8cc3",
+          "amountFen": 1550,
+          "currency": "CNY",
+          "occurredDate": "2026-09-09",
+          "occurredTime": null,
+          "timePrecision": "date",
+          "name": "午餐",
+          "categoryId": "cat_food",
+          "merchant": null,
+          "note": null,
+          "source": "manual",
+          "sourceCandidateId": null,
+          "deletedAt": null,
+          "version": 1,
+          "createdAt": "2026-10-21T04:00:00.000Z",
+          "updatedAt": "2026-10-21T04:00:00.000Z"
+        },
+        {
+          "id": "d4e31029-c98c-4808-af94-9395d3db4bb4",
+          "ledgerId": "218c795a-8d34-4b9d-a1c6-95859a0c8cc3",
+          "amountFen": 5554,
+          "currency": "CNY",
+          "occurredDate": "2026-09-09",
+          "occurredTime": null,
+          "timePrecision": "date",
+          "name": "iPad保护膜",
+          "categoryId": "cat_digital",
+          "merchant": null,
+          "note": null,
+          "source": "manual",
+          "sourceCandidateId": null,
+          "deletedAt": null,
+          "version": 1,
+          "createdAt": "2026-10-21T04:00:00.000Z",
+          "updatedAt": "2026-10-21T04:00:00.000Z"
+        },
+        {
+          "id": "03f5e133-8bf6-456f-b999-93027c90d810",
+          "ledgerId": "218c795a-8d34-4b9d-a1c6-95859a0c8cc3",
+          "amountFen": 1800,
+          "currency": "CNY",
+          "occurredDate": "2026-09-08",
+          "occurredTime": null,
+          "timePrecision": "date",
+          "name": "午餐",
+          "categoryId": "cat_food",
+          "merchant": null,
+          "note": null,
+          "source": "manual",
+          "sourceCandidateId": null,
+          "deletedAt": null,
+          "version": 1,
+          "createdAt": "2026-10-21T04:00:00.000Z",
+          "updatedAt": "2026-10-21T04:00:00.000Z"
+        },
+        {
+          "id": "664a198f-98b7-4efa-b9b1-6a0bd224ff54",
+          "ledgerId": "218c795a-8d34-4b9d-a1c6-95859a0c8cc3",
+          "amountFen": 1000,
+          "currency": "CNY",
+          "occurredDate": "2026-09-08",
+          "occurredTime": null,
+          "timePrecision": "date",
+          "name": "晚餐",
+          "categoryId": "cat_food",
+          "merchant": null,
+          "note": null,
+          "source": "manual",
+          "sourceCandidateId": null,
+          "deletedAt": null,
+          "version": 1,
+          "createdAt": "2026-10-21T04:00:00.000Z",
+          "updatedAt": "2026-10-21T04:00:00.000Z"
+        },
+        {
+          "id": "af08c14d-62c6-472c-8586-933e631ff821",
+          "ledgerId": "218c795a-8d34-4b9d-a1c6-95859a0c8cc3",
+          "amountFen": 1626,
+          "currency": "CNY",
+          "occurredDate": "2026-09-08",
+          "occurredTime": null,
+          "timePrecision": "date",
+          "name": "购买水果",
+          "categoryId": "cat_fruit",
+          "merchant": null,
+          "note": null,
+          "source": "manual",
+          "sourceCandidateId": null,
+          "deletedAt": null,
+          "version": 1,
+          "createdAt": "2026-10-21T04:00:00.000Z",
+          "updatedAt": "2026-10-21T04:00:00.000Z"
+        }
+      ],
+      "nextCursor": null,
+      "totalCount": 6,
+      "snapshotRevision": 6,
+      "filteredTotalFen": "96530",
+      "dateGroups": [
+        {
+          "date": "2026-09-09",
+          "count": 3,
+          "totalFen": "92104"
+        },
+        {
+          "date": "2026-09-08",
+          "count": 3,
+          "totalFen": "4426"
+        }
+      ],
+      "filterEcho": {
+        "dateStart": null,
+        "dateEnd": null,
+        "categoryIds": [],
+        "nameQuery": null,
+        "deleted": "active"
+      }
+    },
+    "views": [
+      {
+        "period": "week",
+        "series": {
+          "scope": {
+            "period": "week",
+            "anchorDate": "2026-09-07",
+            "categoryIds": [],
+            "ledgerId": "218c795a-8d34-4b9d-a1c6-95859a0c8cc3",
+            "dataEpoch": "a0bac229-7ef7-4157-9d81-f52870bdca82",
+            "revision": 6,
+            "today": "2026-10-21",
+            "timezone": "Asia/Shanghai",
+            "start": "2026-09-07",
+            "end": "2026-09-14",
+            "effectiveEnd": "2026-09-14",
+            "scopeId": "6ed3d28c557ace07d89e42f8456bc5fb57f52fb3f1f1e67eb61226a2a747cdcc"
+          },
+          "totalFen": "96530",
+          "points": [
+            {
+              "pointKey": "2026-09-07",
+              "label": "9/7",
+              "start": "2026-09-07",
+              "end": "2026-09-08",
+              "amountFen": "0",
+              "isFuture": false
+            },
+            {
+              "pointKey": "2026-09-08",
+              "label": "9/8",
+              "start": "2026-09-08",
+              "end": "2026-09-09",
+              "amountFen": "4426",
+              "isFuture": false
+            },
+            {
+              "pointKey": "2026-09-09",
+              "label": "9/9",
+              "start": "2026-09-09",
+              "end": "2026-09-10",
+              "amountFen": "92104",
+              "isFuture": false
+            },
+            {
+              "pointKey": "2026-09-10",
+              "label": "9/10",
+              "start": "2026-09-10",
+              "end": "2026-09-11",
+              "amountFen": "0",
+              "isFuture": false
+            },
+            {
+              "pointKey": "2026-09-11",
+              "label": "9/11",
+              "start": "2026-09-11",
+              "end": "2026-09-12",
+              "amountFen": "0",
+              "isFuture": false
+            },
+            {
+              "pointKey": "2026-09-12",
+              "label": "9/12",
+              "start": "2026-09-12",
+              "end": "2026-09-13",
+              "amountFen": "0",
+              "isFuture": false
+            },
+            {
+              "pointKey": "2026-09-13",
+              "label": "9/13",
+              "start": "2026-09-13",
+              "end": "2026-09-14",
+              "amountFen": "0",
+              "isFuture": false
+            }
+          ]
+        },
+        "summary": {
+          "scope": {
+            "period": "week",
+            "anchorDate": "2026-09-07",
+            "categoryIds": [],
+            "ledgerId": "218c795a-8d34-4b9d-a1c6-95859a0c8cc3",
+            "dataEpoch": "a0bac229-7ef7-4157-9d81-f52870bdca82",
+            "revision": 6,
+            "today": "2026-10-21",
+            "timezone": "Asia/Shanghai",
+            "start": "2026-09-07",
+            "end": "2026-09-14",
+            "effectiveEnd": "2026-09-14",
+            "scopeId": "6ed3d28c557ace07d89e42f8456bc5fb57f52fb3f1f1e67eb61226a2a747cdcc"
+          },
+          "totalFen": "96530",
+          "count": 6,
+          "dailyAverage": {
+            "numeratorFen": "96530",
+            "denominatorDays": 7,
+            "displayYuan": "137.90"
+          },
+          "categoryTotals": [
+            {
+              "categoryId": "cat_repair",
+              "name": "维修",
+              "iconKey": "lucide:hammer",
+              "totalFen": "85000",
+              "ratioPercent": "88.06"
+            },
+            {
+              "categoryId": "cat_digital",
+              "name": "数码",
+              "iconKey": "lucide:cable",
+              "totalFen": "5554",
+              "ratioPercent": "5.75"
+            },
+            {
+              "categoryId": "cat_food",
+              "name": "餐饮",
+              "iconKey": "lucide:utensils",
+              "totalFen": "4350",
+              "ratioPercent": "4.51"
+            },
+            {
+              "categoryId": "cat_fruit",
+              "name": "水果",
+              "iconKey": "lucide:cherry",
+              "totalFen": "1626",
+              "ratioPercent": "1.68"
+            }
+          ]
+        },
+        "ranking": {
+          "scope": {
+            "period": "week",
+            "anchorDate": "2026-09-07",
+            "categoryIds": [],
+            "ledgerId": "218c795a-8d34-4b9d-a1c6-95859a0c8cc3",
+            "dataEpoch": "a0bac229-7ef7-4157-9d81-f52870bdca82",
+            "revision": 6,
+            "today": "2026-10-21",
+            "timezone": "Asia/Shanghai",
+            "start": "2026-09-07",
+            "end": "2026-09-14",
+            "effectiveEnd": "2026-09-14",
+            "scopeId": "6ed3d28c557ace07d89e42f8456bc5fb57f52fb3f1f1e67eb61226a2a747cdcc"
+          },
+          "totalFen": "96530",
+          "items": [
+            {
+              "categoryId": "cat_repair",
+              "name": "维修",
+              "iconKey": "lucide:hammer",
+              "totalFen": "85000",
+              "ratioPercent": "88.06"
+            },
+            {
+              "categoryId": "cat_digital",
+              "name": "数码",
+              "iconKey": "lucide:cable",
+              "totalFen": "5554",
+              "ratioPercent": "5.75"
+            },
+            {
+              "categoryId": "cat_food",
+              "name": "餐饮",
+              "iconKey": "lucide:utensils",
+              "totalFen": "4350",
+              "ratioPercent": "4.51"
+            },
+            {
+              "categoryId": "cat_fruit",
+              "name": "水果",
+              "iconKey": "lucide:cherry",
+              "totalFen": "1626",
+              "ratioPercent": "1.68"
+            }
+          ]
+        },
+        "top": {
+          "scope": {
+            "period": "week",
+            "anchorDate": "2026-09-07",
+            "categoryIds": [],
+            "ledgerId": "218c795a-8d34-4b9d-a1c6-95859a0c8cc3",
+            "dataEpoch": "a0bac229-7ef7-4157-9d81-f52870bdca82",
+            "revision": 6,
+            "today": "2026-10-21",
+            "timezone": "Asia/Shanghai",
+            "start": "2026-09-07",
+            "end": "2026-09-14",
+            "effectiveEnd": "2026-09-14",
+            "scopeId": "6ed3d28c557ace07d89e42f8456bc5fb57f52fb3f1f1e67eb61226a2a747cdcc"
+          },
+          "pointTotalFen": "92104",
+          "items": [
+            {
+              "transactionId": "4942d9fc-6b12-4ba5-bfc3-cfb30711341d",
+              "name": "iPad维修",
+              "amountFen": "85000",
+              "occurredTime": null,
+              "timePrecision": "date"
+            },
+            {
+              "transactionId": "d4e31029-c98c-4808-af94-9395d3db4bb4",
+              "name": "iPad保护膜",
+              "amountFen": "5554",
+              "occurredTime": null,
+              "timePrecision": "date"
+            },
+            {
+              "transactionId": "8a0cfa05-f2e0-4f71-8eaa-79e7f107e169",
+              "name": "午餐",
+              "amountFen": "1550",
+              "occurredTime": null,
+              "timePrecision": "date"
+            }
+          ]
+        }
+      },
+      {
+        "period": "month",
+        "series": {
+          "scope": {
+            "period": "month",
+            "anchorDate": "2026-09-01",
+            "categoryIds": [],
+            "ledgerId": "218c795a-8d34-4b9d-a1c6-95859a0c8cc3",
+            "dataEpoch": "a0bac229-7ef7-4157-9d81-f52870bdca82",
+            "revision": 6,
+            "today": "2026-10-21",
+            "timezone": "Asia/Shanghai",
+            "start": "2026-09-01",
+            "end": "2026-10-01",
+            "effectiveEnd": "2026-10-01",
+            "scopeId": "f3734153b032774da4f76fab5713ea999397892bf3e9983719709ec853b2f027"
+          },
+          "totalFen": "96530",
+          "points": [
+            {
+              "pointKey": "2026-09-01",
+              "label": "9/1",
+              "start": "2026-09-01",
+              "end": "2026-09-02",
+              "amountFen": "0",
+              "isFuture": false
+            },
+            {
+              "pointKey": "2026-09-02",
+              "label": "9/2",
+              "start": "2026-09-02",
+              "end": "2026-09-03",
+              "amountFen": "0",
+              "isFuture": false
+            },
+            {
+              "pointKey": "2026-09-03",
+              "label": "9/3",
+              "start": "2026-09-03",
+              "end": "2026-09-04",
+              "amountFen": "0",
+              "isFuture": false
+            },
+            {
+              "pointKey": "2026-09-04",
+              "label": "9/4",
+              "start": "2026-09-04",
+              "end": "2026-09-05",
+              "amountFen": "0",
+              "isFuture": false
+            },
+            {
+              "pointKey": "2026-09-05",
+              "label": "9/5",
+              "start": "2026-09-05",
+              "end": "2026-09-06",
+              "amountFen": "0",
+              "isFuture": false
+            },
+            {
+              "pointKey": "2026-09-06",
+              "label": "9/6",
+              "start": "2026-09-06",
+              "end": "2026-09-07",
+              "amountFen": "0",
+              "isFuture": false
+            },
+            {
+              "pointKey": "2026-09-07",
+              "label": "9/7",
+              "start": "2026-09-07",
+              "end": "2026-09-08",
+              "amountFen": "0",
+              "isFuture": false
+            },
+            {
+              "pointKey": "2026-09-08",
+              "label": "9/8",
+              "start": "2026-09-08",
+              "end": "2026-09-09",
+              "amountFen": "4426",
+              "isFuture": false
+            },
+            {
+              "pointKey": "2026-09-09",
+              "label": "9/9",
+              "start": "2026-09-09",
+              "end": "2026-09-10",
+              "amountFen": "92104",
+              "isFuture": false
+            },
+            {
+              "pointKey": "2026-09-10",
+              "label": "9/10",
+              "start": "2026-09-10",
+              "end": "2026-09-11",
+              "amountFen": "0",
+              "isFuture": false
+            },
+            {
+              "pointKey": "2026-09-11",
+              "label": "9/11",
+              "start": "2026-09-11",
+              "end": "2026-09-12",
+              "amountFen": "0",
+              "isFuture": false
+            },
+            {
+              "pointKey": "2026-09-12",
+              "label": "9/12",
+              "start": "2026-09-12",
+              "end": "2026-09-13",
+              "amountFen": "0",
+              "isFuture": false
+            },
+            {
+              "pointKey": "2026-09-13",
+              "label": "9/13",
+              "start": "2026-09-13",
+              "end": "2026-09-14",
+              "amountFen": "0",
+              "isFuture": false
+            },
+            {
+              "pointKey": "2026-09-14",
+              "label": "9/14",
+              "start": "2026-09-14",
+              "end": "2026-09-15",
+              "amountFen": "0",
+              "isFuture": false
+            },
+            {
+              "pointKey": "2026-09-15",
+              "label": "9/15",
+              "start": "2026-09-15",
+              "end": "2026-09-16",
+              "amountFen": "0",
+              "isFuture": false
+            },
+            {
+              "pointKey": "2026-09-16",
+              "label": "9/16",
+              "start": "2026-09-16",
+              "end": "2026-09-17",
+              "amountFen": "0",
+              "isFuture": false
+            },
+            {
+              "pointKey": "2026-09-17",
+              "label": "9/17",
+              "start": "2026-09-17",
+              "end": "2026-09-18",
+              "amountFen": "0",
+              "isFuture": false
+            },
+            {
+              "pointKey": "2026-09-18",
+              "label": "9/18",
+              "start": "2026-09-18",
+              "end": "2026-09-19",
+              "amountFen": "0",
+              "isFuture": false
+            },
+            {
+              "pointKey": "2026-09-19",
+              "label": "9/19",
+              "start": "2026-09-19",
+              "end": "2026-09-20",
+              "amountFen": "0",
+              "isFuture": false
+            },
+            {
+              "pointKey": "2026-09-20",
+              "label": "9/20",
+              "start": "2026-09-20",
+              "end": "2026-09-21",
+              "amountFen": "0",
+              "isFuture": false
+            },
+            {
+              "pointKey": "2026-09-21",
+              "label": "9/21",
+              "start": "2026-09-21",
+              "end": "2026-09-22",
+              "amountFen": "0",
+              "isFuture": false
+            },
+            {
+              "pointKey": "2026-09-22",
+              "label": "9/22",
+              "start": "2026-09-22",
+              "end": "2026-09-23",
+              "amountFen": "0",
+              "isFuture": false
+            },
+            {
+              "pointKey": "2026-09-23",
+              "label": "9/23",
+              "start": "2026-09-23",
+              "end": "2026-09-24",
+              "amountFen": "0",
+              "isFuture": false
+            },
+            {
+              "pointKey": "2026-09-24",
+              "label": "9/24",
+              "start": "2026-09-24",
+              "end": "2026-09-25",
+              "amountFen": "0",
+              "isFuture": false
+            },
+            {
+              "pointKey": "2026-09-25",
+              "label": "9/25",
+              "start": "2026-09-25",
+              "end": "2026-09-26",
+              "amountFen": "0",
+              "isFuture": false
+            },
+            {
+              "pointKey": "2026-09-26",
+              "label": "9/26",
+              "start": "2026-09-26",
+              "end": "2026-09-27",
+              "amountFen": "0",
+              "isFuture": false
+            },
+            {
+              "pointKey": "2026-09-27",
+              "label": "9/27",
+              "start": "2026-09-27",
+              "end": "2026-09-28",
+              "amountFen": "0",
+              "isFuture": false
+            },
+            {
+              "pointKey": "2026-09-28",
+              "label": "9/28",
+              "start": "2026-09-28",
+              "end": "2026-09-29",
+              "amountFen": "0",
+              "isFuture": false
+            },
+            {
+              "pointKey": "2026-09-29",
+              "label": "9/29",
+              "start": "2026-09-29",
+              "end": "2026-09-30",
+              "amountFen": "0",
+              "isFuture": false
+            },
+            {
+              "pointKey": "2026-09-30",
+              "label": "9/30",
+              "start": "2026-09-30",
+              "end": "2026-10-01",
+              "amountFen": "0",
+              "isFuture": false
+            }
+          ]
+        },
+        "summary": {
+          "scope": {
+            "period": "month",
+            "anchorDate": "2026-09-01",
+            "categoryIds": [],
+            "ledgerId": "218c795a-8d34-4b9d-a1c6-95859a0c8cc3",
+            "dataEpoch": "a0bac229-7ef7-4157-9d81-f52870bdca82",
+            "revision": 6,
+            "today": "2026-10-21",
+            "timezone": "Asia/Shanghai",
+            "start": "2026-09-01",
+            "end": "2026-10-01",
+            "effectiveEnd": "2026-10-01",
+            "scopeId": "f3734153b032774da4f76fab5713ea999397892bf3e9983719709ec853b2f027"
+          },
+          "totalFen": "96530",
+          "count": 6,
+          "dailyAverage": {
+            "numeratorFen": "96530",
+            "denominatorDays": 30,
+            "displayYuan": "32.18"
+          },
+          "categoryTotals": [
+            {
+              "categoryId": "cat_repair",
+              "name": "维修",
+              "iconKey": "lucide:hammer",
+              "totalFen": "85000",
+              "ratioPercent": "88.06"
+            },
+            {
+              "categoryId": "cat_digital",
+              "name": "数码",
+              "iconKey": "lucide:cable",
+              "totalFen": "5554",
+              "ratioPercent": "5.75"
+            },
+            {
+              "categoryId": "cat_food",
+              "name": "餐饮",
+              "iconKey": "lucide:utensils",
+              "totalFen": "4350",
+              "ratioPercent": "4.51"
+            },
+            {
+              "categoryId": "cat_fruit",
+              "name": "水果",
+              "iconKey": "lucide:cherry",
+              "totalFen": "1626",
+              "ratioPercent": "1.68"
+            }
+          ]
+        },
+        "ranking": {
+          "scope": {
+            "period": "month",
+            "anchorDate": "2026-09-01",
+            "categoryIds": [],
+            "ledgerId": "218c795a-8d34-4b9d-a1c6-95859a0c8cc3",
+            "dataEpoch": "a0bac229-7ef7-4157-9d81-f52870bdca82",
+            "revision": 6,
+            "today": "2026-10-21",
+            "timezone": "Asia/Shanghai",
+            "start": "2026-09-01",
+            "end": "2026-10-01",
+            "effectiveEnd": "2026-10-01",
+            "scopeId": "f3734153b032774da4f76fab5713ea999397892bf3e9983719709ec853b2f027"
+          },
+          "totalFen": "96530",
+          "items": [
+            {
+              "categoryId": "cat_repair",
+              "name": "维修",
+              "iconKey": "lucide:hammer",
+              "totalFen": "85000",
+              "ratioPercent": "88.06"
+            },
+            {
+              "categoryId": "cat_digital",
+              "name": "数码",
+              "iconKey": "lucide:cable",
+              "totalFen": "5554",
+              "ratioPercent": "5.75"
+            },
+            {
+              "categoryId": "cat_food",
+              "name": "餐饮",
+              "iconKey": "lucide:utensils",
+              "totalFen": "4350",
+              "ratioPercent": "4.51"
+            },
+            {
+              "categoryId": "cat_fruit",
+              "name": "水果",
+              "iconKey": "lucide:cherry",
+              "totalFen": "1626",
+              "ratioPercent": "1.68"
+            }
+          ]
+        },
+        "top": {
+          "scope": {
+            "period": "month",
+            "anchorDate": "2026-09-01",
+            "categoryIds": [],
+            "ledgerId": "218c795a-8d34-4b9d-a1c6-95859a0c8cc3",
+            "dataEpoch": "a0bac229-7ef7-4157-9d81-f52870bdca82",
+            "revision": 6,
+            "today": "2026-10-21",
+            "timezone": "Asia/Shanghai",
+            "start": "2026-09-01",
+            "end": "2026-10-01",
+            "effectiveEnd": "2026-10-01",
+            "scopeId": "f3734153b032774da4f76fab5713ea999397892bf3e9983719709ec853b2f027"
+          },
+          "pointTotalFen": "92104",
+          "items": [
+            {
+              "transactionId": "4942d9fc-6b12-4ba5-bfc3-cfb30711341d",
+              "name": "iPad维修",
+              "amountFen": "85000",
+              "occurredTime": null,
+              "timePrecision": "date"
+            },
+            {
+              "transactionId": "d4e31029-c98c-4808-af94-9395d3db4bb4",
+              "name": "iPad保护膜",
+              "amountFen": "5554",
+              "occurredTime": null,
+              "timePrecision": "date"
+            },
+            {
+              "transactionId": "8a0cfa05-f2e0-4f71-8eaa-79e7f107e169",
+              "name": "午餐",
+              "amountFen": "1550",
+              "occurredTime": null,
+              "timePrecision": "date"
+            }
+          ]
+        }
+      },
+      {
+        "period": "year",
+        "series": {
+          "scope": {
+            "period": "year",
+            "anchorDate": "2026-01-01",
+            "categoryIds": [],
+            "ledgerId": "218c795a-8d34-4b9d-a1c6-95859a0c8cc3",
+            "dataEpoch": "a0bac229-7ef7-4157-9d81-f52870bdca82",
+            "revision": 6,
+            "today": "2026-10-21",
+            "timezone": "Asia/Shanghai",
+            "start": "2026-01-01",
+            "end": "2027-01-01",
+            "effectiveEnd": "2026-10-22",
+            "scopeId": "537a44b4d982484216594354e54b94af1ab9afa8069795289a77e7c93860b9aa"
+          },
+          "totalFen": "96530",
+          "points": [
+            {
+              "pointKey": "2026-01",
+              "label": "1月",
+              "start": "2026-01-01",
+              "end": "2026-02-01",
+              "amountFen": "0",
+              "isFuture": false
+            },
+            {
+              "pointKey": "2026-02",
+              "label": "2月",
+              "start": "2026-02-01",
+              "end": "2026-03-01",
+              "amountFen": "0",
+              "isFuture": false
+            },
+            {
+              "pointKey": "2026-03",
+              "label": "3月",
+              "start": "2026-03-01",
+              "end": "2026-04-01",
+              "amountFen": "0",
+              "isFuture": false
+            },
+            {
+              "pointKey": "2026-04",
+              "label": "4月",
+              "start": "2026-04-01",
+              "end": "2026-05-01",
+              "amountFen": "0",
+              "isFuture": false
+            },
+            {
+              "pointKey": "2026-05",
+              "label": "5月",
+              "start": "2026-05-01",
+              "end": "2026-06-01",
+              "amountFen": "0",
+              "isFuture": false
+            },
+            {
+              "pointKey": "2026-06",
+              "label": "6月",
+              "start": "2026-06-01",
+              "end": "2026-07-01",
+              "amountFen": "0",
+              "isFuture": false
+            },
+            {
+              "pointKey": "2026-07",
+              "label": "7月",
+              "start": "2026-07-01",
+              "end": "2026-08-01",
+              "amountFen": "0",
+              "isFuture": false
+            },
+            {
+              "pointKey": "2026-08",
+              "label": "8月",
+              "start": "2026-08-01",
+              "end": "2026-09-01",
+              "amountFen": "0",
+              "isFuture": false
+            },
+            {
+              "pointKey": "2026-09",
+              "label": "9月",
+              "start": "2026-09-01",
+              "end": "2026-10-01",
+              "amountFen": "96530",
+              "isFuture": false
+            },
+            {
+              "pointKey": "2026-10",
+              "label": "10月",
+              "start": "2026-10-01",
+              "end": "2026-11-01",
+              "amountFen": "0",
+              "isFuture": false
+            },
+            {
+              "pointKey": "2026-11",
+              "label": "11月",
+              "start": "2026-11-01",
+              "end": "2026-12-01",
+              "amountFen": "0",
+              "isFuture": true
+            },
+            {
+              "pointKey": "2026-12",
+              "label": "12月",
+              "start": "2026-12-01",
+              "end": "2027-01-01",
+              "amountFen": "0",
+              "isFuture": true
+            }
+          ]
+        },
+        "summary": {
+          "scope": {
+            "period": "year",
+            "anchorDate": "2026-01-01",
+            "categoryIds": [],
+            "ledgerId": "218c795a-8d34-4b9d-a1c6-95859a0c8cc3",
+            "dataEpoch": "a0bac229-7ef7-4157-9d81-f52870bdca82",
+            "revision": 6,
+            "today": "2026-10-21",
+            "timezone": "Asia/Shanghai",
+            "start": "2026-01-01",
+            "end": "2027-01-01",
+            "effectiveEnd": "2026-10-22",
+            "scopeId": "537a44b4d982484216594354e54b94af1ab9afa8069795289a77e7c93860b9aa"
+          },
+          "totalFen": "96530",
+          "count": 6,
+          "dailyAverage": {
+            "numeratorFen": "96530",
+            "denominatorDays": 294,
+            "displayYuan": "3.28"
+          },
+          "categoryTotals": [
+            {
+              "categoryId": "cat_repair",
+              "name": "维修",
+              "iconKey": "lucide:hammer",
+              "totalFen": "85000",
+              "ratioPercent": "88.06"
+            },
+            {
+              "categoryId": "cat_digital",
+              "name": "数码",
+              "iconKey": "lucide:cable",
+              "totalFen": "5554",
+              "ratioPercent": "5.75"
+            },
+            {
+              "categoryId": "cat_food",
+              "name": "餐饮",
+              "iconKey": "lucide:utensils",
+              "totalFen": "4350",
+              "ratioPercent": "4.51"
+            },
+            {
+              "categoryId": "cat_fruit",
+              "name": "水果",
+              "iconKey": "lucide:cherry",
+              "totalFen": "1626",
+              "ratioPercent": "1.68"
+            }
+          ]
+        },
+        "ranking": {
+          "scope": {
+            "period": "year",
+            "anchorDate": "2026-01-01",
+            "categoryIds": [],
+            "ledgerId": "218c795a-8d34-4b9d-a1c6-95859a0c8cc3",
+            "dataEpoch": "a0bac229-7ef7-4157-9d81-f52870bdca82",
+            "revision": 6,
+            "today": "2026-10-21",
+            "timezone": "Asia/Shanghai",
+            "start": "2026-01-01",
+            "end": "2027-01-01",
+            "effectiveEnd": "2026-10-22",
+            "scopeId": "537a44b4d982484216594354e54b94af1ab9afa8069795289a77e7c93860b9aa"
+          },
+          "totalFen": "96530",
+          "items": [
+            {
+              "categoryId": "cat_repair",
+              "name": "维修",
+              "iconKey": "lucide:hammer",
+              "totalFen": "85000",
+              "ratioPercent": "88.06"
+            },
+            {
+              "categoryId": "cat_digital",
+              "name": "数码",
+              "iconKey": "lucide:cable",
+              "totalFen": "5554",
+              "ratioPercent": "5.75"
+            },
+            {
+              "categoryId": "cat_food",
+              "name": "餐饮",
+              "iconKey": "lucide:utensils",
+              "totalFen": "4350",
+              "ratioPercent": "4.51"
+            },
+            {
+              "categoryId": "cat_fruit",
+              "name": "水果",
+              "iconKey": "lucide:cherry",
+              "totalFen": "1626",
+              "ratioPercent": "1.68"
+            }
+          ]
+        },
+        "top": {
+          "scope": {
+            "period": "year",
+            "anchorDate": "2026-01-01",
+            "categoryIds": [],
+            "ledgerId": "218c795a-8d34-4b9d-a1c6-95859a0c8cc3",
+            "dataEpoch": "a0bac229-7ef7-4157-9d81-f52870bdca82",
+            "revision": 6,
+            "today": "2026-10-21",
+            "timezone": "Asia/Shanghai",
+            "start": "2026-01-01",
+            "end": "2027-01-01",
+            "effectiveEnd": "2026-10-22",
+            "scopeId": "537a44b4d982484216594354e54b94af1ab9afa8069795289a77e7c93860b9aa"
+          },
+          "totalFen": "96530",
+          "items": [
+            {
+              "categoryId": "cat_repair",
+              "name": "维修",
+              "iconKey": "lucide:hammer",
+              "totalFen": "85000",
+              "ratioPercent": "88.06"
+            },
+            {
+              "categoryId": "cat_digital",
+              "name": "数码",
+              "iconKey": "lucide:cable",
+              "totalFen": "5554",
+              "ratioPercent": "5.75"
+            },
+            {
+              "categoryId": "cat_food",
+              "name": "餐饮",
+              "iconKey": "lucide:utensils",
+              "totalFen": "4350",
+              "ratioPercent": "4.51"
+            }
+          ]
+        }
+      }
+    ]
+  },
+  "pendingJobId": "67e78917-0aac-4b81-bfd8-e527a716df6b",
+  "failedJobId": "4d54d526-2633-47fb-82ac-0e46f25305e2",
+  "prepared": {
+    "id": "97c32293-6649-45eb-992c-b9c1103e476a",
+    "version": 1,
+    "originalHash": "9746481de27d7e64d23a91fd9b6eaab22fadd4d955c5e20b000424337dd34f91",
+    "preparedHash": "d1974422926bb87dae5225b1ae9847a70ac91f3d9c6af86fbb1dd26cc44deb55",
+    "width": 600,
+    "height": 300,
+    "byteSize": 13803,
+    "originalRetained": true,
+    "parentAssetId": "c09b6c32-883a-41be-868d-0337a475a3c4",
+    "source": "prepared",
+    "createdAt": "2026-10-21T14:01:20.431Z"
+  },
+  "afterPersistence": {
+    "list": {
+      "items": [
+        {
+          "id": "4942d9fc-6b12-4ba5-bfc3-cfb30711341d",
+          "ledgerId": "218c795a-8d34-4b9d-a1c6-95859a0c8cc3",
+          "amountFen": 85000,
+          "currency": "CNY",
+          "occurredDate": "2026-09-09",
+          "occurredTime": null,
+          "timePrecision": "date",
+          "name": "iPad维修",
+          "categoryId": "cat_repair",
+          "merchant": null,
+          "note": null,
+          "source": "manual",
+          "sourceCandidateId": null,
+          "deletedAt": null,
+          "version": 1,
+          "createdAt": "2026-10-21T04:00:00.000Z",
+          "updatedAt": "2026-10-21T04:00:00.000Z"
+        },
+        {
+          "id": "8a0cfa05-f2e0-4f71-8eaa-79e7f107e169",
+          "ledgerId": "218c795a-8d34-4b9d-a1c6-95859a0c8cc3",
+          "amountFen": 1550,
+          "currency": "CNY",
+          "occurredDate": "2026-09-09",
+          "occurredTime": null,
+          "timePrecision": "date",
+          "name": "午餐",
+          "categoryId": "cat_food",
+          "merchant": null,
+          "note": null,
+          "source": "manual",
+          "sourceCandidateId": null,
+          "deletedAt": null,
+          "version": 1,
+          "createdAt": "2026-10-21T04:00:00.000Z",
+          "updatedAt": "2026-10-21T04:00:00.000Z"
+        },
+        {
+          "id": "d4e31029-c98c-4808-af94-9395d3db4bb4",
+          "ledgerId": "218c795a-8d34-4b9d-a1c6-95859a0c8cc3",
+          "amountFen": 5554,
+          "currency": "CNY",
+          "occurredDate": "2026-09-09",
+          "occurredTime": null,
+          "timePrecision": "date",
+          "name": "iPad保护膜",
+          "categoryId": "cat_digital",
+          "merchant": null,
+          "note": null,
+          "source": "manual",
+          "sourceCandidateId": null,
+          "deletedAt": null,
+          "version": 1,
+          "createdAt": "2026-10-21T04:00:00.000Z",
+          "updatedAt": "2026-10-21T04:00:00.000Z"
+        },
+        {
+          "id": "03f5e133-8bf6-456f-b999-93027c90d810",
+          "ledgerId": "218c795a-8d34-4b9d-a1c6-95859a0c8cc3",
+          "amountFen": 1800,
+          "currency": "CNY",
+          "occurredDate": "2026-09-08",
+          "occurredTime": null,
+          "timePrecision": "date",
+          "name": "午餐",
+          "categoryId": "cat_food",
+          "merchant": null,
+          "note": null,
+          "source": "manual",
+          "sourceCandidateId": null,
+          "deletedAt": null,
+          "version": 1,
+          "createdAt": "2026-10-21T04:00:00.000Z",
+          "updatedAt": "2026-10-21T04:00:00.000Z"
+        },
+        {
+          "id": "664a198f-98b7-4efa-b9b1-6a0bd224ff54",
+          "ledgerId": "218c795a-8d34-4b9d-a1c6-95859a0c8cc3",
+          "amountFen": 1000,
+          "currency": "CNY",
+          "occurredDate": "2026-09-08",
+          "occurredTime": null,
+          "timePrecision": "date",
+          "name": "晚餐",
+          "categoryId": "cat_food",
+          "merchant": null,
+          "note": null,
+          "source": "manual",
+          "sourceCandidateId": null,
+          "deletedAt": null,
+          "version": 1,
+          "createdAt": "2026-10-21T04:00:00.000Z",
+          "updatedAt": "2026-10-21T04:00:00.000Z"
+        },
+        {
+          "id": "af08c14d-62c6-472c-8586-933e631ff821",
+          "ledgerId": "218c795a-8d34-4b9d-a1c6-95859a0c8cc3",
+          "amountFen": 1626,
+          "currency": "CNY",
+          "occurredDate": "2026-09-08",
+          "occurredTime": null,
+          "timePrecision": "date",
+          "name": "购买水果",
+          "categoryId": "cat_fruit",
+          "merchant": null,
+          "note": null,
+          "source": "manual",
+          "sourceCandidateId": null,
+          "deletedAt": null,
+          "version": 1,
+          "createdAt": "2026-10-21T04:00:00.000Z",
+          "updatedAt": "2026-10-21T04:00:00.000Z"
+        }
+      ],
+      "nextCursor": null,
+      "totalCount": 6,
+      "snapshotRevision": 15,
+      "filteredTotalFen": "96530",
+      "dateGroups": [
+        {
+          "date": "2026-09-09",
+          "count": 3,
+          "totalFen": "92104"
+        },
+        {
+          "date": "2026-09-08",
+          "count": 3,
+          "totalFen": "4426"
+        }
+      ],
+      "filterEcho": {
+        "dateStart": null,
+        "dateEnd": null,
+        "categoryIds": [],
+        "nameQuery": null,
+        "deleted": "active"
+      }
+    },
+    "views": [
+      {
+        "period": "week",
+        "series": {
+          "scope": {
+            "period": "week",
+            "anchorDate": "2026-09-07",
+            "categoryIds": [],
+            "ledgerId": "218c795a-8d34-4b9d-a1c6-95859a0c8cc3",
+            "dataEpoch": "a0bac229-7ef7-4157-9d81-f52870bdca82",
+            "revision": 15,
+            "today": "2026-10-21",
+            "timezone": "Asia/Shanghai",
+            "start": "2026-09-07",
+            "end": "2026-09-14",
+            "effectiveEnd": "2026-09-14",
+            "scopeId": "2945701cd715d6799712502cbd73dab0985dd6ee23410f5b8a73567ed44cdc6a"
+          },
+          "totalFen": "96530",
+          "points": [
+            {
+              "pointKey": "2026-09-07",
+              "label": "9/7",
+              "start": "2026-09-07",
+              "end": "2026-09-08",
+              "amountFen": "0",
+              "isFuture": false
+            },
+            {
+              "pointKey": "2026-09-08",
+              "label": "9/8",
+              "start": "2026-09-08",
+              "end": "2026-09-09",
+              "amountFen": "4426",
+              "isFuture": false
+            },
+            {
+              "pointKey": "2026-09-09",
+              "label": "9/9",
+              "start": "2026-09-09",
+              "end": "2026-09-10",
+              "amountFen": "92104",
+              "isFuture": false
+            },
+            {
+              "pointKey": "2026-09-10",
+              "label": "9/10",
+              "start": "2026-09-10",
+              "end": "2026-09-11",
+              "amountFen": "0",
+              "isFuture": false
+            },
+            {
+              "pointKey": "2026-09-11",
+              "label": "9/11",
+              "start": "2026-09-11",
+              "end": "2026-09-12",
+              "amountFen": "0",
+              "isFuture": false
+            },
+            {
+              "pointKey": "2026-09-12",
+              "label": "9/12",
+              "start": "2026-09-12",
+              "end": "2026-09-13",
+              "amountFen": "0",
+              "isFuture": false
+            },
+            {
+              "pointKey": "2026-09-13",
+              "label": "9/13",
+              "start": "2026-09-13",
+              "end": "2026-09-14",
+              "amountFen": "0",
+              "isFuture": false
+            }
+          ]
+        },
+        "summary": {
+          "scope": {
+            "period": "week",
+            "anchorDate": "2026-09-07",
+            "categoryIds": [],
+            "ledgerId": "218c795a-8d34-4b9d-a1c6-95859a0c8cc3",
+            "dataEpoch": "a0bac229-7ef7-4157-9d81-f52870bdca82",
+            "revision": 15,
+            "today": "2026-10-21",
+            "timezone": "Asia/Shanghai",
+            "start": "2026-09-07",
+            "end": "2026-09-14",
+            "effectiveEnd": "2026-09-14",
+            "scopeId": "2945701cd715d6799712502cbd73dab0985dd6ee23410f5b8a73567ed44cdc6a"
+          },
+          "totalFen": "96530",
+          "count": 6,
+          "dailyAverage": {
+            "numeratorFen": "96530",
+            "denominatorDays": 7,
+            "displayYuan": "137.90"
+          },
+          "categoryTotals": [
+            {
+              "categoryId": "cat_repair",
+              "name": "维修",
+              "iconKey": "lucide:hammer",
+              "totalFen": "85000",
+              "ratioPercent": "88.06"
+            },
+            {
+              "categoryId": "cat_digital",
+              "name": "数码",
+              "iconKey": "lucide:cable",
+              "totalFen": "5554",
+              "ratioPercent": "5.75"
+            },
+            {
+              "categoryId": "cat_food",
+              "name": "餐饮",
+              "iconKey": "lucide:utensils",
+              "totalFen": "4350",
+              "ratioPercent": "4.51"
+            },
+            {
+              "categoryId": "cat_fruit",
+              "name": "水果",
+              "iconKey": "lucide:cherry",
+              "totalFen": "1626",
+              "ratioPercent": "1.68"
+            }
+          ]
+        },
+        "ranking": {
+          "scope": {
+            "period": "week",
+            "anchorDate": "2026-09-07",
+            "categoryIds": [],
+            "ledgerId": "218c795a-8d34-4b9d-a1c6-95859a0c8cc3",
+            "dataEpoch": "a0bac229-7ef7-4157-9d81-f52870bdca82",
+            "revision": 15,
+            "today": "2026-10-21",
+            "timezone": "Asia/Shanghai",
+            "start": "2026-09-07",
+            "end": "2026-09-14",
+            "effectiveEnd": "2026-09-14",
+            "scopeId": "2945701cd715d6799712502cbd73dab0985dd6ee23410f5b8a73567ed44cdc6a"
+          },
+          "totalFen": "96530",
+          "items": [
+            {
+              "categoryId": "cat_repair",
+              "name": "维修",
+              "iconKey": "lucide:hammer",
+              "totalFen": "85000",
+              "ratioPercent": "88.06"
+            },
+            {
+              "categoryId": "cat_digital",
+              "name": "数码",
+              "iconKey": "lucide:cable",
+              "totalFen": "5554",
+              "ratioPercent": "5.75"
+            },
+            {
+              "categoryId": "cat_food",
+              "name": "餐饮",
+              "iconKey": "lucide:utensils",
+              "totalFen": "4350",
+              "ratioPercent": "4.51"
+            },
+            {
+              "categoryId": "cat_fruit",
+              "name": "水果",
+              "iconKey": "lucide:cherry",
+              "totalFen": "1626",
+              "ratioPercent": "1.68"
+            }
+          ]
+        },
+        "top": {
+          "scope": {
+            "period": "week",
+            "anchorDate": "2026-09-07",
+            "categoryIds": [],
+            "ledgerId": "218c795a-8d34-4b9d-a1c6-95859a0c8cc3",
+            "dataEpoch": "a0bac229-7ef7-4157-9d81-f52870bdca82",
+            "revision": 15,
+            "today": "2026-10-21",
+            "timezone": "Asia/Shanghai",
+            "start": "2026-09-07",
+            "end": "2026-09-14",
+            "effectiveEnd": "2026-09-14",
+            "scopeId": "2945701cd715d6799712502cbd73dab0985dd6ee23410f5b8a73567ed44cdc6a"
+          },
+          "pointTotalFen": "92104",
+          "items": [
+            {
+              "transactionId": "4942d9fc-6b12-4ba5-bfc3-cfb30711341d",
+              "name": "iPad维修",
+              "amountFen": "85000",
+              "occurredTime": null,
+              "timePrecision": "date"
+            },
+            {
+              "transactionId": "d4e31029-c98c-4808-af94-9395d3db4bb4",
+              "name": "iPad保护膜",
+              "amountFen": "5554",
+              "occurredTime": null,
+              "timePrecision": "date"
+            },
+            {
+              "transactionId": "8a0cfa05-f2e0-4f71-8eaa-79e7f107e169",
+              "name": "午餐",
+              "amountFen": "1550",
+              "occurredTime": null,
+              "timePrecision": "date"
+            }
+          ]
+        }
+      },
+      {
+        "period": "month",
+        "series": {
+          "scope": {
+            "period": "month",
+            "anchorDate": "2026-09-01",
+            "categoryIds": [],
+            "ledgerId": "218c795a-8d34-4b9d-a1c6-95859a0c8cc3",
+            "dataEpoch": "a0bac229-7ef7-4157-9d81-f52870bdca82",
+            "revision": 15,
+            "today": "2026-10-21",
+            "timezone": "Asia/Shanghai",
+            "start": "2026-09-01",
+            "end": "2026-10-01",
+            "effectiveEnd": "2026-10-01",
+            "scopeId": "d1a1369be80c3c88fe9b81cabdeba3073090c360a308831cb699d544a6196c7c"
+          },
+          "totalFen": "96530",
+          "points": [
+            {
+              "pointKey": "2026-09-01",
+              "label": "9/1",
+              "start": "2026-09-01",
+              "end": "2026-09-02",
+              "amountFen": "0",
+              "isFuture": false
+            },
+            {
+              "pointKey": "2026-09-02",
+              "label": "9/2",
+              "start": "2026-09-02",
+              "end": "2026-09-03",
+              "amountFen": "0",
+              "isFuture": false
+            },
+            {
+              "pointKey": "2026-09-03",
+              "label": "9/3",
+              "start": "2026-09-03",
+              "end": "2026-09-04",
+              "amountFen": "0",
+              "isFuture": false
+            },
+            {
+              "pointKey": "2026-09-04",
+              "label": "9/4",
+              "start": "2026-09-04",
+              "end": "2026-09-05",
+              "amountFen": "0",
+              "isFuture": false
+            },
+            {
+              "pointKey": "2026-09-05",
+              "label": "9/5",
+              "start": "2026-09-05",
+              "end": "2026-09-06",
+              "amountFen": "0",
+              "isFuture": false
+            },
+            {
+              "pointKey": "2026-09-06",
+              "label": "9/6",
+              "start": "2026-09-06",
+              "end": "2026-09-07",
+              "amountFen": "0",
+              "isFuture": false
+            },
+            {
+              "pointKey": "2026-09-07",
+              "label": "9/7",
+              "start": "2026-09-07",
+              "end": "2026-09-08",
+              "amountFen": "0",
+              "isFuture": false
+            },
+            {
+              "pointKey": "2026-09-08",
+              "label": "9/8",
+              "start": "2026-09-08",
+              "end": "2026-09-09",
+              "amountFen": "4426",
+              "isFuture": false
+            },
+            {
+              "pointKey": "2026-09-09",
+              "label": "9/9",
+              "start": "2026-09-09",
+              "end": "2026-09-10",
+              "amountFen": "92104",
+              "isFuture": false
+            },
+            {
+              "pointKey": "2026-09-10",
+              "label": "9/10",
+              "start": "2026-09-10",
+              "end": "2026-09-11",
+              "amountFen": "0",
+              "isFuture": false
+            },
+            {
+              "pointKey": "2026-09-11",
+              "label": "9/11",
+              "start": "2026-09-11",
+              "end": "2026-09-12",
+              "amountFen": "0",
+              "isFuture": false
+            },
+            {
+              "pointKey": "2026-09-12",
+              "label": "9/12",
+              "start": "2026-09-12",
+              "end": "2026-09-13",
+              "amountFen": "0",
+              "isFuture": false
+            },
+            {
+              "pointKey": "2026-09-13",
+              "label": "9/13",
+              "start": "2026-09-13",
+              "end": "2026-09-14",
+              "amountFen": "0",
+              "isFuture": false
+            },
+            {
+              "pointKey": "2026-09-14",
+              "label": "9/14",
+              "start": "2026-09-14",
+              "end": "2026-09-15",
+              "amountFen": "0",
+              "isFuture": false
+            },
+            {
+              "pointKey": "2026-09-15",
+              "label": "9/15",
+              "start": "2026-09-15",
+              "end": "2026-09-16",
+              "amountFen": "0",
+              "isFuture": false
+            },
+            {
+              "pointKey": "2026-09-16",
+              "label": "9/16",
+              "start": "2026-09-16",
+              "end": "2026-09-17",
+              "amountFen": "0",
+              "isFuture": false
+            },
+            {
+              "pointKey": "2026-09-17",
+              "label": "9/17",
+              "start": "2026-09-17",
+              "end": "2026-09-18",
+              "amountFen": "0",
+              "isFuture": false
+            },
+            {
+              "pointKey": "2026-09-18",
+              "label": "9/18",
+              "start": "2026-09-18",
+              "end": "2026-09-19",
+              "amountFen": "0",
+              "isFuture": false
+            },
+            {
+              "pointKey": "2026-09-19",
+              "label": "9/19",
+              "start": "2026-09-19",
+              "end": "2026-09-20",
+              "amountFen": "0",
+              "isFuture": false
+            },
+            {
+              "pointKey": "2026-09-20",
+              "label": "9/20",
+              "start": "2026-09-20",
+              "end": "2026-09-21",
+              "amountFen": "0",
+              "isFuture": false
+            },
+            {
+              "pointKey": "2026-09-21",
+              "label": "9/21",
+              "start": "2026-09-21",
+              "end": "2026-09-22",
+              "amountFen": "0",
+              "isFuture": false
+            },
+            {
+              "pointKey": "2026-09-22",
+              "label": "9/22",
+              "start": "2026-09-22",
+              "end": "2026-09-23",
+              "amountFen": "0",
+              "isFuture": false
+            },
+            {
+              "pointKey": "2026-09-23",
+              "label": "9/23",
+              "start": "2026-09-23",
+              "end": "2026-09-24",
+              "amountFen": "0",
+              "isFuture": false
+            },
+            {
+              "pointKey": "2026-09-24",
+              "label": "9/24",
+              "start": "2026-09-24",
+              "end": "2026-09-25",
+              "amountFen": "0",
+              "isFuture": false
+            },
+            {
+              "pointKey": "2026-09-25",
+              "label": "9/25",
+              "start": "2026-09-25",
+              "end": "2026-09-26",
+              "amountFen": "0",
+              "isFuture": false
+            },
+            {
+              "pointKey": "2026-09-26",
+              "label": "9/26",
+              "start": "2026-09-26",
+              "end": "2026-09-27",
+              "amountFen": "0",
+              "isFuture": false
+            },
+            {
+              "pointKey": "2026-09-27",
+              "label": "9/27",
+              "start": "2026-09-27",
+              "end": "2026-09-28",
+              "amountFen": "0",
+              "isFuture": false
+            },
+            {
+              "pointKey": "2026-09-28",
+              "label": "9/28",
+              "start": "2026-09-28",
+              "end": "2026-09-29",
+              "amountFen": "0",
+              "isFuture": false
+            },
+            {
+              "pointKey": "2026-09-29",
+              "label": "9/29",
+              "start": "2026-09-29",
+              "end": "2026-09-30",
+              "amountFen": "0",
+              "isFuture": false
+            },
+            {
+              "pointKey": "2026-09-30",
+              "label": "9/30",
+              "start": "2026-09-30",
+              "end": "2026-10-01",
+              "amountFen": "0",
+              "isFuture": false
+            }
+          ]
+        },
+        "summary": {
+          "scope": {
+            "period": "month",
+            "anchorDate": "2026-09-01",
+            "categoryIds": [],
+            "ledgerId": "218c795a-8d34-4b9d-a1c6-95859a0c8cc3",
+            "dataEpoch": "a0bac229-7ef7-4157-9d81-f52870bdca82",
+            "revision": 15,
+            "today": "2026-10-21",
+            "timezone": "Asia/Shanghai",
+            "start": "2026-09-01",
+            "end": "2026-10-01",
+            "effectiveEnd": "2026-10-01",
+            "scopeId": "d1a1369be80c3c88fe9b81cabdeba3073090c360a308831cb699d544a6196c7c"
+          },
+          "totalFen": "96530",
+          "count": 6,
+          "dailyAverage": {
+            "numeratorFen": "96530",
+            "denominatorDays": 30,
+            "displayYuan": "32.18"
+          },
+          "categoryTotals": [
+            {
+              "categoryId": "cat_repair",
+              "name": "维修",
+              "iconKey": "lucide:hammer",
+              "totalFen": "85000",
+              "ratioPercent": "88.06"
+            },
+            {
+              "categoryId": "cat_digital",
+              "name": "数码",
+              "iconKey": "lucide:cable",
+              "totalFen": "5554",
+              "ratioPercent": "5.75"
+            },
+            {
+              "categoryId": "cat_food",
+              "name": "餐饮",
+              "iconKey": "lucide:utensils",
+              "totalFen": "4350",
+              "ratioPercent": "4.51"
+            },
+            {
+              "categoryId": "cat_fruit",
+              "name": "水果",
+              "iconKey": "lucide:cherry",
+              "totalFen": "1626",
+              "ratioPercent": "1.68"
+            }
+          ]
+        },
+        "ranking": {
+          "scope": {
+            "period": "month",
+            "anchorDate": "2026-09-01",
+            "categoryIds": [],
+            "ledgerId": "218c795a-8d34-4b9d-a1c6-95859a0c8cc3",
+            "dataEpoch": "a0bac229-7ef7-4157-9d81-f52870bdca82",
+            "revision": 15,
+            "today": "2026-10-21",
+            "timezone": "Asia/Shanghai",
+            "start": "2026-09-01",
+            "end": "2026-10-01",
+            "effectiveEnd": "2026-10-01",
+            "scopeId": "d1a1369be80c3c88fe9b81cabdeba3073090c360a308831cb699d544a6196c7c"
+          },
+          "totalFen": "96530",
+          "items": [
+            {
+              "categoryId": "cat_repair",
+              "name": "维修",
+              "iconKey": "lucide:hammer",
+              "totalFen": "85000",
+              "ratioPercent": "88.06"
+            },
+            {
+              "categoryId": "cat_digital",
+              "name": "数码",
+              "iconKey": "lucide:cable",
+              "totalFen": "5554",
+              "ratioPercent": "5.75"
+            },
+            {
+              "categoryId": "cat_food",
+              "name": "餐饮",
+              "iconKey": "lucide:utensils",
+              "totalFen": "4350",
+              "ratioPercent": "4.51"
+            },
+            {
+              "categoryId": "cat_fruit",
+              "name": "水果",
+              "iconKey": "lucide:cherry",
+              "totalFen": "1626",
+              "ratioPercent": "1.68"
+            }
+          ]
+        },
+        "top": {
+          "scope": {
+            "period": "month",
+            "anchorDate": "2026-09-01",
+            "categoryIds": [],
+            "ledgerId": "218c795a-8d34-4b9d-a1c6-95859a0c8cc3",
+            "dataEpoch": "a0bac229-7ef7-4157-9d81-f52870bdca82",
+            "revision": 15,
+            "today": "2026-10-21",
+            "timezone": "Asia/Shanghai",
+            "start": "2026-09-01",
+            "end": "2026-10-01",
+            "effectiveEnd": "2026-10-01",
+            "scopeId": "d1a1369be80c3c88fe9b81cabdeba3073090c360a308831cb699d544a6196c7c"
+          },
+          "pointTotalFen": "92104",
+          "items": [
+            {
+              "transactionId": "4942d9fc-6b12-4ba5-bfc3-cfb30711341d",
+              "name": "iPad维修",
+              "amountFen": "85000",
+              "occurredTime": null,
+              "timePrecision": "date"
+            },
+            {
+              "transactionId": "d4e31029-c98c-4808-af94-9395d3db4bb4",
+              "name": "iPad保护膜",
+              "amountFen": "5554",
+              "occurredTime": null,
+              "timePrecision": "date"
+            },
+            {
+              "transactionId": "8a0cfa05-f2e0-4f71-8eaa-79e7f107e169",
+              "name": "午餐",
+              "amountFen": "1550",
+              "occurredTime": null,
+              "timePrecision": "date"
+            }
+          ]
+        }
+      },
+      {
+        "period": "year",
+        "series": {
+          "scope": {
+            "period": "year",
+            "anchorDate": "2026-01-01",
+            "categoryIds": [],
+            "ledgerId": "218c795a-8d34-4b9d-a1c6-95859a0c8cc3",
+            "dataEpoch": "a0bac229-7ef7-4157-9d81-f52870bdca82",
+            "revision": 15,
+            "today": "2026-10-21",
+            "timezone": "Asia/Shanghai",
+            "start": "2026-01-01",
+            "end": "2027-01-01",
+            "effectiveEnd": "2026-10-22",
+            "scopeId": "87d513e03e5579e0b7435c5269614a2c44b4cae9480074fdadfcf1c3d8fffc99"
+          },
+          "totalFen": "96530",
+          "points": [
+            {
+              "pointKey": "2026-01",
+              "label": "1月",
+              "start": "2026-01-01",
+              "end": "2026-02-01",
+              "amountFen": "0",
+              "isFuture": false
+            },
+            {
+              "pointKey": "2026-02",
+              "label": "2月",
+              "start": "2026-02-01",
+              "end": "2026-03-01",
+              "amountFen": "0",
+              "isFuture": false
+            },
+            {
+              "pointKey": "2026-03",
+              "label": "3月",
+              "start": "2026-03-01",
+              "end": "2026-04-01",
+              "amountFen": "0",
+              "isFuture": false
+            },
+            {
+              "pointKey": "2026-04",
+              "label": "4月",
+              "start": "2026-04-01",
+              "end": "2026-05-01",
+              "amountFen": "0",
+              "isFuture": false
+            },
+            {
+              "pointKey": "2026-05",
+              "label": "5月",
+              "start": "2026-05-01",
+              "end": "2026-06-01",
+              "amountFen": "0",
+              "isFuture": false
+            },
+            {
+              "pointKey": "2026-06",
+              "label": "6月",
+              "start": "2026-06-01",
+              "end": "2026-07-01",
+              "amountFen": "0",
+              "isFuture": false
+            },
+            {
+              "pointKey": "2026-07",
+              "label": "7月",
+              "start": "2026-07-01",
+              "end": "2026-08-01",
+              "amountFen": "0",
+              "isFuture": false
+            },
+            {
+              "pointKey": "2026-08",
+              "label": "8月",
+              "start": "2026-08-01",
+              "end": "2026-09-01",
+              "amountFen": "0",
+              "isFuture": false
+            },
+            {
+              "pointKey": "2026-09",
+              "label": "9月",
+              "start": "2026-09-01",
+              "end": "2026-10-01",
+              "amountFen": "96530",
+              "isFuture": false
+            },
+            {
+              "pointKey": "2026-10",
+              "label": "10月",
+              "start": "2026-10-01",
+              "end": "2026-11-01",
+              "amountFen": "0",
+              "isFuture": false
+            },
+            {
+              "pointKey": "2026-11",
+              "label": "11月",
+              "start": "2026-11-01",
+              "end": "2026-12-01",
+              "amountFen": "0",
+              "isFuture": true
+            },
+            {
+              "pointKey": "2026-12",
+              "label": "12月",
+              "start": "2026-12-01",
+              "end": "2027-01-01",
+              "amountFen": "0",
+              "isFuture": true
+            }
+          ]
+        },
+        "summary": {
+          "scope": {
+            "period": "year",
+            "anchorDate": "2026-01-01",
+            "categoryIds": [],
+            "ledgerId": "218c795a-8d34-4b9d-a1c6-95859a0c8cc3",
+            "dataEpoch": "a0bac229-7ef7-4157-9d81-f52870bdca82",
+            "revision": 15,
+            "today": "2026-10-21",
+            "timezone": "Asia/Shanghai",
+            "start": "2026-01-01",
+            "end": "2027-01-01",
+            "effectiveEnd": "2026-10-22",
+            "scopeId": "87d513e03e5579e0b7435c5269614a2c44b4cae9480074fdadfcf1c3d8fffc99"
+          },
+          "totalFen": "96530",
+          "count": 6,
+          "dailyAverage": {
+            "numeratorFen": "96530",
+            "denominatorDays": 294,
+            "displayYuan": "3.28"
+          },
+          "categoryTotals": [
+            {
+              "categoryId": "cat_repair",
+              "name": "维修",
+              "iconKey": "lucide:hammer",
+              "totalFen": "85000",
+              "ratioPercent": "88.06"
+            },
+            {
+              "categoryId": "cat_digital",
+              "name": "数码",
+              "iconKey": "lucide:cable",
+              "totalFen": "5554",
+              "ratioPercent": "5.75"
+            },
+            {
+              "categoryId": "cat_food",
+              "name": "餐饮",
+              "iconKey": "lucide:utensils",
+              "totalFen": "4350",
+              "ratioPercent": "4.51"
+            },
+            {
+              "categoryId": "cat_fruit",
+              "name": "水果",
+              "iconKey": "lucide:cherry",
+              "totalFen": "1626",
+              "ratioPercent": "1.68"
+            }
+          ]
+        },
+        "ranking": {
+          "scope": {
+            "period": "year",
+            "anchorDate": "2026-01-01",
+            "categoryIds": [],
+            "ledgerId": "218c795a-8d34-4b9d-a1c6-95859a0c8cc3",
+            "dataEpoch": "a0bac229-7ef7-4157-9d81-f52870bdca82",
+            "revision": 15,
+            "today": "2026-10-21",
+            "timezone": "Asia/Shanghai",
+            "start": "2026-01-01",
+            "end": "2027-01-01",
+            "effectiveEnd": "2026-10-22",
+            "scopeId": "87d513e03e5579e0b7435c5269614a2c44b4cae9480074fdadfcf1c3d8fffc99"
+          },
+          "totalFen": "96530",
+          "items": [
+            {
+              "categoryId": "cat_repair",
+              "name": "维修",
+              "iconKey": "lucide:hammer",
+              "totalFen": "85000",
+              "ratioPercent": "88.06"
+            },
+            {
+              "categoryId": "cat_digital",
+              "name": "数码",
+              "iconKey": "lucide:cable",
+              "totalFen": "5554",
+              "ratioPercent": "5.75"
+            },
+            {
+              "categoryId": "cat_food",
+              "name": "餐饮",
+              "iconKey": "lucide:utensils",
+              "totalFen": "4350",
+              "ratioPercent": "4.51"
+            },
+            {
+              "categoryId": "cat_fruit",
+              "name": "水果",
+              "iconKey": "lucide:cherry",
+              "totalFen": "1626",
+              "ratioPercent": "1.68"
+            }
+          ]
+        },
+        "top": {
+          "scope": {
+            "period": "year",
+            "anchorDate": "2026-01-01",
+            "categoryIds": [],
+            "ledgerId": "218c795a-8d34-4b9d-a1c6-95859a0c8cc3",
+            "dataEpoch": "a0bac229-7ef7-4157-9d81-f52870bdca82",
+            "revision": 15,
+            "today": "2026-10-21",
+            "timezone": "Asia/Shanghai",
+            "start": "2026-01-01",
+            "end": "2027-01-01",
+            "effectiveEnd": "2026-10-22",
+            "scopeId": "87d513e03e5579e0b7435c5269614a2c44b4cae9480074fdadfcf1c3d8fffc99"
+          },
+          "totalFen": "96530",
+          "items": [
+            {
+              "categoryId": "cat_repair",
+              "name": "维修",
+              "iconKey": "lucide:hammer",
+              "totalFen": "85000",
+              "ratioPercent": "88.06"
+            },
+            {
+              "categoryId": "cat_digital",
+              "name": "数码",
+              "iconKey": "lucide:cable",
+              "totalFen": "5554",
+              "ratioPercent": "5.75"
+            },
+            {
+              "categoryId": "cat_food",
+              "name": "餐饮",
+              "iconKey": "lucide:utensils",
+              "totalFen": "4350",
+              "ratioPercent": "4.51"
+            }
+          ]
+        }
+      }
+    ]
+  },
+  "candidate": {
+    "id": "ea74d068-5c12-416d-b45c-606f2c0d38d7",
+    "version": 1,
+    "jobId": "67e78917-0aac-4b81-bfd8-e527a716df6b",
+    "imageAssetId": "97c32293-6649-45eb-992c-b9c1103e476a",
+    "preparedHash": "d1974422926bb87dae5225b1ae9847a70ac91f3d9c6af86fbb1dd26cc44deb55",
+    "ordinal": 0,
+    "proposal": {
+      "amountFen": 9900,
+      "occurredDate": "2026-09-09",
+      "occurredTime": null,
+      "timePrecision": "date",
+      "name": "待审餐饮9900（合成）",
+      "merchant": null,
+      "categoryId": "cat_food",
+      "transactionKind": "expense",
+      "amountBasis": "paid_total",
+      "groupKey": null,
+      "lineItems": [],
+      "evidence": [
+        {
+          "field": "amountFen",
+          "text": "Paid CNY 99.00",
+          "region": null,
+          "source": "image"
+        },
+        {
+          "field": "occurredDate",
+          "text": "2026-09-09",
+          "region": null,
+          "source": "image"
+        },
+        {
+          "field": "name",
+          "text": "Food expense",
+          "region": null,
+          "source": "image"
+        },
+        {
+          "field": "categoryId",
+          "text": "Food expense",
+          "region": null,
+          "source": "image"
+        }
+      ],
+      "missingFields": [],
+      "warnings": [],
+      "confidence": 0.8
+    },
+    "current": {
+      "amountFen": 9900,
+      "occurredDate": "2026-09-09",
+      "occurredTime": null,
+      "timePrecision": "date",
+      "name": "待审餐饮9900（合成）",
+      "merchant": null,
+      "categoryId": "cat_food",
+      "transactionKind": "expense",
+      "amountBasis": "paid_total",
+      "groupKey": null,
+      "lineItems": [],
+      "evidence": [
+        {
+          "field": "amountFen",
+          "text": "Paid CNY 99.00",
+          "region": null,
+          "source": "image"
+        },
+        {
+          "field": "occurredDate",
+          "text": "2026-09-09",
+          "region": null,
+          "source": "image"
+        },
+        {
+          "field": "name",
+          "text": "Food expense",
+          "region": null,
+          "source": "image"
+        },
+        {
+          "field": "categoryId",
+          "text": "Food expense",
+          "region": null,
+          "source": "image"
+        }
+      ],
+      "missingFields": [],
+      "warnings": [],
+      "confidence": 0.8
+    },
+    "missingFields": [],
+    "warnings": [],
+    "blocking": false,
+    "excludedByDefault": false,
+    "duplicateMatches": [],
+    "reviewState": "pending_review",
+    "postedTransactionId": null,
+    "createdAt": "2026-10-21T04:00:00.000Z"
+  },
+  "afterRestart": {
+    "list": {
+      "items": [
+        {
+          "id": "4942d9fc-6b12-4ba5-bfc3-cfb30711341d",
+          "ledgerId": "218c795a-8d34-4b9d-a1c6-95859a0c8cc3",
+          "amountFen": 85000,
+          "currency": "CNY",
+          "occurredDate": "2026-09-09",
+          "occurredTime": null,
+          "timePrecision": "date",
+          "name": "iPad维修",
+          "categoryId": "cat_repair",
+          "merchant": null,
+          "note": null,
+          "source": "manual",
+          "sourceCandidateId": null,
+          "deletedAt": null,
+          "version": 1,
+          "createdAt": "2026-10-21T04:00:00.000Z",
+          "updatedAt": "2026-10-21T04:00:00.000Z"
+        },
+        {
+          "id": "8a0cfa05-f2e0-4f71-8eaa-79e7f107e169",
+          "ledgerId": "218c795a-8d34-4b9d-a1c6-95859a0c8cc3",
+          "amountFen": 1550,
+          "currency": "CNY",
+          "occurredDate": "2026-09-09",
+          "occurredTime": null,
+          "timePrecision": "date",
+          "name": "午餐",
+          "categoryId": "cat_food",
+          "merchant": null,
+          "note": null,
+          "source": "manual",
+          "sourceCandidateId": null,
+          "deletedAt": null,
+          "version": 1,
+          "createdAt": "2026-10-21T04:00:00.000Z",
+          "updatedAt": "2026-10-21T04:00:00.000Z"
+        },
+        {
+          "id": "d4e31029-c98c-4808-af94-9395d3db4bb4",
+          "ledgerId": "218c795a-8d34-4b9d-a1c6-95859a0c8cc3",
+          "amountFen": 5554,
+          "currency": "CNY",
+          "occurredDate": "2026-09-09",
+          "occurredTime": null,
+          "timePrecision": "date",
+          "name": "iPad保护膜",
+          "categoryId": "cat_digital",
+          "merchant": null,
+          "note": null,
+          "source": "manual",
+          "sourceCandidateId": null,
+          "deletedAt": null,
+          "version": 1,
+          "createdAt": "2026-10-21T04:00:00.000Z",
+          "updatedAt": "2026-10-21T04:00:00.000Z"
+        },
+        {
+          "id": "03f5e133-8bf6-456f-b999-93027c90d810",
+          "ledgerId": "218c795a-8d34-4b9d-a1c6-95859a0c8cc3",
+          "amountFen": 1800,
+          "currency": "CNY",
+          "occurredDate": "2026-09-08",
+          "occurredTime": null,
+          "timePrecision": "date",
+          "name": "午餐",
+          "categoryId": "cat_food",
+          "merchant": null,
+          "note": null,
+          "source": "manual",
+          "sourceCandidateId": null,
+          "deletedAt": null,
+          "version": 1,
+          "createdAt": "2026-10-21T04:00:00.000Z",
+          "updatedAt": "2026-10-21T04:00:00.000Z"
+        },
+        {
+          "id": "664a198f-98b7-4efa-b9b1-6a0bd224ff54",
+          "ledgerId": "218c795a-8d34-4b9d-a1c6-95859a0c8cc3",
+          "amountFen": 1000,
+          "currency": "CNY",
+          "occurredDate": "2026-09-08",
+          "occurredTime": null,
+          "timePrecision": "date",
+          "name": "晚餐",
+          "categoryId": "cat_food",
+          "merchant": null,
+          "note": null,
+          "source": "manual",
+          "sourceCandidateId": null,
+          "deletedAt": null,
+          "version": 1,
+          "createdAt": "2026-10-21T04:00:00.000Z",
+          "updatedAt": "2026-10-21T04:00:00.000Z"
+        },
+        {
+          "id": "af08c14d-62c6-472c-8586-933e631ff821",
+          "ledgerId": "218c795a-8d34-4b9d-a1c6-95859a0c8cc3",
+          "amountFen": 1626,
+          "currency": "CNY",
+          "occurredDate": "2026-09-08",
+          "occurredTime": null,
+          "timePrecision": "date",
+          "name": "购买水果",
+          "categoryId": "cat_fruit",
+          "merchant": null,
+          "note": null,
+          "source": "manual",
+          "sourceCandidateId": null,
+          "deletedAt": null,
+          "version": 1,
+          "createdAt": "2026-10-21T04:00:00.000Z",
+          "updatedAt": "2026-10-21T04:00:00.000Z"
+        }
+      ],
+      "nextCursor": null,
+      "totalCount": 6,
+      "snapshotRevision": 15,
+      "filteredTotalFen": "96530",
+      "dateGroups": [
+        {
+          "date": "2026-09-09",
+          "count": 3,
+          "totalFen": "92104"
+        },
+        {
+          "date": "2026-09-08",
+          "count": 3,
+          "totalFen": "4426"
+        }
+      ],
+      "filterEcho": {
+        "dateStart": null,
+        "dateEnd": null,
+        "categoryIds": [],
+        "nameQuery": null,
+        "deleted": "active"
+      }
+    },
+    "views": [
+      {
+        "period": "week",
+        "series": {
+          "scope": {
+            "period": "week",
+            "anchorDate": "2026-09-07",
+            "categoryIds": [],
+            "ledgerId": "218c795a-8d34-4b9d-a1c6-95859a0c8cc3",
+            "dataEpoch": "a0bac229-7ef7-4157-9d81-f52870bdca82",
+            "revision": 15,
+            "today": "2026-10-21",
+            "timezone": "Asia/Shanghai",
+            "start": "2026-09-07",
+            "end": "2026-09-14",
+            "effectiveEnd": "2026-09-14",
+            "scopeId": "2945701cd715d6799712502cbd73dab0985dd6ee23410f5b8a73567ed44cdc6a"
+          },
+          "totalFen": "96530",
+          "points": [
+            {
+              "pointKey": "2026-09-07",
+              "label": "9/7",
+              "start": "2026-09-07",
+              "end": "2026-09-08",
+              "amountFen": "0",
+              "isFuture": false
+            },
+            {
+              "pointKey": "2026-09-08",
+              "label": "9/8",
+              "start": "2026-09-08",
+              "end": "2026-09-09",
+              "amountFen": "4426",
+              "isFuture": false
+            },
+            {
+              "pointKey": "2026-09-09",
+              "label": "9/9",
+              "start": "2026-09-09",
+              "end": "2026-09-10",
+              "amountFen": "92104",
+              "isFuture": false
+            },
+            {
+              "pointKey": "2026-09-10",
+              "label": "9/10",
+              "start": "2026-09-10",
+              "end": "2026-09-11",
+              "amountFen": "0",
+              "isFuture": false
+            },
+            {
+              "pointKey": "2026-09-11",
+              "label": "9/11",
+              "start": "2026-09-11",
+              "end": "2026-09-12",
+              "amountFen": "0",
+              "isFuture": false
+            },
+            {
+              "pointKey": "2026-09-12",
+              "label": "9/12",
+              "start": "2026-09-12",
+              "end": "2026-09-13",
+              "amountFen": "0",
+              "isFuture": false
+            },
+            {
+              "pointKey": "2026-09-13",
+              "label": "9/13",
+              "start": "2026-09-13",
+              "end": "2026-09-14",
+              "amountFen": "0",
+              "isFuture": false
+            }
+          ]
+        },
+        "summary": {
+          "scope": {
+            "period": "week",
+            "anchorDate": "2026-09-07",
+            "categoryIds": [],
+            "ledgerId": "218c795a-8d34-4b9d-a1c6-95859a0c8cc3",
+            "dataEpoch": "a0bac229-7ef7-4157-9d81-f52870bdca82",
+            "revision": 15,
+            "today": "2026-10-21",
+            "timezone": "Asia/Shanghai",
+            "start": "2026-09-07",
+            "end": "2026-09-14",
+            "effectiveEnd": "2026-09-14",
+            "scopeId": "2945701cd715d6799712502cbd73dab0985dd6ee23410f5b8a73567ed44cdc6a"
+          },
+          "totalFen": "96530",
+          "count": 6,
+          "dailyAverage": {
+            "numeratorFen": "96530",
+            "denominatorDays": 7,
+            "displayYuan": "137.90"
+          },
+          "categoryTotals": [
+            {
+              "categoryId": "cat_repair",
+              "name": "维修",
+              "iconKey": "lucide:hammer",
+              "totalFen": "85000",
+              "ratioPercent": "88.06"
+            },
+            {
+              "categoryId": "cat_digital",
+              "name": "数码",
+              "iconKey": "lucide:cable",
+              "totalFen": "5554",
+              "ratioPercent": "5.75"
+            },
+            {
+              "categoryId": "cat_food",
+              "name": "餐饮",
+              "iconKey": "lucide:utensils",
+              "totalFen": "4350",
+              "ratioPercent": "4.51"
+            },
+            {
+              "categoryId": "cat_fruit",
+              "name": "水果",
+              "iconKey": "lucide:cherry",
+              "totalFen": "1626",
+              "ratioPercent": "1.68"
+            }
+          ]
+        },
+        "ranking": {
+          "scope": {
+            "period": "week",
+            "anchorDate": "2026-09-07",
+            "categoryIds": [],
+            "ledgerId": "218c795a-8d34-4b9d-a1c6-95859a0c8cc3",
+            "dataEpoch": "a0bac229-7ef7-4157-9d81-f52870bdca82",
+            "revision": 15,
+            "today": "2026-10-21",
+            "timezone": "Asia/Shanghai",
+            "start": "2026-09-07",
+            "end": "2026-09-14",
+            "effectiveEnd": "2026-09-14",
+            "scopeId": "2945701cd715d6799712502cbd73dab0985dd6ee23410f5b8a73567ed44cdc6a"
+          },
+          "totalFen": "96530",
+          "items": [
+            {
+              "categoryId": "cat_repair",
+              "name": "维修",
+              "iconKey": "lucide:hammer",
+              "totalFen": "85000",
+              "ratioPercent": "88.06"
+            },
+            {
+              "categoryId": "cat_digital",
+              "name": "数码",
+              "iconKey": "lucide:cable",
+              "totalFen": "5554",
+              "ratioPercent": "5.75"
+            },
+            {
+              "categoryId": "cat_food",
+              "name": "餐饮",
+              "iconKey": "lucide:utensils",
+              "totalFen": "4350",
+              "ratioPercent": "4.51"
+            },
+            {
+              "categoryId": "cat_fruit",
+              "name": "水果",
+              "iconKey": "lucide:cherry",
+              "totalFen": "1626",
+              "ratioPercent": "1.68"
+            }
+          ]
+        },
+        "top": {
+          "scope": {
+            "period": "week",
+            "anchorDate": "2026-09-07",
+            "categoryIds": [],
+            "ledgerId": "218c795a-8d34-4b9d-a1c6-95859a0c8cc3",
+            "dataEpoch": "a0bac229-7ef7-4157-9d81-f52870bdca82",
+            "revision": 15,
+            "today": "2026-10-21",
+            "timezone": "Asia/Shanghai",
+            "start": "2026-09-07",
+            "end": "2026-09-14",
+            "effectiveEnd": "2026-09-14",
+            "scopeId": "2945701cd715d6799712502cbd73dab0985dd6ee23410f5b8a73567ed44cdc6a"
+          },
+          "pointTotalFen": "92104",
+          "items": [
+            {
+              "transactionId": "4942d9fc-6b12-4ba5-bfc3-cfb30711341d",
+              "name": "iPad维修",
+              "amountFen": "85000",
+              "occurredTime": null,
+              "timePrecision": "date"
+            },
+            {
+              "transactionId": "d4e31029-c98c-4808-af94-9395d3db4bb4",
+              "name": "iPad保护膜",
+              "amountFen": "5554",
+              "occurredTime": null,
+              "timePrecision": "date"
+            },
+            {
+              "transactionId": "8a0cfa05-f2e0-4f71-8eaa-79e7f107e169",
+              "name": "午餐",
+              "amountFen": "1550",
+              "occurredTime": null,
+              "timePrecision": "date"
+            }
+          ]
+        }
+      },
+      {
+        "period": "month",
+        "series": {
+          "scope": {
+            "period": "month",
+            "anchorDate": "2026-09-01",
+            "categoryIds": [],
+            "ledgerId": "218c795a-8d34-4b9d-a1c6-95859a0c8cc3",
+            "dataEpoch": "a0bac229-7ef7-4157-9d81-f52870bdca82",
+            "revision": 15,
+            "today": "2026-10-21",
+            "timezone": "Asia/Shanghai",
+            "start": "2026-09-01",
+            "end": "2026-10-01",
+            "effectiveEnd": "2026-10-01",
+            "scopeId": "d1a1369be80c3c88fe9b81cabdeba3073090c360a308831cb699d544a6196c7c"
+          },
+          "totalFen": "96530",
+          "points": [
+            {
+              "pointKey": "2026-09-01",
+              "label": "9/1",
+              "start": "2026-09-01",
+              "end": "2026-09-02",
+              "amountFen": "0",
+              "isFuture": false
+            },
+            {
+              "pointKey": "2026-09-02",
+              "label": "9/2",
+              "start": "2026-09-02",
+              "end": "2026-09-03",
+              "amountFen": "0",
+              "isFuture": false
+            },
+            {
+              "pointKey": "2026-09-03",
+              "label": "9/3",
+              "start": "2026-09-03",
+              "end": "2026-09-04",
+              "amountFen": "0",
+              "isFuture": false
+            },
+            {
+              "pointKey": "2026-09-04",
+              "label": "9/4",
+              "start": "2026-09-04",
+              "end": "2026-09-05",
+              "amountFen": "0",
+              "isFuture": false
+            },
+            {
+              "pointKey": "2026-09-05",
+              "label": "9/5",
+              "start": "2026-09-05",
+              "end": "2026-09-06",
+              "amountFen": "0",
+              "isFuture": false
+            },
+            {
+              "pointKey": "2026-09-06",
+              "label": "9/6",
+              "start": "2026-09-06",
+              "end": "2026-09-07",
+              "amountFen": "0",
+              "isFuture": false
+            },
+            {
+              "pointKey": "2026-09-07",
+              "label": "9/7",
+              "start": "2026-09-07",
+              "end": "2026-09-08",
+              "amountFen": "0",
+              "isFuture": false
+            },
+            {
+              "pointKey": "2026-09-08",
+              "label": "9/8",
+              "start": "2026-09-08",
+              "end": "2026-09-09",
+              "amountFen": "4426",
+              "isFuture": false
+            },
+            {
+              "pointKey": "2026-09-09",
+              "label": "9/9",
+              "start": "2026-09-09",
+              "end": "2026-09-10",
+              "amountFen": "92104",
+              "isFuture": false
+            },
+            {
+              "pointKey": "2026-09-10",
+              "label": "9/10",
+              "start": "2026-09-10",
+              "end": "2026-09-11",
+              "amountFen": "0",
+              "isFuture": false
+            },
+            {
+              "pointKey": "2026-09-11",
+              "label": "9/11",
+              "start": "2026-09-11",
+              "end": "2026-09-12",
+              "amountFen": "0",
+              "isFuture": false
+            },
+            {
+              "pointKey": "2026-09-12",
+              "label": "9/12",
+              "start": "2026-09-12",
+              "end": "2026-09-13",
+              "amountFen": "0",
+              "isFuture": false
+            },
+            {
+              "pointKey": "2026-09-13",
+              "label": "9/13",
+              "start": "2026-09-13",
+              "end": "2026-09-14",
+              "amountFen": "0",
+              "isFuture": false
+            },
+            {
+              "pointKey": "2026-09-14",
+              "label": "9/14",
+              "start": "2026-09-14",
+              "end": "2026-09-15",
+              "amountFen": "0",
+              "isFuture": false
+            },
+            {
+              "pointKey": "2026-09-15",
+              "label": "9/15",
+              "start": "2026-09-15",
+              "end": "2026-09-16",
+              "amountFen": "0",
+              "isFuture": false
+            },
+            {
+              "pointKey": "2026-09-16",
+              "label": "9/16",
+              "start": "2026-09-16",
+              "end": "2026-09-17",
+              "amountFen": "0",
+              "isFuture": false
+            },
+            {
+              "pointKey": "2026-09-17",
+              "label": "9/17",
+              "start": "2026-09-17",
+              "end": "2026-09-18",
+              "amountFen": "0",
+              "isFuture": false
+            },
+            {
+              "pointKey": "2026-09-18",
+              "label": "9/18",
+              "start": "2026-09-18",
+              "end": "2026-09-19",
+              "amountFen": "0",
+              "isFuture": false
+            },
+            {
+              "pointKey": "2026-09-19",
+              "label": "9/19",
+              "start": "2026-09-19",
+              "end": "2026-09-20",
+              "amountFen": "0",
+              "isFuture": false
+            },
+            {
+              "pointKey": "2026-09-20",
+              "label": "9/20",
+              "start": "2026-09-20",
+              "end": "2026-09-21",
+              "amountFen": "0",
+              "isFuture": false
+            },
+            {
+              "pointKey": "2026-09-21",
+              "label": "9/21",
+              "start": "2026-09-21",
+              "end": "2026-09-22",
+              "amountFen": "0",
+              "isFuture": false
+            },
+            {
+              "pointKey": "2026-09-22",
+              "label": "9/22",
+              "start": "2026-09-22",
+              "end": "2026-09-23",
+              "amountFen": "0",
+              "isFuture": false
+            },
+            {
+              "pointKey": "2026-09-23",
+              "label": "9/23",
+              "start": "2026-09-23",
+              "end": "2026-09-24",
+              "amountFen": "0",
+              "isFuture": false
+            },
+            {
+              "pointKey": "2026-09-24",
+              "label": "9/24",
+              "start": "2026-09-24",
+              "end": "2026-09-25",
+              "amountFen": "0",
+              "isFuture": false
+            },
+            {
+              "pointKey": "2026-09-25",
+              "label": "9/25",
+              "start": "2026-09-25",
+              "end": "2026-09-26",
+              "amountFen": "0",
+              "isFuture": false
+            },
+            {
+              "pointKey": "2026-09-26",
+              "label": "9/26",
+              "start": "2026-09-26",
+              "end": "2026-09-27",
+              "amountFen": "0",
+              "isFuture": false
+            },
+            {
+              "pointKey": "2026-09-27",
+              "label": "9/27",
+              "start": "2026-09-27",
+              "end": "2026-09-28",
+              "amountFen": "0",
+              "isFuture": false
+            },
+            {
+              "pointKey": "2026-09-28",
+              "label": "9/28",
+              "start": "2026-09-28",
+              "end": "2026-09-29",
+              "amountFen": "0",
+              "isFuture": false
+            },
+            {
+              "pointKey": "2026-09-29",
+              "label": "9/29",
+              "start": "2026-09-29",
+              "end": "2026-09-30",
+              "amountFen": "0",
+              "isFuture": false
+            },
+            {
+              "pointKey": "2026-09-30",
+              "label": "9/30",
+              "start": "2026-09-30",
+              "end": "2026-10-01",
+              "amountFen": "0",
+              "isFuture": false
+            }
+          ]
+        },
+        "summary": {
+          "scope": {
+            "period": "month",
+            "anchorDate": "2026-09-01",
+            "categoryIds": [],
+            "ledgerId": "218c795a-8d34-4b9d-a1c6-95859a0c8cc3",
+            "dataEpoch": "a0bac229-7ef7-4157-9d81-f52870bdca82",
+            "revision": 15,
+            "today": "2026-10-21",
+            "timezone": "Asia/Shanghai",
+            "start": "2026-09-01",
+            "end": "2026-10-01",
+            "effectiveEnd": "2026-10-01",
+            "scopeId": "d1a1369be80c3c88fe9b81cabdeba3073090c360a308831cb699d544a6196c7c"
+          },
+          "totalFen": "96530",
+          "count": 6,
+          "dailyAverage": {
+            "numeratorFen": "96530",
+            "denominatorDays": 30,
+            "displayYuan": "32.18"
+          },
+          "categoryTotals": [
+            {
+              "categoryId": "cat_repair",
+              "name": "维修",
+              "iconKey": "lucide:hammer",
+              "totalFen": "85000",
+              "ratioPercent": "88.06"
+            },
+            {
+              "categoryId": "cat_digital",
+              "name": "数码",
+              "iconKey": "lucide:cable",
+              "totalFen": "5554",
+              "ratioPercent": "5.75"
+            },
+            {
+              "categoryId": "cat_food",
+              "name": "餐饮",
+              "iconKey": "lucide:utensils",
+              "totalFen": "4350",
+              "ratioPercent": "4.51"
+            },
+            {
+              "categoryId": "cat_fruit",
+              "name": "水果",
+              "iconKey": "lucide:cherry",
+              "totalFen": "1626",
+              "ratioPercent": "1.68"
+            }
+          ]
+        },
+        "ranking": {
+          "scope": {
+            "period": "month",
+            "anchorDate": "2026-09-01",
+            "categoryIds": [],
+            "ledgerId": "218c795a-8d34-4b9d-a1c6-95859a0c8cc3",
+            "dataEpoch": "a0bac229-7ef7-4157-9d81-f52870bdca82",
+            "revision": 15,
+            "today": "2026-10-21",
+            "timezone": "Asia/Shanghai",
+            "start": "2026-09-01",
+            "end": "2026-10-01",
+            "effectiveEnd": "2026-10-01",
+            "scopeId": "d1a1369be80c3c88fe9b81cabdeba3073090c360a308831cb699d544a6196c7c"
+          },
+          "totalFen": "96530",
+          "items": [
+            {
+              "categoryId": "cat_repair",
+              "name": "维修",
+              "iconKey": "lucide:hammer",
+              "totalFen": "85000",
+              "ratioPercent": "88.06"
+            },
+            {
+              "categoryId": "cat_digital",
+              "name": "数码",
+              "iconKey": "lucide:cable",
+              "totalFen": "5554",
+              "ratioPercent": "5.75"
+            },
+            {
+              "categoryId": "cat_food",
+              "name": "餐饮",
+              "iconKey": "lucide:utensils",
+              "totalFen": "4350",
+              "ratioPercent": "4.51"
+            },
+            {
+              "categoryId": "cat_fruit",
+              "name": "水果",
+              "iconKey": "lucide:cherry",
+              "totalFen": "1626",
+              "ratioPercent": "1.68"
+            }
+          ]
+        },
+        "top": {
+          "scope": {
+            "period": "month",
+            "anchorDate": "2026-09-01",
+            "categoryIds": [],
+            "ledgerId": "218c795a-8d34-4b9d-a1c6-95859a0c8cc3",
+            "dataEpoch": "a0bac229-7ef7-4157-9d81-f52870bdca82",
+            "revision": 15,
+            "today": "2026-10-21",
+            "timezone": "Asia/Shanghai",
+            "start": "2026-09-01",
+            "end": "2026-10-01",
+            "effectiveEnd": "2026-10-01",
+            "scopeId": "d1a1369be80c3c88fe9b81cabdeba3073090c360a308831cb699d544a6196c7c"
+          },
+          "pointTotalFen": "92104",
+          "items": [
+            {
+              "transactionId": "4942d9fc-6b12-4ba5-bfc3-cfb30711341d",
+              "name": "iPad维修",
+              "amountFen": "85000",
+              "occurredTime": null,
+              "timePrecision": "date"
+            },
+            {
+              "transactionId": "d4e31029-c98c-4808-af94-9395d3db4bb4",
+              "name": "iPad保护膜",
+              "amountFen": "5554",
+              "occurredTime": null,
+              "timePrecision": "date"
+            },
+            {
+              "transactionId": "8a0cfa05-f2e0-4f71-8eaa-79e7f107e169",
+              "name": "午餐",
+              "amountFen": "1550",
+              "occurredTime": null,
+              "timePrecision": "date"
+            }
+          ]
+        }
+      },
+      {
+        "period": "year",
+        "series": {
+          "scope": {
+            "period": "year",
+            "anchorDate": "2026-01-01",
+            "categoryIds": [],
+            "ledgerId": "218c795a-8d34-4b9d-a1c6-95859a0c8cc3",
+            "dataEpoch": "a0bac229-7ef7-4157-9d81-f52870bdca82",
+            "revision": 15,
+            "today": "2026-10-21",
+            "timezone": "Asia/Shanghai",
+            "start": "2026-01-01",
+            "end": "2027-01-01",
+            "effectiveEnd": "2026-10-22",
+            "scopeId": "87d513e03e5579e0b7435c5269614a2c44b4cae9480074fdadfcf1c3d8fffc99"
+          },
+          "totalFen": "96530",
+          "points": [
+            {
+              "pointKey": "2026-01",
+              "label": "1月",
+              "start": "2026-01-01",
+              "end": "2026-02-01",
+              "amountFen": "0",
+              "isFuture": false
+            },
+            {
+              "pointKey": "2026-02",
+              "label": "2月",
+              "start": "2026-02-01",
+              "end": "2026-03-01",
+              "amountFen": "0",
+              "isFuture": false
+            },
+            {
+              "pointKey": "2026-03",
+              "label": "3月",
+              "start": "2026-03-01",
+              "end": "2026-04-01",
+              "amountFen": "0",
+              "isFuture": false
+            },
+            {
+              "pointKey": "2026-04",
+              "label": "4月",
+              "start": "2026-04-01",
+              "end": "2026-05-01",
+              "amountFen": "0",
+              "isFuture": false
+            },
+            {
+              "pointKey": "2026-05",
+              "label": "5月",
+              "start": "2026-05-01",
+              "end": "2026-06-01",
+              "amountFen": "0",
+              "isFuture": false
+            },
+            {
+              "pointKey": "2026-06",
+              "label": "6月",
+              "start": "2026-06-01",
+              "end": "2026-07-01",
+              "amountFen": "0",
+              "isFuture": false
+            },
+            {
+              "pointKey": "2026-07",
+              "label": "7月",
+              "start": "2026-07-01",
+              "end": "2026-08-01",
+              "amountFen": "0",
+              "isFuture": false
+            },
+            {
+              "pointKey": "2026-08",
+              "label": "8月",
+              "start": "2026-08-01",
+              "end": "2026-09-01",
+              "amountFen": "0",
+              "isFuture": false
+            },
+            {
+              "pointKey": "2026-09",
+              "label": "9月",
+              "start": "2026-09-01",
+              "end": "2026-10-01",
+              "amountFen": "96530",
+              "isFuture": false
+            },
+            {
+              "pointKey": "2026-10",
+              "label": "10月",
+              "start": "2026-10-01",
+              "end": "2026-11-01",
+              "amountFen": "0",
+              "isFuture": false
+            },
+            {
+              "pointKey": "2026-11",
+              "label": "11月",
+              "start": "2026-11-01",
+              "end": "2026-12-01",
+              "amountFen": "0",
+              "isFuture": true
+            },
+            {
+              "pointKey": "2026-12",
+              "label": "12月",
+              "start": "2026-12-01",
+              "end": "2027-01-01",
+              "amountFen": "0",
+              "isFuture": true
+            }
+          ]
+        },
+        "summary": {
+          "scope": {
+            "period": "year",
+            "anchorDate": "2026-01-01",
+            "categoryIds": [],
+            "ledgerId": "218c795a-8d34-4b9d-a1c6-95859a0c8cc3",
+            "dataEpoch": "a0bac229-7ef7-4157-9d81-f52870bdca82",
+            "revision": 15,
+            "today": "2026-10-21",
+            "timezone": "Asia/Shanghai",
+            "start": "2026-01-01",
+            "end": "2027-01-01",
+            "effectiveEnd": "2026-10-22",
+            "scopeId": "87d513e03e5579e0b7435c5269614a2c44b4cae9480074fdadfcf1c3d8fffc99"
+          },
+          "totalFen": "96530",
+          "count": 6,
+          "dailyAverage": {
+            "numeratorFen": "96530",
+            "denominatorDays": 294,
+            "displayYuan": "3.28"
+          },
+          "categoryTotals": [
+            {
+              "categoryId": "cat_repair",
+              "name": "维修",
+              "iconKey": "lucide:hammer",
+              "totalFen": "85000",
+              "ratioPercent": "88.06"
+            },
+            {
+              "categoryId": "cat_digital",
+              "name": "数码",
+              "iconKey": "lucide:cable",
+              "totalFen": "5554",
+              "ratioPercent": "5.75"
+            },
+            {
+              "categoryId": "cat_food",
+              "name": "餐饮",
+              "iconKey": "lucide:utensils",
+              "totalFen": "4350",
+              "ratioPercent": "4.51"
+            },
+            {
+              "categoryId": "cat_fruit",
+              "name": "水果",
+              "iconKey": "lucide:cherry",
+              "totalFen": "1626",
+              "ratioPercent": "1.68"
+            }
+          ]
+        },
+        "ranking": {
+          "scope": {
+            "period": "year",
+            "anchorDate": "2026-01-01",
+            "categoryIds": [],
+            "ledgerId": "218c795a-8d34-4b9d-a1c6-95859a0c8cc3",
+            "dataEpoch": "a0bac229-7ef7-4157-9d81-f52870bdca82",
+            "revision": 15,
+            "today": "2026-10-21",
+            "timezone": "Asia/Shanghai",
+            "start": "2026-01-01",
+            "end": "2027-01-01",
+            "effectiveEnd": "2026-10-22",
+            "scopeId": "87d513e03e5579e0b7435c5269614a2c44b4cae9480074fdadfcf1c3d8fffc99"
+          },
+          "totalFen": "96530",
+          "items": [
+            {
+              "categoryId": "cat_repair",
+              "name": "维修",
+              "iconKey": "lucide:hammer",
+              "totalFen": "85000",
+              "ratioPercent": "88.06"
+            },
+            {
+              "categoryId": "cat_digital",
+              "name": "数码",
+              "iconKey": "lucide:cable",
+              "totalFen": "5554",
+              "ratioPercent": "5.75"
+            },
+            {
+              "categoryId": "cat_food",
+              "name": "餐饮",
+              "iconKey": "lucide:utensils",
+              "totalFen": "4350",
+              "ratioPercent": "4.51"
+            },
+            {
+              "categoryId": "cat_fruit",
+              "name": "水果",
+              "iconKey": "lucide:cherry",
+              "totalFen": "1626",
+              "ratioPercent": "1.68"
+            }
+          ]
+        },
+        "top": {
+          "scope": {
+            "period": "year",
+            "anchorDate": "2026-01-01",
+            "categoryIds": [],
+            "ledgerId": "218c795a-8d34-4b9d-a1c6-95859a0c8cc3",
+            "dataEpoch": "a0bac229-7ef7-4157-9d81-f52870bdca82",
+            "revision": 15,
+            "today": "2026-10-21",
+            "timezone": "Asia/Shanghai",
+            "start": "2026-01-01",
+            "end": "2027-01-01",
+            "effectiveEnd": "2026-10-22",
+            "scopeId": "87d513e03e5579e0b7435c5269614a2c44b4cae9480074fdadfcf1c3d8fffc99"
+          },
+          "totalFen": "96530",
+          "items": [
+            {
+              "categoryId": "cat_repair",
+              "name": "维修",
+              "iconKey": "lucide:hammer",
+              "totalFen": "85000",
+              "ratioPercent": "88.06"
+            },
+            {
+              "categoryId": "cat_digital",
+              "name": "数码",
+              "iconKey": "lucide:cable",
+              "totalFen": "5554",
+              "ratioPercent": "5.75"
+            },
+            {
+              "categoryId": "cat_food",
+              "name": "餐饮",
+              "iconKey": "lucide:utensils",
+              "totalFen": "4350",
+              "ratioPercent": "4.51"
+            }
+          ]
+        }
+      }
+    ]
+  }
+}

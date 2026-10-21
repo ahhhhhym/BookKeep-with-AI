@@ -1,0 +1,17 @@
+{
+  "kind": "real-api S10 implementation self-test, public synthetic fixture only; not G3/independent acceptance",
+  "ok": false,
+  "requestCount": 0,
+  "startedAt": "2026-10-21T13:43:26.175Z",
+  "checks": [],
+  "secretStatus": {
+    "configured": false,
+    "mode": "encrypted",
+    "encryptionAvailable": true,
+    "version": 1,
+    "lastErrorCode": "SECRET_UNREADABLE"
+  },
+  "notExecuted": "Configured secret unavailable in same-user isolation; no request sent",
+  "failure": "SECRET_UNREADABLE",
+  "finishedAt": "2026-10-21T13:43:26.866Z"
+}

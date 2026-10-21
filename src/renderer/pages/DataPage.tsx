@@ -143,10 +143,11 @@ export function DataPage(): JSX.Element {
           <p className="tiny">导出接口按契约预留；S05 不伪造成功结果。</p>
         </Panel>
 
-        <Panel title="本地完整备份" actions={<span className="tiny">不含密钥/日志</span>}>
+        <Panel title="本地数据库备份" actions={<span className="tiny">不含密钥/日志</span>}>
           <p className="muted">
             一致数据库快照，保存到 <code>%LOCALAPPDATA%\BookKeepAI\backups</code>；档案记录 schema、账本与修订号，
             恢复前会再次校验 hash 与完整性。
+            当前仅支持无图片附件的账本；已有图片时会拒绝数据库单独备份或恢复。包含附件的完整备份将在S15接入。
           </p>
           <div className="form-actions">
             <button

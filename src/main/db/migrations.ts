@@ -9,6 +9,7 @@
  */
 
 import { createHash, randomUUID } from 'node:crypto';
+import { IMPORT_SQL } from './import-schema';
 import { AppError } from '../../shared/errors';
 import {
   listUserTables,
@@ -206,6 +207,7 @@ export const MIGRATIONS: readonly Migration[] = [
     name: 'initial-ledger-schema',
     sql: V1_SQL,
   },
+  { version: 2, name: 'image-job-candidate', sql: IMPORT_SQL },
 ];
 
 export const LATEST_SCHEMA_VERSION = MIGRATIONS[MIGRATIONS.length - 1].version;

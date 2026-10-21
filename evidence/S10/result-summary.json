@@ -1,0 +1,57 @@
+{
+  "kind": "S10 implementation self-test; pending stage receipt",
+  "baseline": "d1dcc337954f2800128a8efb0704770d9d607480",
+  "branch": "codex/s10-image-queue",
+  "tests": {
+    "total": 256,
+    "passed": 256,
+    "failed": 0
+  },
+  "desktop": {
+    "ok": true,
+    "checks": 16
+  },
+  "startup": {
+    "first": true,
+    "restart": true,
+    "checks": 28
+  },
+  "realAPI": {
+    "ok": true,
+    "totalHTTP": 3,
+    "allTokens": 5401,
+    "finalJob": "c943b267-9302-4258-8d15-5bd94c9f4ad0",
+    "finalCandidate": "d4d8b7dc-1dfc-44f9-8c9c-51a2a01faeeb",
+    "finalMainSha256": "1f1ada8d889e87e070c101acbb1d0359beb80bcb5b692c06b102e99116b96294",
+    "finalMatches": {
+      "amount": true,
+      "date": true,
+      "name": true
+    }
+  },
+  "AC07C": {
+    "s10PrerequisiteSelftest": true,
+    "formalCount": 6,
+    "totalFen": "96530",
+    "pendingFen": 9900,
+    "failed": true,
+    "finalAcceptance": "未执行，待S11/G3验证、S17复验"
+  },
+  "gates": {
+    "G1": "既有通过",
+    "G2": "既有通过，本步真实链路另列",
+    "G3": "未通过",
+    "G4": "未通过",
+    "G5": "未通过",
+    "G6": "未通过"
+  },
+  "unexecuted": [
+    "S11拒绝/批准/G3",
+    "S17复验",
+    "真人OS文件对话框/IME/读屏",
+    "Win11/干净机/完整DPI",
+    "真实90秒网络错误",
+    "完整附件备份/S15加固",
+    "正式ZIP/Release/发布"
+  ]
+}

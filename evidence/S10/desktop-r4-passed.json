@@ -1,0 +1,530 @@
+{
+  "ok": true,
+  "kind": "S10 implementation self-test; actual Electron/preload/SQLite, MOCK HTTP; not independent acceptance",
+  "checks": [
+    {
+      "id": "UI-native-selection-entry-content-validation-prepared-preview-and-hash",
+      "ok": true,
+      "detail": {
+        "picker": "dialog result injected by test; OS dialog interaction not tested"
+      }
+    },
+    {
+      "id": "UI-loading-follows-actual-pending-request-and-upload-consent",
+      "ok": true,
+      "detail": {}
+    },
+    {
+      "id": "UI-pointer-and-keyboard-crop-masks-confirmed-as-opaque-PNG-pixels",
+      "ok": true,
+      "detail": {
+        "width": 900,
+        "height": 600,
+        "pixel": [
+          0,
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "id": "UI-multiple-persisted-candidates-source-evidence-and-no-approval-control",
+      "ok": true,
+      "detail": {}
+    },
+    {
+      "id": "malicious-provider-text-rendered-inert-with-warning",
+      "ok": true,
+      "detail": {}
+    },
+    {
+      "id": "exact-hash-reuse-no-second-HTTP",
+      "ok": true,
+      "detail": {}
+    },
+    {
+      "id": "illegal-JSON-failed-persisted-zero-partial-draft",
+      "ok": true,
+      "detail": {}
+    },
+    {
+      "id": "UI-cancel-generation-fence-drops-abort-ignoring-late-success",
+      "ok": true,
+      "detail": {}
+    },
+    {
+      "id": "offline-max3-persisted-attempts-bounded-real-backoff",
+      "ok": true,
+      "detail": {
+        "attempts": 3,
+        "backoffMs": [
+          2000,
+          4000
+        ]
+      }
+    },
+    {
+      "id": "actual-File-WebP-through-webUtils-drop-token-and-IPC",
+      "ok": true,
+      "detail": {}
+    },
+    {
+      "id": "UI-drop-handler-imports-real-File-and-reuses-image",
+      "ok": true,
+      "detail": {}
+    },
+    {
+      "id": "drop-rejects-path-string-masquerading-as-File",
+      "ok": true,
+      "detail": {}
+    },
+    {
+      "id": "real-process-restart-persists-pending-failed-cancelled-and-interrupted-no-charge-resume",
+      "ok": true,
+      "detail": {}
+    },
+    {
+      "id": "native-SQLite-schema2-source-FKs-quickcheck-and-6-96530-after-restart",
+      "ok": true,
+      "detail": {
+        "schema": 2,
+        "formal": {
+          "count": 6,
+          "total": 96530
+        },
+        "jobs": [
+          {
+            "status": "cancelled",
+            "error_code": "CANCELLED",
+            "count": 1
+          },
+          {
+            "status": "completed",
+            "error_code": null,
+            "count": 1
+          },
+          {
+            "status": "failed",
+            "error_code": "INTERRUPTED",
+            "count": 1
+          },
+          {
+            "status": "failed",
+            "error_code": "NETWORK_ERROR",
+            "count": 1
+          },
+          {
+            "status": "failed",
+            "error_code": "OUTPUT_SCHEMA_INVALID",
+            "count": 1
+          }
+        ],
+        "candidates": [
+          {
+            "review_state": "pending_review",
+            "count": 2,
+            "amount": 12000
+          }
+        ],
+        "links": {
+          "count": 2
+        },
+        "quick": [
+          {
+            "quick_check": "ok"
+          }
+        ],
+        "fk": []
+      }
+    },
+    {
+      "id": "week-month-year-ranking-Top3-and-average-through-preload-ignore-drafts-and-failed-jobs",
+      "ok": true,
+      "detail": {}
+    },
+    {
+      "id": "640x600-no-horizontal-overflow",
+      "ok": true,
+      "detail": {}
+    }
+  ],
+  "errors": [],
+  "notices": [
+    "The Content Security Policy directive 'frame-ancestors' is ignored when delivered via a <meta> element.",
+    "The Content Security Policy directive 'frame-ancestors' is ignored when delivered via a <meta> element."
+  ],
+  "sqlBeforeRestart": {
+    "schema": 2,
+    "formal": {
+      "count": 6,
+      "total": 96530
+    },
+    "jobs": [
+      {
+        "status": "completed",
+        "error_code": null,
+        "count": 1
+      }
+    ],
+    "candidates": [
+      {
+        "review_state": "pending_review",
+        "count": 2,
+        "amount": 12000
+      }
+    ],
+    "links": {
+      "count": 2
+    },
+    "quick": [
+      {
+        "quick_check": "ok"
+      }
+    ],
+    "fk": []
+  },
+  "sqlAfterRestart": {
+    "schema": 2,
+    "formal": {
+      "count": 6,
+      "total": 96530
+    },
+    "jobs": [
+      {
+        "status": "cancelled",
+        "error_code": "CANCELLED",
+        "count": 1
+      },
+      {
+        "status": "completed",
+        "error_code": null,
+        "count": 1
+      },
+      {
+        "status": "failed",
+        "error_code": "INTERRUPTED",
+        "count": 1
+      },
+      {
+        "status": "failed",
+        "error_code": "NETWORK_ERROR",
+        "count": 1
+      },
+      {
+        "status": "failed",
+        "error_code": "OUTPUT_SCHEMA_INVALID",
+        "count": 1
+      }
+    ],
+    "candidates": [
+      {
+        "review_state": "pending_review",
+        "count": 2,
+        "amount": 12000
+      }
+    ],
+    "links": {
+      "count": 2
+    },
+    "quick": [
+      {
+        "quick_check": "ok"
+      }
+    ],
+    "fk": []
+  },
+  "formalViews": [
+    {
+      "period": "week",
+      "total": "96530",
+      "count": 6,
+      "average": {
+        "numeratorFen": "96530",
+        "denominatorDays": 7,
+        "displayYuan": "137.90"
+      },
+      "point": {
+        "scope": {
+          "period": "week",
+          "anchorDate": "2026-09-07",
+          "categoryIds": [],
+          "ledgerId": "aa526f61-5f0f-42eb-bdc3-92e86abe4781",
+          "dataEpoch": "48457e46-6b16-4558-807f-dbfd928ec647",
+          "revision": 34,
+          "today": "2026-10-21",
+          "timezone": "Asia/Shanghai",
+          "start": "2026-09-07",
+          "end": "2026-09-14",
+          "effectiveEnd": "2026-09-14",
+          "scopeId": "dc57c2ee5419053f122b948e73becc1eb85de7f3b55aa26bebb344f31857331e"
+        },
+        "pointTotalFen": "92104",
+        "items": [
+          {
+            "transactionId": "0eb2a7cd-96ad-4da9-b160-c874eb539d89",
+            "name": "iPad维修",
+            "amountFen": "85000",
+            "occurredTime": null,
+            "timePrecision": "date"
+          },
+          {
+            "transactionId": "94a5eb45-5650-467a-8d48-a7eee1ad1c78",
+            "name": "iPad保护膜",
+            "amountFen": "5554",
+            "occurredTime": null,
+            "timePrecision": "date"
+          },
+          {
+            "transactionId": "63402391-bac7-4db0-a33c-bd58c084d563",
+            "name": "午餐",
+            "amountFen": "1550",
+            "occurredTime": null,
+            "timePrecision": "date"
+          }
+        ]
+      },
+      "rank": {
+        "scope": {
+          "period": "week",
+          "anchorDate": "2026-09-07",
+          "categoryIds": [],
+          "ledgerId": "aa526f61-5f0f-42eb-bdc3-92e86abe4781",
+          "dataEpoch": "48457e46-6b16-4558-807f-dbfd928ec647",
+          "revision": 34,
+          "today": "2026-10-21",
+          "timezone": "Asia/Shanghai",
+          "start": "2026-09-07",
+          "end": "2026-09-14",
+          "effectiveEnd": "2026-09-14",
+          "scopeId": "dc57c2ee5419053f122b948e73becc1eb85de7f3b55aa26bebb344f31857331e"
+        },
+        "totalFen": "96530",
+        "items": [
+          {
+            "categoryId": "cat_repair",
+            "name": "维修",
+            "iconKey": "lucide:hammer",
+            "totalFen": "85000",
+            "ratioPercent": "88.06"
+          },
+          {
+            "categoryId": "cat_digital",
+            "name": "数码",
+            "iconKey": "lucide:cable",
+            "totalFen": "5554",
+            "ratioPercent": "5.75"
+          },
+          {
+            "categoryId": "cat_food",
+            "name": "餐饮",
+            "iconKey": "lucide:utensils",
+            "totalFen": "4350",
+            "ratioPercent": "4.51"
+          },
+          {
+            "categoryId": "cat_fruit",
+            "name": "水果",
+            "iconKey": "lucide:cherry",
+            "totalFen": "1626",
+            "ratioPercent": "1.68"
+          }
+        ]
+      }
+    },
+    {
+      "period": "month",
+      "total": "96530",
+      "count": 6,
+      "average": {
+        "numeratorFen": "96530",
+        "denominatorDays": 30,
+        "displayYuan": "32.18"
+      },
+      "point": {
+        "scope": {
+          "period": "month",
+          "anchorDate": "2026-09-01",
+          "categoryIds": [],
+          "ledgerId": "aa526f61-5f0f-42eb-bdc3-92e86abe4781",
+          "dataEpoch": "48457e46-6b16-4558-807f-dbfd928ec647",
+          "revision": 34,
+          "today": "2026-10-21",
+          "timezone": "Asia/Shanghai",
+          "start": "2026-09-01",
+          "end": "2026-10-01",
+          "effectiveEnd": "2026-10-01",
+          "scopeId": "4ee3819adda7f49ca0f63038c339ae1d6a622c236fa7f4308cb02ce267bb43db"
+        },
+        "pointTotalFen": "92104",
+        "items": [
+          {
+            "transactionId": "0eb2a7cd-96ad-4da9-b160-c874eb539d89",
+            "name": "iPad维修",
+            "amountFen": "85000",
+            "occurredTime": null,
+            "timePrecision": "date"
+          },
+          {
+            "transactionId": "94a5eb45-5650-467a-8d48-a7eee1ad1c78",
+            "name": "iPad保护膜",
+            "amountFen": "5554",
+            "occurredTime": null,
+            "timePrecision": "date"
+          },
+          {
+            "transactionId": "63402391-bac7-4db0-a33c-bd58c084d563",
+            "name": "午餐",
+            "amountFen": "1550",
+            "occurredTime": null,
+            "timePrecision": "date"
+          }
+        ]
+      },
+      "rank": {
+        "scope": {
+          "period": "month",
+          "anchorDate": "2026-09-01",
+          "categoryIds": [],
+          "ledgerId": "aa526f61-5f0f-42eb-bdc3-92e86abe4781",
+          "dataEpoch": "48457e46-6b16-4558-807f-dbfd928ec647",
+          "revision": 34,
+          "today": "2026-10-21",
+          "timezone": "Asia/Shanghai",
+          "start": "2026-09-01",
+          "end": "2026-10-01",
+          "effectiveEnd": "2026-10-01",
+          "scopeId": "4ee3819adda7f49ca0f63038c339ae1d6a622c236fa7f4308cb02ce267bb43db"
+        },
+        "totalFen": "96530",
+        "items": [
+          {
+            "categoryId": "cat_repair",
+            "name": "维修",
+            "iconKey": "lucide:hammer",
+            "totalFen": "85000",
+            "ratioPercent": "88.06"
+          },
+          {
+            "categoryId": "cat_digital",
+            "name": "数码",
+            "iconKey": "lucide:cable",
+            "totalFen": "5554",
+            "ratioPercent": "5.75"
+          },
+          {
+            "categoryId": "cat_food",
+            "name": "餐饮",
+            "iconKey": "lucide:utensils",
+            "totalFen": "4350",
+            "ratioPercent": "4.51"
+          },
+          {
+            "categoryId": "cat_fruit",
+            "name": "水果",
+            "iconKey": "lucide:cherry",
+            "totalFen": "1626",
+            "ratioPercent": "1.68"
+          }
+        ]
+      }
+    },
+    {
+      "period": "year",
+      "total": "96530",
+      "count": 6,
+      "average": {
+        "numeratorFen": "96530",
+        "denominatorDays": 294,
+        "displayYuan": "3.28"
+      },
+      "point": {
+        "scope": {
+          "period": "year",
+          "anchorDate": "2026-01-01",
+          "categoryIds": [],
+          "ledgerId": "aa526f61-5f0f-42eb-bdc3-92e86abe4781",
+          "dataEpoch": "48457e46-6b16-4558-807f-dbfd928ec647",
+          "revision": 34,
+          "today": "2026-10-21",
+          "timezone": "Asia/Shanghai",
+          "start": "2026-01-01",
+          "end": "2027-01-01",
+          "effectiveEnd": "2026-10-22",
+          "scopeId": "ab89b2ce78de1a62acc558f6f57461c30f91666bd29b7cec4944ca13db6a38aa"
+        },
+        "totalFen": "96530",
+        "items": [
+          {
+            "categoryId": "cat_repair",
+            "name": "维修",
+            "iconKey": "lucide:hammer",
+            "totalFen": "85000",
+            "ratioPercent": "88.06"
+          },
+          {
+            "categoryId": "cat_digital",
+            "name": "数码",
+            "iconKey": "lucide:cable",
+            "totalFen": "5554",
+            "ratioPercent": "5.75"
+          },
+          {
+            "categoryId": "cat_food",
+            "name": "餐饮",
+            "iconKey": "lucide:utensils",
+            "totalFen": "4350",
+            "ratioPercent": "4.51"
+          }
+        ]
+      },
+      "rank": {
+        "scope": {
+          "period": "year",
+          "anchorDate": "2026-01-01",
+          "categoryIds": [],
+          "ledgerId": "aa526f61-5f0f-42eb-bdc3-92e86abe4781",
+          "dataEpoch": "48457e46-6b16-4558-807f-dbfd928ec647",
+          "revision": 34,
+          "today": "2026-10-21",
+          "timezone": "Asia/Shanghai",
+          "start": "2026-01-01",
+          "end": "2027-01-01",
+          "effectiveEnd": "2026-10-22",
+          "scopeId": "ab89b2ce78de1a62acc558f6f57461c30f91666bd29b7cec4944ca13db6a38aa"
+        },
+        "totalFen": "96530",
+        "items": [
+          {
+            "categoryId": "cat_repair",
+            "name": "维修",
+            "iconKey": "lucide:hammer",
+            "totalFen": "85000",
+            "ratioPercent": "88.06"
+          },
+          {
+            "categoryId": "cat_digital",
+            "name": "数码",
+            "iconKey": "lucide:cable",
+            "totalFen": "5554",
+            "ratioPercent": "5.75"
+          },
+          {
+            "categoryId": "cat_food",
+            "name": "餐饮",
+            "iconKey": "lucide:utensils",
+            "totalFen": "4350",
+            "ratioPercent": "4.51"
+          },
+          {
+            "categoryId": "cat_fruit",
+            "name": "水果",
+            "iconKey": "lucide:cherry",
+            "totalFen": "1626",
+            "ratioPercent": "1.68"
+          }
+        ]
+      }
+    }
+  ],
+  "requestCount": 0
+}

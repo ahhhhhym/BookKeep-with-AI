@@ -1,0 +1,9 @@
+{
+  "kind": "real-api S10 implementation self-test, public synthetic fixture only; not G3/independent acceptance",
+  "ok": false,
+  "requestCount": 0,
+  "startedAt": "2026-10-21T13:42:32.535Z",
+  "checks": [],
+  "failure": "Expected values to be strictly equal:\n\nfalse !== true\n",
+  "finishedAt": "2026-10-21T13:42:33.276Z"
+}

@@ -227,3 +227,6 @@ S06按D45落实客户端世代栅栏：列表快照与编辑/删除/恢复意图
 统计服务使用现有LedgerStore上下文和正式transaction表，在单次DEFERRED只读事务中读取revision、日聚合和分类/Top3。只读取本账本deleted_at为空且在[start,effectiveEnd)的记录；类别停用不删历史额。SQL SUM转十进制字符串，BigInt累计及显示，SQLite整数溢出及跨组64位超限统一AMOUNT_TOTAL_OVERFLOW。所有视图、排行、点详情以相同scope绑定；不从列表已加载分页计算。
 
 S04依赖未锁ECharts，S07选择本地SVG，避免为有限折线引入新运行依赖，保留建议架构的主进程统计与受限渲染职责。图形只把服务已计算的整数额换成像素坐标；可访问性采用单Tab图入口、键盘导航、正常流详情及同值数据表。无迁移、无新依赖、无网络/API调用。
+
+## S10 schema v2与服务落点
+新增image_asset/import_job/candidate，文件引用在当前generation attachments内；旧v1迁移字节保持不变。服务通过LedgerStore内部事务访问当前库，恢复时中止旧任务并绑定新库。完整字段与状态见[S10-IMPLEMENTATION](S10-IMPLEMENTATION.md)和新增迁移。S05 DB-only备份无法安全包含附件时拒绝操作，完整附件备份交S15。

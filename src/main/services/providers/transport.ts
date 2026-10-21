@@ -4,6 +4,7 @@ import { CandidateSchemaError, parseCandidateOutput, type CandidateOutput } from
 import { DEEPSEEK_MODEL } from '../../../shared/constants';
 export const ENDPOINT = 'https://api.deepseek.com/chat/completions';
 export interface TransportMetadata {
+  retryAfterMs?: number | null;
   diagnostics?: { stage: string; finishReason: string | null; issues: { path: string; code: string }[] };
   httpStatus: number | null;
   actualModel: string | null;
@@ -21,10 +22,13 @@ export function httpError(status: number): ErrorCode {
 }
 export async function requestImageJson(options: {
   key: string; image: Buffer; prompt: string; metadata: TransportMetadata;
-  fetcher?: typeof fetch; timeoutMs?: number;
+  fetcher?: typeof fetch; timeoutMs?: number; signal?: AbortSignal; imageText?: string;
 }): Promise<CandidateOutput> {
   if (options.image.length === 0 || options.image.length > 10 * 1024 * 1024) throw new AppError('IMAGE_TOO_LARGE');
   const abort = new AbortController();
+  const cancel = () => abort.abort();
+  options.signal?.addEventListener('abort', cancel, { once: true });
+  if (options.signal?.aborted) abort.abort();
   const diagnostics = { stage: 'request', finishReason: null as string | null, issues: [] as { path: string; code: string }[] };
   options.metadata.diagnostics = diagnostics;
   const timer = setTimeout(() => abort.abort(), options.timeoutMs ?? 90000);
@@ -35,12 +39,17 @@ export async function requestImageJson(options: {
       body: JSON.stringify({ model: DEEPSEEK_MODEL, thinking: { type: 'disabled' }, max_tokens: 4096,
         response_format: { type: 'json_object' },
         messages: [{ role: 'system', content: options.prompt }, { role: 'user', content: [
-          { type: 'text', text: '读取这张无隐私合成消费图中的可见字段，按指定json格式输出。' },
+          { type: 'text', text: options.imageText ?? '读取这张无隐私合成消费图中的可见字段，按指定json格式输出。' },
           { type: 'image_url', image_url: { url: `data:image/png;base64,${options.image.toString('base64')}`, detail: 'high' } },
         ] }] }),
     });
     options.metadata.httpStatus = response.status;
-    if (!response.ok) { await response.body?.cancel(); throw new AppError(httpError(response.status), { details: { providerStatus: response.status } }); }
+    if (!response.ok) {
+      const raw=response.headers.get('retry-after');
+      const delay=raw && /^\d+$/.test(raw)?Number(raw)*1000:raw?Date.parse(raw)-Date.now():NaN;
+      options.metadata.retryAfterMs=Number.isFinite(delay)&&delay>=0&&delay<=60000?delay:null;
+      await response.body?.cancel(); throw new AppError(httpError(response.status), { details: { providerStatus: response.status } });
+    }
     const reader = response.body?.getReader();
     if (!reader) throw new AppError('OUTPUT_SCHEMA_INVALID');
     const chunks: Uint8Array[] = []; let size = 0;
@@ -81,5 +90,5 @@ export async function requestImageJson(options: {
   } catch (error) {
     if (error instanceof AppError) throw error;
     throw new AppError(abort.signal.aborted ? 'REQUEST_TIMEOUT' : 'NETWORK_ERROR');
-  } finally { clearTimeout(timer); }
+  } finally { clearTimeout(timer); options.signal?.removeEventListener('abort', cancel); }
 }
