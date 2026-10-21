@@ -1,0 +1,131 @@
+{
+  "generatedBy": "scripts/collect-licenses.mjs",
+  "packages": [
+    {
+      "name": "sharp",
+      "version": "0.35.5",
+      "license": "Apache-2.0",
+      "fileName": "sharp/LICENSE",
+      "sha256": "73BA74DFAA520B49A401B5D21459A8523A146F3B7518A833EEA5EFA85130BF68",
+      "scope": "runtime",
+      "purpose": "本地图片内容校验与裁剪遮盖"
+    },
+    {
+      "name": "@img/sharp-win32-x64",
+      "version": "0.35.5",
+      "license": "Apache-2.0 AND LGPL-3.0-or-later",
+      "fileName": "@img/sharp-win32-x64/LICENSE",
+      "sha256": "DC1F5D2D43C5531DFE0ACAF4E950EA5DBE3E61E1850CF0E983BDA7EFC10D6693",
+      "scope": "runtime",
+      "purpose": "Sharp Windows x64 原生解码及 libvips"
+    },
+    {
+      "name": "electron",
+      "version": "44.9.1",
+      "license": "MIT",
+      "fileName": "electron/LICENSE",
+      "sha256": "5154E165BD6C2CC0CFBCD8916498C7ABAB0497923BAFCD5CB07673FE8480087D",
+      "scope": "runtime",
+      "purpose": "桌面运行时"
+    },
+    {
+      "name": "react",
+      "version": "19.3.1",
+      "license": "MIT",
+      "fileName": "react/LICENSE",
+      "sha256": "DA6D3703ED11CBE42BD212C725957C98DA23CBFF1998C05FA4B3D976D1A58E93",
+      "scope": "runtime",
+      "purpose": "界面库（打包进渲染资源）"
+    },
+    {
+      "name": "react-dom",
+      "version": "19.3.1",
+      "license": "MIT",
+      "fileName": "react-dom/LICENSE",
+      "sha256": "DA6D3703ED11CBE42BD212C725957C98DA23CBFF1998C05FA4B3D976D1A58E93",
+      "scope": "runtime",
+      "purpose": "界面渲染（打包进渲染资源）"
+    },
+    {
+      "name": "lucide-react",
+      "version": "1.60.0",
+      "license": "ISC",
+      "fileName": "lucide-react/LICENSE",
+      "sha256": "B495047BD93A9B06913511076F504DABA17D5BBEB3E0650F3BB53A4220329C57",
+      "scope": "runtime",
+      "purpose": "本地 SVG 图标组件（ISC + Feather 衍生 MIT）"
+    },
+    {
+      "name": "lucide-static",
+      "version": "1.60.0",
+      "license": "ISC",
+      "fileName": "lucide-static/LICENSE",
+      "sha256": "B495047BD93A9B06913511076F504DABA17D5BBEB3E0650F3BB53A4220329C57",
+      "scope": "build",
+      "purpose": "图标 slug 核验与许可原文来源"
+    },
+    {
+      "name": "better-sqlite3",
+      "version": "13.0.3",
+      "license": "MIT",
+      "fileName": "better-sqlite3/LICENSE",
+      "sha256": "09856B52897C91AB67E7456EF43067019F31DFD3B87FDA72E655736B1EBDEE55",
+      "scope": "runtime",
+      "purpose": "本地 SQLite 原生模块（N-API）"
+    },
+    {
+      "name": "vite",
+      "version": "8.3.4",
+      "license": "MIT",
+      "fileName": "vite/LICENSE.md",
+      "sha256": "A47172E44A86A7E2CD1C16282341F7726EC60CAAFE3A6166FE3E0602005B6FA6",
+      "scope": "build",
+      "purpose": "渲染层构建"
+    },
+    {
+      "name": "esbuild",
+      "version": "0.28.2",
+      "license": "MIT",
+      "fileName": "esbuild/LICENSE.md",
+      "sha256": "B40EC5BAEC7BB34FA5B1C09521FA3CD52D5FAD7ADAFED74932A2010D3612A681",
+      "scope": "build",
+      "purpose": "主进程/preload 打包"
+    },
+    {
+      "name": "typescript",
+      "version": "5.9.3",
+      "license": "Apache-2.0",
+      "fileName": "typescript/LICENSE.txt",
+      "sha256": "A7D00BFD54525BC694B6E32F64C7EBCF5E6B7AE3657BE5CC12767BCE74654A47",
+      "scope": "build",
+      "purpose": "类型检查"
+    },
+    {
+      "name": "electron-builder",
+      "version": "26.15.3",
+      "license": "MIT",
+      "fileName": "electron-builder/LICENSE",
+      "sha256": "BED8D0AB3E6031817F775A641FF37313B0F5591BC8BA0ED79B978DAFBD4231CE",
+      "scope": "build",
+      "purpose": "Windows ZIP 打包"
+    },
+    {
+      "name": "vitest",
+      "version": "5.0.5",
+      "license": "MIT",
+      "fileName": "vitest/LICENSE.md",
+      "sha256": "78FBAC9E571C2EE260DEB2A1941A8A18F0A85E3F39C23D08E2DCEE6DA4841998",
+      "scope": "build",
+      "purpose": "单元测试"
+    },
+    {
+      "name": "@vitejs/plugin-react",
+      "version": "6.1.2",
+      "license": "MIT",
+      "fileName": "@vitejs/plugin-react/LICENSE",
+      "sha256": "29B68325FE026047D13E187B44C33B2ACACF7DC647DEC4583702E59F235E13B5",
+      "scope": "build",
+      "purpose": "React 构建插件"
+    }
+  ]
+}
