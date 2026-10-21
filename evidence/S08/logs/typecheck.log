@@ -1,0 +1,5 @@
+
+> bookkeepai@0.1.0 typecheck
+> tsc -p tsconfig.main.json --noEmit && tsc -p tsconfig.renderer.json --noEmit && tsc -p tsconfig.tests.json --noEmit
+
+EXIT_CODE=0

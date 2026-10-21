@@ -1,0 +1,17 @@
+PASS empty-ledger-real-db
+PASS keyboard-ctrl-n-focus-trap-esc-unsaved-and-preserved-invalid-input
+PASS F01-create-stable-order-collapse
+PASS edit-delete-confirm-restore-immediate-totals
+PASS name-search-empty-result-date-inclusive
+PASS category-management-entry-and-persistent-return
+PASS actual-process-restart-and-sql-display-reconciliation
+PASS real-save-pending-response-loss-same-mutation-id-replay
+PASS real-version-conflict-preserved-input-explicit-rebase
+PASS real-restore-old-form-bound-epoch-rejected-after-preload-updated
+PASS disabled-original-category-kept-on-real-edit
+PASS controlled-renderer-clock-shanghai-midnight-cross-year-refresh
+PASS viewport-1280x720
+PASS viewport-640x480
+PASS long-name-cross-year-unknown-time-and-200-percent-form-scroll
+S06 UI checks 15/15
+EXIT_CODE=0

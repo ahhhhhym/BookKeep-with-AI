@@ -1,0 +1,8 @@
+{
+  "checkedAt": "2026-10-21T14:49:20.2099045+08:00",
+  "requestedPath": "C:\\Users\\Administrator\\AppData\\Local\\Microsoft\\WindowsApps\\pwsh.exe",
+  "effectiveProcessPath": "C:\\Program Files\\WindowsApps\\Microsoft.PowerShell_7.6.7.0_x64__8wekyb3d8bbwe\\pwsh.exe",
+  "version": "7.6.7",
+  "edition": "Core",
+  "firstAttempt": "Tool shell parameter was not honored: bundled PowerShell 7.6.5 Core. Preserved in attempt1-bundled-shell. Acceptance commands rerun through explicit requested executable."
+}

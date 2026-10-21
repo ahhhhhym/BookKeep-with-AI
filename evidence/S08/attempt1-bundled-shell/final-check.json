@@ -1,0 +1,34 @@
+{
+  "checkedAt": "2026-10-21T14:47:21.8704245+08:00",
+  "frozenCommit": "47b60fe503c38e05497e0252879587f2dfc6d5bc",
+  "trackedFrozen": 607,
+  "trackedUnchanged": 606,
+  "allowedTrackedDifferences": [
+    {
+      "path": "执行看板.md",
+      "before": "715D68A0063CE93EE8F5ACE2FD382C0A20F09A624285EF48448DCF057B9B91B9",
+      "after": "7451D0C1E1A46A9FDF44FC675356AE80F03C9EE057231EC453DAED13D4C4D34C"
+    }
+  ],
+  "unexpectedTrackedDifferences": [],
+  "sourceTestsScriptsResourcesChanged": false,
+  "buildFrozen": 5,
+  "buildDifferences": [],
+  "projectProcesses": [],
+  "newEvidenceFileCount": 65,
+  "unexpectedDatabaseOrArchive": [],
+  "sensitivePatternMatches": [],
+  "gitStatusAtCheck": [
+    " M 执行看板.md",
+    "?? evidence/S08/",
+    "?? handoff/S08/",
+    "?? issues/BK-S08-001.md"
+  ],
+  "phase": "after acceptance and report; before evidence commit",
+  "g1": "NOT_PASSED",
+  "s09Allowed": false,
+  "blockers": [
+    "BK-S08-001"
+  ],
+  "limitations": "Human UI/IME/screen reader/system DPI/real system midnight/Win11/clean machine/formal ZIP/API not certified"
+}

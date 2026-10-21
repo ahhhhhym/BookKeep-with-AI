@@ -1,0 +1,39 @@
+{
+  "checkedAt": "2026-10-21T14:51:20.9438315+08:00",
+  "frozenCommit": "47b60fe503c38e05497e0252879587f2dfc6d5bc",
+  "actualPowerShell": "7.6.7",
+  "edition": "Core",
+  "actualPowerShellProcess": "C:\\Program Files\\WindowsApps\\Microsoft.PowerShell_7.6.7.0_x64__8wekyb3d8bbwe\\pwsh.exe",
+  "finalCommandCount": 11,
+  "finalCommandFailures": [],
+  "trackedFrozen": 607,
+  "trackedUnchanged": 606,
+  "allowedTrackedDifferences": [
+    {
+      "path": "执行看板.md",
+      "before": "715D68A0063CE93EE8F5ACE2FD382C0A20F09A624285EF48448DCF057B9B91B9",
+      "after": "7451D0C1E1A46A9FDF44FC675356AE80F03C9EE057231EC453DAED13D4C4D34C"
+    }
+  ],
+  "unexpectedTrackedDifferences": [],
+  "sourceTestsScriptsResourcesChanged": false,
+  "buildFrozen": 5,
+  "buildDifferences": [],
+  "projectProcesses": [],
+  "newEvidenceFileCountAtCheck": 140,
+  "unexpectedDatabaseOrArchive": [],
+  "sensitivePatternMatches": [],
+  "gitStatusAtCheck": [
+    " M 执行看板.md",
+    "?? evidence/S08/",
+    "?? handoff/S08/",
+    "?? issues/BK-S08-001.md"
+  ],
+  "phase": "Final explicit requested PowerShell acceptance; before evidence commit",
+  "g1": "NOT_PASSED",
+  "s09Allowed": false,
+  "blockers": [
+    "BK-S08-001"
+  ],
+  "limitations": "Persisted candidate state isolation not executed; human UI/IME/screen reader/system DPI/real system midnight/Win11/clean machine/formal ZIP/API not certified"
+}

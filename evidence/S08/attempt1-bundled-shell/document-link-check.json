@@ -1,0 +1,96 @@
+{
+  "ok": true,
+  "count": 18,
+  "results": [
+    {
+      "file": "evidence/S08/ACCEPTANCE.md",
+      "link": "../../issues/BK-S08-001.md",
+      "exists": true
+    },
+    {
+      "file": "evidence/S08/ACCEPTANCE.md",
+      "link": "historical-verification.json",
+      "exists": true
+    },
+    {
+      "file": "evidence/S08/ACCEPTANCE.md",
+      "link": "input-verification.json",
+      "exists": true
+    },
+    {
+      "file": "evidence/S08/ACCEPTANCE.md",
+      "link": "FROZEN-TRACKED.sha256",
+      "exists": true
+    },
+    {
+      "file": "evidence/S08/ACCEPTANCE.md",
+      "link": "FROZEN-BUILD.sha256",
+      "exists": true
+    },
+    {
+      "file": "evidence/S08/ACCEPTANCE.md",
+      "link": "final-check.json",
+      "exists": true
+    },
+    {
+      "file": "evidence/S08/ACCEPTANCE.md",
+      "link": "replay-routing.json",
+      "exists": true
+    },
+    {
+      "file": "evidence/S08/ACCEPTANCE.md",
+      "link": "calculations.json",
+      "exists": true
+    },
+    {
+      "file": "evidence/S08/ACCEPTANCE.md",
+      "link": "../../issues/BK-S07-004.md",
+      "exists": true
+    },
+    {
+      "file": "issues/BK-S08-001.md",
+      "link": "../evidence/S08/ACCEPTANCE.md",
+      "exists": true
+    },
+    {
+      "file": "issues/BK-S08-001.md",
+      "link": "../evidence/S08/freeze.json",
+      "exists": true
+    },
+    {
+      "file": "issues/BK-S08-001.md",
+      "link": "../evidence/S08/observation/observations.json",
+      "exists": true
+    },
+    {
+      "file": "issues/BK-S08-001.md",
+      "link": "../evidence/S08/observation/review-not-implemented.png",
+      "exists": true
+    },
+    {
+      "file": "issues/BK-S08-001.md",
+      "link": "../evidence/S08/schema.sql",
+      "exists": true
+    },
+    {
+      "file": "issues/BK-S08-001.md",
+      "link": "../evidence/S08/db-report.json",
+      "exists": true
+    },
+    {
+      "file": "handoff/S08/HANDOFF.md",
+      "link": "../../evidence/S08/ACCEPTANCE.md",
+      "exists": true
+    },
+    {
+      "file": "handoff/S08/HANDOFF.md",
+      "link": "../../evidence/S08/calculations.json",
+      "exists": true
+    },
+    {
+      "file": "handoff/S08/HANDOFF.md",
+      "link": "../../evidence/S08/observation/observations.json",
+      "exists": true
+    }
+  ]
+}

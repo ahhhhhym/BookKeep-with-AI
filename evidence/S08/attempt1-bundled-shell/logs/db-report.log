@@ -1,0 +1,71 @@
+{
+  "generatedAt": "2026-10-21T06:40:16.773Z",
+  "dataRootSuffix": "BookKeepAI\\data\\generations",
+  "generationId": "232d545f-9f4f-470b-a404-907cd1cd0f45",
+  "databaseRelativePath": "data/generations/232d545f-9f4f-470b-a404-907cd1cd0f45/ledger.db",
+  "appMeta": {
+    "db_schema_version": 1,
+    "contract_version": "bookkeep.v1",
+    "data_epoch": "f8fa0443-a15e-41d2-9c07-5de2fa55862b",
+    "active_generation": "232d545f-9f4f-470b-a404-907cd1cd0f45",
+    "migration_state": "clean"
+  },
+  "ledger": [
+    {
+      "id": "4c04e33f-5958-427a-a759-4472b26a1eca",
+      "name": "默认账本",
+      "currency": "CNY",
+      "timezone": "Asia/Shanghai",
+      "default_key": "default",
+      "data_revision": 4,
+      "dataset_revision": 0,
+      "version": 1,
+      "created_at": "2026-10-21T06:38:37.816Z",
+      "updated_at": "2026-10-21T06:38:39.749Z"
+    }
+  ],
+  "counts": {
+    "ledger": 1,
+    "category": 34,
+    "transaction": 4,
+    "audit": 6,
+    "receipt": 5,
+    "backup": 2
+  },
+  "categories": 34,
+  "migrations": [
+    {
+      "from_version": 0,
+      "to_version": 1,
+      "status": "completed",
+      "checksum": "2bd16a4a43d96866283572268ed7cee60457826545c60c5cb3ab85a4d4bca06d",
+      "backup_id": null,
+      "error_code": null
+    }
+  ],
+  "backups": [
+    {
+      "id": "55d982ea-bc71-4ac9-a4e4-d30379454e22",
+      "kind": "manual",
+      "status": "completed",
+      "db_schema_version": 1,
+      "archive_hash": "94fc2be75869fdfe051f64e02553a5ba258191fb29ae128dce69413a244f5439",
+      "created_at": "2026-10-21T06:38:38.479Z"
+    },
+    {
+      "id": "eec1eb82-412a-4aee-a543-5d0e24d359eb",
+      "kind": "pre_restore",
+      "status": "completed",
+      "db_schema_version": 1,
+      "archive_hash": "1bb950e9d311ad3fcf401b13366411deb7a5d7b08ecc8d41c3d86a7345339942",
+      "created_at": "2026-10-21T06:38:39.596Z"
+    }
+  ],
+  "integrity": {
+    "quickCheck": [
+      "ok"
+    ],
+    "foreignKeyViolations": 0
+  }
+}
+EXIT_CODE=0

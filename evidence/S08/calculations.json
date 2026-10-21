@@ -1,0 +1,199 @@
+{
+  "method": "Independent BigInt hand-formula cross-check; raw SQL queries and rows retained in observation/observations.json; no floating arithmetic for totals",
+  "rows": [
+    {
+      "case": "F01",
+      "formula": "480+1500+1350",
+      "expectedFen": "3330",
+      "displayYuan": "33.30",
+      "actualSql": {
+        "count": 3,
+        "totalFen": 3330
+      },
+      "ui": "符合筛选 3 笔 · ¥33.30",
+      "ok": true
+    },
+    {
+      "case": "F02-09-08",
+      "formula": "1800+1626+1000",
+      "expectedFen": "4426",
+      "displayYuan": "44.26",
+      "actualSql": {
+        "occurred_date": "2026-09-08",
+        "totalFen": "4426"
+      },
+      "ok": true
+    },
+    {
+      "case": "F02-09-09",
+      "formula": "85000+5554+1550",
+      "expectedFen": "92104",
+      "displayYuan": "921.04",
+      "actualSql": {
+        "occurred_date": "2026-09-09",
+        "totalFen": "92104"
+      },
+      "ok": true
+    },
+    {
+      "case": "F02-total",
+      "formula": "4426+92104",
+      "expectedFen": "96530",
+      "displayYuan": "965.30",
+      "actualSql": [
+        {
+          "count": 6,
+          "totalFen": "96530"
+        }
+      ],
+      "actualRestart": [
+        {
+          "count": 6,
+          "totalFen": "96530"
+        }
+      ],
+      "actualViews": [
+        {
+          "period": "week",
+          "series": "96530",
+          "summary": "96530",
+          "ranking": "96530"
+        },
+        {
+          "period": "month",
+          "series": "96530",
+          "summary": "96530",
+          "ranking": "96530"
+        },
+        {
+          "period": "year",
+          "series": "96530",
+          "summary": "96530",
+          "ranking": "96530"
+        }
+      ],
+      "ok": true
+    },
+    {
+      "case": "F02-daily-average",
+      "formula": "96530 fen / 30 days; half-up to fen",
+      "expectedYuan": "32.18",
+      "actual": {
+        "numeratorFen": "96530",
+        "denominatorDays": 30,
+        "displayYuan": "32.18"
+      },
+      "ok": true
+    },
+    {
+      "case": "F02-category",
+      "formula": "repair=85000;digital=5554;food=1800+1000+1550=4350;fruit=1626",
+      "expected": [
+        [
+          "cat_repair",
+          "85000"
+        ],
+        [
+          "cat_digital",
+          "5554"
+        ],
+        [
+          "cat_food",
+          "4350"
+        ],
+        [
+          "cat_fruit",
+          "1626"
+        ]
+      ],
+      "actualSql": [
+        {
+          "category_id": "cat_repair",
+          "totalFen": "85000"
+        },
+        {
+          "category_id": "cat_digital",
+          "totalFen": "5554"
+        },
+        {
+          "category_id": "cat_food",
+          "totalFen": "4350"
+        },
+        {
+          "category_id": "cat_fruit",
+          "totalFen": "1626"
+        }
+      ],
+      "ok": true
+    },
+    {
+      "case": "F01-edit-delete-restore",
+      "formula": "3330+20=3350;3350-1500=1850;1850+1500=3350",
+      "actual": {
+        "editedFen": 3350,
+        "afterDeleteFen": 1850,
+        "restoredFen": 3350,
+        "finalFen": 3330
+      },
+      "ok": true
+    },
+    {
+      "case": "live-current",
+      "formula": "1000+2000=3000; future3000+4000 excluded; week denominator3,month21,year294",
+      "actual": [
+        {
+          "period": "week",
+          "numeratorFen": "3000",
+          "denominatorDays": 3,
+          "displayYuan": "10.00",
+          "totalFen": "3000"
+        },
+        {
+          "period": "month",
+          "numeratorFen": "3000",
+          "denominatorDays": 21,
+          "displayYuan": "1.43",
+          "totalFen": "3000"
+        },
+        {
+          "period": "year",
+          "numeratorFen": "3000",
+          "denominatorDays": 294,
+          "displayYuan": "0.10",
+          "totalFen": "3000"
+        }
+      ],
+      "sqlAll": [
+        {
+          "count": 4,
+          "totalFen": "10000"
+        }
+      ],
+      "ok": true
+    }
+  ],
+  "allMatched": true,
+  "finalExplicitShellRevalidatedAt": "2026-10-21T14:51:20.2582123+08:00",
+  "latestInputHashes": [
+    {
+      "file": "observation/observations.json",
+      "sha256": "51390C92DCB44AE6DF45D16C4533C5E822C472BB32993AF3F9FB0C1CD334AC6B"
+    },
+    {
+      "file": "manual/ui-workflow.json",
+      "sha256": "392CEC8AAADA83D5D7558EB1AEC553D54AB30DD5D9662BE9F1369E5B9F7105C1"
+    },
+    {
+      "file": "statistics/ui-workflow.json",
+      "sha256": "E39CF791DE53235C4B36B9B79CD0ACCB43D2BB3A1B6A2F03985DC49DD78D3025"
+    },
+    {
+      "file": "statistics-probes/additional-probes.json",
+      "sha256": "F9D0AB8C89CCA8F87F507B7558D838D303032FB3CA880D4E89708960EC819C98"
+    },
+    {
+      "file": "unit-results.json",
+      "sha256": "61A9CE6D70F9E8DD196325E3D225F0C6927406A1D18B9C834E7B8861E628EC44"
+    }
+  ]
+}

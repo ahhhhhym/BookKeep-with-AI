@@ -1,0 +1,88 @@
+{
+  "frozenCommit": "47b60fe503c38e05497e0252879587f2dfc6d5bc",
+  "unit": {
+    "files": 21,
+    "total": 181,
+    "passed": 181,
+    "failed": 0,
+    "success": true
+  },
+  "replays": [
+    {
+      "name": "manual",
+      "file": "manual/ui-workflow.json",
+      "ok": true,
+      "checks": 15,
+      "errors": []
+    },
+    {
+      "name": "statistics",
+      "file": "statistics/ui-workflow.json",
+      "ok": true,
+      "checks": 22,
+      "errors": []
+    },
+    {
+      "name": "manual-probes",
+      "file": "manual-probes/additional-probes.json",
+      "ok": true,
+      "checks": 15,
+      "errors": []
+    },
+    {
+      "name": "statistics-probes",
+      "file": "statistics-probes/additional-probes.json",
+      "ok": true,
+      "checks": 7,
+      "errors": []
+    }
+  ],
+  "oracleScopes": 123,
+  "scopesInspectingAllPoints": 15,
+  "observationComplete": true,
+  "calculationAllMatched": true,
+  "candidateTablesPresent": [],
+  "g1": "NOT_PASSED",
+  "g1Reason": "AC07 persisted pending/rejected/failed isolation not executable in frozen S04-S07 version; no scope waiver made",
+  "s09Allowed": false,
+  "acResults": [
+    {
+      "status": "通过",
+      "id": "AC01"
+    },
+    {
+      "status": "通过",
+      "id": "AC02"
+    },
+    {
+      "status": "通过",
+      "boundary": "Controlled clock per FIXTURES; real OS overnight not executed",
+      "id": "AC03"
+    },
+    {
+      "status": "通过",
+      "id": "AC04"
+    },
+    {
+      "status": "通过",
+      "id": "AC05"
+    },
+    {
+      "status": "通过",
+      "id": "AC06"
+    },
+    {
+      "status": "未执行（部分通过）",
+      "passed": [
+        "fixed numbers",
+        "formal soft-delete isolation",
+        "transient mock no SQL write"
+      ],
+      "issue": "BK-S08-001",
+      "notExecuted": [
+        "persisted pending/rejected/failed business state isolation"
+      ],
+      "id": "AC07"
+    }
+  ]
+}
