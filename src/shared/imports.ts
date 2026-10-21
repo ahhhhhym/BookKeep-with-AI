@@ -142,6 +142,7 @@ export interface Candidate extends NormalizedCandidate {
 export interface CandidateQuery {
     jobId: string | null;
     page: Page;
+    reviewStates?: Candidate['reviewState'][];
 }
 export const IMPORT_CHANNELS = {
     imageSelect: 'image.select', imageDrop: 'image.drop', imageImport: 'image.import',

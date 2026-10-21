@@ -32,7 +32,8 @@ import type {
 import type { CategoryListInput, ProviderCapabilitiesInput, SaveSecretInput } from './ipc';
 import type { AppErrorPayload } from './errors';
 import type { ProbeInput, ProbeReport } from './probe';
-import type { Asset, Candidate, CandidateQuery, ImportInput, ImportResult, Job, JobList, JobQuery, ListResult, PrepareInput, Resource, ResourceInput, RetryInput, Selection, StartInput, VersionedJob } from './imports';
+import type { ApprovalInput, ApprovalPreview, ApprovalResult, ReviewList, ReviewUpdate, ReviewCandidate } from './review';
+import type { Asset, CandidateQuery, ImportInput, ImportResult, Job, JobList, JobQuery, PrepareInput, Resource, ResourceInput, RetryInput, Selection, StartInput, VersionedJob } from './imports';
 import type { StatisticsInput, StatisticsSeries, StatisticsSummary, TopTransactionsInput, TopTransactionsResult, TopCategoriesInput, TopCategoriesResult } from './statistics';
 
 /** 桥接结果对象：错误以数据形式返回，不跨上下文抛自定义异常（避免丢字段）。 */
@@ -59,7 +60,12 @@ export interface BookKeepApi {
     retry(input:RetryInput,options?:MutationOptions):Promise<ApiResult<Job>>;
     resume(input:RetryInput,options?:MutationOptions):Promise<ApiResult<Job>>;
   };
-  readonly candidate: {list(input:CandidateQuery):Promise<ApiResult<ListResult<Candidate>>>};
+  readonly candidate: {
+    list(input:CandidateQuery):Promise<ApiResult<ReviewList>>;
+    update(input:ReviewUpdate,options?:MutationOptions):Promise<ApiResult<ReviewCandidate>>;
+    reject(input:{id:string;expectedVersion:number;reason:string},options?:MutationOptions):Promise<ApiResult<ReviewCandidate>>;
+    approve(input:ApprovalInput,options?:MutationOptions):Promise<ApiResult<ApprovalResult|ApprovalPreview>>;
+  };
   readonly contractVersion: string;
   readonly skeletonStage: 'S05';
   readonly settings: {

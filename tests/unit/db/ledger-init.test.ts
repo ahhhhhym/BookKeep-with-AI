@@ -63,7 +63,7 @@ describe('默认账本与 34 个分类的幂等初始化', () => {
       expect(snapshot.ledgerCount).toBe(1);
       expect(snapshot.categoryCount).toBe(34);
       expect(snapshot.transactionCount).toBe(0);
-      expect(snapshot.dbSchemaVersion).toBe(2);
+      expect(snapshot.dbSchemaVersion).toBe(3);
       expect(snapshot.migrationState).toBe('clean');
       expect(snapshot.recoveryRequired).toBe(false);
       expect(snapshot.databaseRelativePath).toBe(

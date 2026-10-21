@@ -104,6 +104,17 @@ export function collectBusinessViolations(db: SqliteDb): string[] {
   if (badPrecision > 0) violations.push(`TRANSACTION_PRECISION:${badPrecision}`);
 
   if (tableExists(db,'import_job') && tableExists(db,'candidate') && tableExists(db,'image_asset')) {
+    if(tableExists(db,'review_posting')) {
+      const links=db.prepare<{n:number}>(`SELECT count(*) n FROM "transaction" t WHERE t.source='ai' AND NOT EXISTS(
+        SELECT 1 FROM candidate c JOIN review_posting p ON p.candidate_id=c.id
+        JOIN review_event e ON e.candidate_id=c.id AND e.action='approve'
+        WHERE c.id=t.source_candidate_id AND c.ledger_id=t.ledger_id AND c.review_state='approved'
+        AND c.posted_transaction_id=t.id AND p.transaction_id=t.id AND e.transaction_id=t.id)`).get()!.n;
+      if(links)violations.push(`AI_REVIEW_LINK:${links}`);
+      const reverse=db.prepare<{n:number}>(`SELECT count(*) n FROM candidate c WHERE c.review_state='approved' AND NOT EXISTS(
+        SELECT 1 FROM "transaction" t WHERE t.id=c.posted_transaction_id AND t.source_candidate_id=c.id AND t.ledger_id=c.ledger_id)`).get()!.n;
+      if(reverse)violations.push(`APPROVED_TRANSACTION_LINK:${reverse}`);
+    }
     const mismatched = db.prepare<{n:number}>(`SELECT count(*) n FROM candidate c
       JOIN import_job j ON j.id=c.job_id JOIN image_asset a ON a.id=c.image_asset_id
       WHERE c.ledger_id<>j.ledger_id OR c.ledger_id<>a.ledger_id OR c.image_asset_id<>j.image_asset_id

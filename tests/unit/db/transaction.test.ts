@@ -343,44 +343,13 @@ describe('幂等收据与唯一候选关联', () => {
     }
   });
 
-  it('sourceCandidateId 唯一（含软删）：重复批准只返回原交易，不生成第二笔', () => {
+  it('S11 closes the legacy AI creation bypass; real review idempotence is covered by s11-review', () => {
     const layout = newLayout();
-    const clock = fixedClock();
-    const store = LedgerStore.open(storeOptions(layout, clock.clock));
+    const store = LedgerStore.open(storeOptions(layout, fixedClock().clock));
     try {
-      const candidateId = 'c4010000-0000-4000-8000-000000000001';
-      const aiInput = { ...transactionInput({ name: 'AI午餐' }), sourceCandidateId: candidateId };
-      const first = store.createAiTransaction(aiInput);
-      expect(first.transaction.source).toBe('ai');
-      expect(first.transaction.sourceCandidateId).toBe(candidateId);
-      expect(first.replayed).toBe(false);
-
-      const replay = store.createAiTransaction({ ...aiInput, amountFen: 9999 });
-      expect(replay.replayed).toBe(true);
-      expect(replay.transaction.id).toBe(first.transaction.id);
-      expect(replay.transaction.amountFen).toBe(1800);
-      expect(store.snapshot().transactionCount).toBe(1);
-
-      store.softDeleteTransaction(
-        { id: first.transaction.id, expectedVersion: 1 },
-        mutationId(),
-      );
-      const afterDelete = store.createAiTransaction(aiInput);
-      expect(afterDelete.replayed).toBe(true);
-      expect(afterDelete.transaction.id).toBe(first.transaction.id);
-      expect(afterDelete.transaction.deletedAt).not.toBeNull();
-      expect(store.snapshot().transactionCount).toBe(1);
-      const audits = openReadOnly(store.diagnostics().databasePath, (db) =>
-        db
-          .prepare<{ count: number }>(
-            "SELECT COUNT(*) AS count FROM audit_event WHERE action = 'transaction.aiApprove'",
-          )
-          .get(),
-      );
-      expect(audits?.count).toBe(1);
-    } finally {
-      closeQuietly(store);
-    }
+      expect(() => store.createAiTransaction({ ...transactionInput(), sourceCandidateId: 'c4010000-0000-4000-8000-000000000001' })).toThrowError('UNSUPPORTED');
+      expect(store.snapshot().transactionCount).toBe(0);
+    } finally { closeQuietly(store); }
   });
 });
 

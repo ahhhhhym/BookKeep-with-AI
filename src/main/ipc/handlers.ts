@@ -14,6 +14,7 @@ import type { ProbeService } from '../services/providers/probe';
 import type { LedgerStore } from '../services/ledger-store';
 import type { ImageService } from '../services/image-service';
 import type { RecognitionService } from '../services/recognition-service';
+import { ReviewService } from '../services/review-service';
 
 export interface HandlerDependencies {
   readonly store: LedgerStore;
@@ -23,9 +24,11 @@ export interface HandlerDependencies {
   readonly recognition: RecognitionService;
   readonly selectImages: () => Promise<string[]>;
   readonly onRestored: () => void;
+  readonly reviewOwner?: () => number|null;
 }
 
 export function registerIpcHandlers(router: IpcRouter, deps: HandlerDependencies): void {
+  const review=new ReviewService(deps.store,deps.images,deps.reviewOwner);
   router.handle(CHANNEL_SPECS.imageSelect, async () => deps.images.select(await deps.selectImages(), 'selection'));
   router.handle(CHANNEL_SPECS.imageDrop, r => deps.images.select(r.payload.paths,'drop'));
   router.handle(CHANNEL_SPECS.imageImport, r => deps.images.import(r.payload,r.mutationId!));
@@ -37,7 +40,10 @@ export function registerIpcHandlers(router: IpcRouter, deps: HandlerDependencies
   router.handle(CHANNEL_SPECS.recognitionCancel, r => deps.recognition.cancel(r.payload,r.mutationId!));
   router.handle(CHANNEL_SPECS.recognitionRetry, r => deps.recognition.retry(r.payload,r.mutationId!));
   router.handle(CHANNEL_SPECS.recognitionResume, r => deps.recognition.retry(r.payload,r.mutationId!,true));
-  router.handle(CHANNEL_SPECS.candidateList, r => deps.recognition.candidates(r.payload));
+  router.handle(CHANNEL_SPECS.candidateList, r => review.list(r.payload,deps.recognition));
+  router.handle(CHANNEL_SPECS.candidateUpdate, r => review.update(r.payload,r.mutationId!));
+  router.handle(CHANNEL_SPECS.candidateReject, r => review.reject(r.payload,r.mutationId!));
+  router.handle(CHANNEL_SPECS.candidateApprove, r => review.approve(r.payload,r.mutationId));
   const secretLimiter = createRateLimiter(
     SECRET_SUBMIT_RATE_LIMIT.limit,
     SECRET_SUBMIT_RATE_LIMIT.windowMs,

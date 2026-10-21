@@ -32,5 +32,8 @@ export const IMPORT_SPECS = {
     recognitionRetry: spec<RetryInput>(C.recognitionRetry, ['jobId', 'expectedVersion', 'possibleChargeAccepted', 'uploadConsent'], retry, true, 'U'),
     recognitionResume: spec<RetryInput>(C.recognitionResume, ['jobId', 'expectedVersion', 'possibleChargeAccepted', 'uploadConsent'], retry, true, 'U'),
     recognitionStatus: spec<JobQuery>(C.recognitionStatus, ['jobId', 'statusFilter', 'page'], v => (v.jobId === null || isUuidV4(v.jobId)) && Array.isArray(v.statusFilter) && v.statusFilter.length <= 5 && v.statusFilter.every(s => ['queued', 'processing', 'completed', 'failed', 'cancelled'].includes(String(s))) && page(v.page), false, 'R'),
-    candidateList: spec<CandidateQuery>(C.candidateList, ['jobId', 'page'], v => (v.jobId === null || isUuidV4(v.jobId)) && page(v.page), false, 'R'),
+    candidateList: { ...spec<CandidateQuery>(C.candidateList, ['jobId', 'page'], v => (v.jobId === null || isUuidV4(v.jobId)) && page(v.page), false, 'R'), request: {
+        required:['jobId','page'],optional:['reviewStates'],allowNullEpoch:false,requireMutationId:false,
+        validatePayload:(v:Record<string,unknown>)=>(v.jobId===null||isUuidV4(v.jobId))&&page(v.page)&&(!('reviewStates' in v)||Array.isArray(v.reviewStates)&&v.reviewStates.length<=3&&v.reviewStates.every((s:unknown)=>['pending_review','approved','rejected'].includes(String(s))))?[]:[{path:'payload',code:'INVALID_IMPORT_INPUT'}],cast:(v:Record<string,unknown>)=>v as unknown as CandidateQuery,
+    } },
 };

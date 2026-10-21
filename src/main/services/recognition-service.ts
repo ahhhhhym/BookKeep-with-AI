@@ -217,7 +217,9 @@ export class RecognitionService {
         });
     }
     candidates(query: CandidateQuery): ListResult<Candidate> {
-        return this.store.withImports(false, c => this.page(c, 'candidate', query.jobId ? 'AND job_id=?' : '', query.jobId ? [query.jobId] : [], query.page, { jobId: query.jobId }, candidateDto));
+        const states=query.reviewStates??[];
+        const where=(query.jobId?'AND job_id=? ':'')+(states.length?`AND review_state IN (${states.map(()=>'?').join(',')})`:'');
+        return this.store.withImports(false, c => this.page(c, 'candidate', where, [...(query.jobId?[query.jobId]:[]),...states], query.page, { jobId: query.jobId,reviewStates:states }, candidateDto));
     }
     private pump(): void {
         if (this.stopped || this.store.currentEpoch !== this.epoch)

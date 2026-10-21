@@ -7,7 +7,8 @@
  */
 
 import { spawnSync } from 'node:child_process';
-import { existsSync, mkdirSync, readFileSync } from 'node:fs';
+import { existsSync, mkdirSync, mkdtempSync, readFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { DIST, ROOT, electronExecutable, electronSafeEnv, log } from './lib/paths.mjs';
@@ -27,7 +28,7 @@ export function printSelfTestReport(report, label) {
   }
 }
 
-function runOnce(reportPath) {
+function runOnce(reportPath, localAppData) {
   const mainBundle = path.join(DIST, 'main', 'index.cjs');
   if (!existsSync(mainBundle)) {
     throw new Error('缺少 dist/main/index.cjs，请先运行 npm run build');
@@ -38,7 +39,7 @@ function runOnce(reportPath) {
     [ROOT, '--self-test', `--self-test-report=${reportPath}`],
     {
       cwd: ROOT,
-      env: electronSafeEnv(),
+      env: electronSafeEnv({ LOCALAPPDATA: localAppData }),
       stdio: 'inherit',
       timeout: 180_000,
     },
@@ -67,8 +68,11 @@ function compareRestart(first, second) {
 }
 
 export async function smokeElectron({ reportPath, restartReportPath, restart = true } = {}) {
+  // Self-tests must never migrate or initialize the current user's application ledger.
+  // Both child processes share only this isolated temporary data root.
+  const localAppData = mkdtempSync(path.join(tmpdir(), 'BookKeepAI-smoke-'));
   const firstTarget = reportPath ?? path.join(ROOT, '.tmp', 'selftest-dev.json');
-  const first = runOnce(firstTarget);
+  const first = runOnce(firstTarget, localAppData);
   printSelfTestReport(first.report, 'electron self-test (first start)');
 
   if (!restart) {
@@ -81,7 +85,7 @@ export async function smokeElectron({ reportPath, restartReportPath, restart = t
   }
 
   const secondTarget = restartReportPath ?? path.join(ROOT, '.tmp', 'selftest-dev-restart.json');
-  const second = runOnce(secondTarget);
+  const second = runOnce(secondTarget, localAppData);
   printSelfTestReport(second.report, 'electron self-test (restart)');
   const restartCheck = compareRestart(first.report, second.report);
   log(
