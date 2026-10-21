@@ -23,6 +23,7 @@ import type {
   TransactionVersionedInput,
 } from './entities.js';
 import type { MockRecognitionInput, ProviderId } from './dto.js';
+import type { StatisticsInput, TopTransactionsInput, TopCategoriesInput } from './statistics';
 import { SECRET_MAX_LENGTH, SECRET_MIN_LENGTH } from './constants.js';
 import { isPlainRecord, isSafeIntegerInRange, isUuidV4 } from './validation.js';
 
@@ -42,6 +43,10 @@ export const IPC = {
   transactionSoftDelete: 'transaction.softDelete',
   transactionRestore: 'transaction.restore',
   transactionList: 'transaction.list',
+  statisticsSeries: 'statistics.series',
+  statisticsSummary: 'statistics.summary',
+  statisticsTopTransactions: 'statistics.topTransactions',
+  statisticsTopCategories: 'statistics.topCategories',
   backupCreate: 'backup.create',
   backupList: 'backup.list',
   backupRestore: 'backup.restore',
@@ -420,6 +425,24 @@ const READ_EPOCH_SPEC: RequestSpec<Record<string, never>> = {
   allowNullEpoch: false,
 };
 
+function statisticsSpec<T>(channel: IpcChannel, extra: 'pointDate' | 'pointMonth' | null = null): ChannelSpec<T> {
+  return { channel, permission: 'R', skeletonOnly: false, request: {
+    required: ['period', 'anchorDate', 'categoryIds', 'snapshotRevision', ...(extra ? [extra] : [])],
+    optional: [], allowNullEpoch: false, requireMutationId: false,
+    validatePayload: (payload) => {
+      const issues: Issue[] = [];
+      if (typeof payload.period !== 'string' || !['week', 'month', 'year'].includes(payload.period)) issues.push({ path: 'payload.period', code: 'EXPECTED_PERIOD' });
+      checkString(payload.anchorDate, 'payload.anchorDate', issues, 10);
+      if (!Array.isArray(payload.categoryIds) || payload.categoryIds.length > 500 || !payload.categoryIds.every(isIdLike)) issues.push({ path: 'payload.categoryIds', code: 'EXPECTED_IDS' });
+      if (payload.snapshotRevision !== null && !isSafeIntegerInRange(payload.snapshotRevision, 0, Number.MAX_SAFE_INTEGER)) issues.push({ path: 'payload.snapshotRevision', code: 'EXPECTED_REVISION' });
+      if (extra === 'pointDate') checkString(payload.pointDate, 'payload.pointDate', issues, 10);
+      if (extra === 'pointMonth') checkNullableString(payload.pointMonth, 'payload.pointMonth', issues, 7);
+      return issues;
+    },
+    cast: (payload) => payload as unknown as T,
+  } };
+}
+
 export const CHANNEL_SPECS: {
   readonly settingsReadAi: ChannelSpec<Record<string, never>>;
   readonly settingsReadStatus: ChannelSpec<Record<string, never>>;
@@ -436,10 +459,18 @@ export const CHANNEL_SPECS: {
   readonly transactionSoftDelete: ChannelSpec<TransactionVersionedInput>;
   readonly transactionRestore: ChannelSpec<TransactionVersionedInput>;
   readonly transactionList: ChannelSpec<TransactionListInput>;
+  readonly statisticsSeries: ChannelSpec<StatisticsInput>;
+  readonly statisticsSummary: ChannelSpec<StatisticsInput>;
+  readonly statisticsTopTransactions: ChannelSpec<TopTransactionsInput>;
+  readonly statisticsTopCategories: ChannelSpec<TopCategoriesInput>;
   readonly backupCreate: ChannelSpec<BackupCreateInput>;
   readonly backupList: ChannelSpec<BackupListInput>;
   readonly backupRestore: ChannelSpec<BackupRestoreInput>;
 } = {
+  statisticsSeries: statisticsSpec<StatisticsInput>(IPC.statisticsSeries),
+  statisticsSummary: statisticsSpec<StatisticsInput>(IPC.statisticsSummary),
+  statisticsTopTransactions: statisticsSpec<TopTransactionsInput>(IPC.statisticsTopTransactions, 'pointDate'),
+  statisticsTopCategories: statisticsSpec<TopCategoriesInput>(IPC.statisticsTopCategories, 'pointMonth'),
   settingsReadAi: {
     channel: IPC.settingsReadAi,
     permission: 'R',
@@ -669,6 +700,10 @@ export const BUSINESS_CHANNELS: readonly IpcChannel[] = [
   IPC.transactionSoftDelete,
   IPC.transactionRestore,
   IPC.transactionList,
+  IPC.statisticsSeries,
+  IPC.statisticsSummary,
+  IPC.statisticsTopTransactions,
+  IPC.statisticsTopCategories,
   IPC.backupCreate,
   IPC.backupList,
   IPC.backupRestore,

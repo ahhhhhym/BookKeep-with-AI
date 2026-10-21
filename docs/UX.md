@@ -235,3 +235,7 @@ REQ-025～027；AC17～19。数据管理下“样本与评测”独立页：授�
 | 数据登记/版本/导出/撤回/评测 | consent.record(dataset)、dataset.sampleList/sampleUpsert/versionCreate/validate/export、evaluation.run/status/cancel；首版训练submit/status返回UNSUPPORTED |
 
 此表只作文字绑定，不新增运行时schema/IPC。不存在的实现报NOT_IMPLEMENTED，不能通过UI演示值掩盖。字段规范冲突先回DECISIONS/CONTRACTS，由Codex先记录并统一规格，再编码与回归。
+
+### S07实施注（2026-10-21，D48）
+
+本地SVG折线与图下正常流详情卡实现§5；详情不覆盖周期/保存控件，最高min(360px,60vh)内部滚动。图点/数据表共用同一服务结果，长名换行、金额保持完整；完整日期选择器按所选周/月/年定位，最大日期为上海今天。数据表可展开，图表只有一个Tab入口。查看明细传入已到来点[start,min(end,effectiveEnd))及当前分类，不携带名称搜索；返回统计保留周期/分类并重新读库。

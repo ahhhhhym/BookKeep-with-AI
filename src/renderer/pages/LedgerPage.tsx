@@ -10,14 +10,15 @@ import { call, errorCodeOf, getBridge } from '../lib/bridge';
 import { describeError } from '../lib/messages';
 import { dateGroupLabel, EMPTY_FILTER, LedgerReader, MutationAttempt, shiftDate, untilShanghaiMidnight, displayFen } from '../lib/ledger';
 
-export function LedgerPage({ onManageCategories, registerGuard, newRequest = 0, onNewRequestHandled }: {
+export function LedgerPage({ onManageCategories, registerGuard, newRequest = 0, onNewRequestHandled, initialFilter }: {
+  initialFilter?: TransactionFilter;
   onManageCategories: () => void; registerGuard: (guard: LeaveGuard) => void; newRequest?: number; onNewRequestHandled: () => void;
 }): JSX.Element {
   const [result, setResult] = useState<TransactionListResult | null>(null);
   const [categories, setCategories] = useState<CategoryView[]>([]);
-  const [filter, setFilter] = useState<TransactionFilter>(EMPTY_FILTER);
-  const [start, setStart] = useState(''); const [end, setEnd] = useState('');
-  const [query, setQuery] = useState(''); const [selected, setSelected] = useState<string[]>([]);
+  const [filter, setFilter] = useState<TransactionFilter>(initialFilter ?? EMPTY_FILTER);
+  const [start, setStart] = useState(initialFilter?.dateStart ?? ''); const [end, setEnd] = useState(initialFilter?.dateEnd ? shiftDate(initialFilter.dateEnd, -1) : '');
+  const [query, setQuery] = useState(''); const [selected, setSelected] = useState<string[]>(initialFilter?.categoryIds ?? []);
   const [loading, setLoading] = useState(true); const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
   const [today, setToday] = useState(todayInShanghai);

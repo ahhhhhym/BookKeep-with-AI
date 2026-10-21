@@ -31,6 +31,7 @@ import type {
 } from './entities';
 import type { CategoryListInput, ProviderCapabilitiesInput, SaveSecretInput } from './ipc';
 import type { AppErrorPayload } from './errors';
+import type { StatisticsInput, StatisticsSeries, StatisticsSummary, TopTransactionsInput, TopTransactionsResult, TopCategoriesInput, TopCategoriesResult } from './statistics';
 
 /** 桥接结果对象：错误以数据形式返回，不跨上下文抛自定义异常（避免丢字段）。 */
 export type ApiResult<T> = ({ ok: true; data: T } | { ok: false; error: AppErrorPayload }) & {
@@ -90,6 +91,12 @@ export interface BookKeepApi {
       options?: MutationOptions,
     ): Promise<ApiResult<TransactionMutationResult>>;
     list(input: TransactionListInput): Promise<ApiResult<TransactionListResult>>;
+  };
+  readonly statistics: {
+    series(input: StatisticsInput): Promise<ApiResult<StatisticsSeries>>;
+    summary(input: StatisticsInput): Promise<ApiResult<StatisticsSummary>>;
+    topTransactions(input: TopTransactionsInput): Promise<ApiResult<TopTransactionsResult>>;
+    topCategories(input: TopCategoriesInput): Promise<ApiResult<TopCategoriesResult>>;
   };
   readonly backup: {
     create(

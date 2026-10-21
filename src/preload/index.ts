@@ -175,6 +175,12 @@ const api: BookKeepApi = {
     list: (input: TransactionListInput): Promise<ApiResult<TransactionListResult>> =>
       invoke(IPC.transactionList, input, { mutation: false }),
   },
+  statistics: {
+    series: (input) => invoke(IPC.statisticsSeries, input, { mutation: false }),
+    summary: (input) => invoke(IPC.statisticsSummary, input, { mutation: false }),
+    topTransactions: (input) => invoke(IPC.statisticsTopTransactions, input, { mutation: false }),
+    topCategories: (input) => invoke(IPC.statisticsTopCategories, input, { mutation: false }),
+  },
   backup: {
     create: (input: BackupCreateInput, options?: MutationOptions): Promise<ApiResult<BackupCreateResult>> =>
       invoke(IPC.backupCreate, input, mutationOptions(options)),

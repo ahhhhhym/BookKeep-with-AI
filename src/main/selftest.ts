@@ -50,6 +50,7 @@ interface RendererIsolationFacts {
   globalType: string;
   bridgeType: string;
   bridgeKeys: string[];
+  statisticsKeys: string[];
   ipcRendererType: string;
   electronType: string;
 }
@@ -153,6 +154,7 @@ export async function runSelfTest(deps: SelfTestDependencies): Promise<SelfTestR
     globalType: typeof global,
     bridgeType: typeof window.bookkeep,
     bridgeKeys: window.bookkeep ? Object.keys(window.bookkeep).sort() : [],
+    statisticsKeys: window.bookkeep?.statistics ? Object.keys(window.bookkeep.statistics).sort() : [],
     ipcRendererType: typeof window.ipcRenderer,
     electronType: typeof window.electron,
   }))()`);
@@ -175,8 +177,9 @@ export async function runSelfTest(deps: SelfTestDependencies): Promise<SelfTestR
       'preload.bridgeSurface',
       isolation.bridgeType === 'object' &&
         isolation.bridgeKeys.join(',') ===
-          'backup,category,contractVersion,ledger,provider,settings,skeleton,skeletonStage,transaction',
-      { bridgeType: isolation.bridgeType, bridgeKeys: isolation.bridgeKeys },
+          'backup,category,contractVersion,ledger,provider,settings,skeleton,skeletonStage,statistics,transaction' &&
+        isolation.statisticsKeys.join(',') === 'series,summary,topCategories,topTransactions',
+      { bridgeType: isolation.bridgeType, bridgeKeys: isolation.bridgeKeys, statisticsKeys: isolation.statisticsKeys },
     ),
   );
 

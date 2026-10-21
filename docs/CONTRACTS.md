@@ -268,3 +268,11 @@ S10/S11 在附件/候选建立后扩展备份清单与关联校验；S15 补对�
 - UI 失败重试必须持有原 mutationId；S06 记账表单落实，备份维护 UI 最迟 S15 同步，不以禁用按钮代替持久幂等。
 
 S06落实补充（D45）：preload向渲染层ApiResult透传既有信封dataEpoch/dataRevision元数据（旧调用方可忽略）；MutationOptions允许显式dataEpoch覆盖桥接缓存，表示调用方打开表单/确认操作时读取的世代，不是放宽主进程校验。S06列表读取保存信封epoch；新增/编辑/软删/恢复都绑定该值，STALE_EPOCH后只重读，保留输入对照且要求关闭重开。不同epoch分页即使revision相同也不能合并。来自旧请求的迟到信封不允许把已切换的preload缓存改回旧epoch。无新增通道或业务字段。
+
+## 11. S07统计运行时映射（D47，2026-10-21）
+
+既定四个statistics通道均为R/只读、要求当前epoch、不要求mutationId。payload严格要求period、anchorDate、categoryIds、snapshotRevision；topTransactions另要求pointDate，topCategories另要求pointMonth（整周期null）。拒绝未知键、名称/删除筛选、超过500分类与非法revision；日期/周期领域错误由服务返回。
+
+scope完整字段：scopeId（规范字段SHA256）、period、anchorDate（规范为周期start）、categoryIds（去重ASCII排序）、ledgerId、dataEpoch、revision、today、timezone、start/end/effectiveEnd。snapshotRevision=null首读；后续请求带首次revision。相同周期内anchor等价；scopeId还绑定today和epoch，因此恢复或午夜不能混用旧序列/详情，即使revision相同。渲染校验series/summary/排行/分类字典的revision/epoch，点详情额外核对scopeId和点总额；冲突整组重取，最多3次后明确错误，不显示0冒充成功。
+
+summary.categoryTotals和topCategories(pointMonth=null)为实际有支出的全分类排行，零支出返回[]，不补虚假项目。pointMonth非null先全月聚合再截3项，其ratioPercent以该月全额为分母。金额/日均/占比精确整数半入四舍五入，只有图形像素与progress宽度用近似数。接口与数据库版本仍bookkeep.v1/schema1；完整类型见src/shared/statistics.ts，运行时白名单见src/shared/ipc.ts。S07仅实现自测，S08另轮验收。

@@ -141,3 +141,10 @@ R1前的决策/契约/架构和看板原字节保存在evidence/RECEIPT-S05-R1/b
 | 编号 | 裁定 | 影响 |
 |---|---|---|
 | D46 | 本次用户S06任务只列手工记账/列表/筛选/恢复，现行分步任务S15明确要求完成CSV；PRD早期REQ-023还写S06导出。依最新任务范围本轮不实现CSV，统一为S15实现及加固，保留既有导出契约与AC16，未实现入口明确标S15 | PRD REQ-023、DataPage阶段文案、S06交接及S15输入；没有删除功能、不改导出格式，不因本步完成提前标CSV通过 |
+
+## 14. S07 实施细化（2026-10-21，先登记后实现）
+
+| 编号 | 裁定 | 影响 |
+|---|---|---|
+| D47 | 将既定statistics四操作落实为受限只读IPC；输出scope包含period/anchorDate/categoryIds、ledgerId/dataEpoch/revision/today/timezone及start/end/effectiveEnd，scopeId为这些规范字段的SHA256。snapshotRevision首读null、后续绑定首读revision；渲染比较完整scopeId及信封epoch，午夜/恢复/变更不匹配则整组重取，迟到应答丢弃。单次操作使用SQLite DEFERRED只读事务。零额类别不生成虚假排行项，空排行[] | CONTRACTS§11、shared统计DTO/schema、主进程服务、preload、renderer及测试；bookkeep.v1/dbSchemaVersion1不变，无新增迁移 |
+| D48 | 保持已锁依赖，用本地SVG绘制折线，金额/序列/排序仍全部来自统计服务；精确金额只在像素坐标转换为近似数。图表单Tab入口、方向键/Home/End、点击/Enter/Space固定、Esc关闭；详情用图下正常流卡片，优先确保小屏/缩放不遮挡周期和焦点控件，提供同值数据表及查看明细 | ARCHITECTURE§12、UX§5实施注、StatisticsPage/图表；对原ECharts建议的有记录替代，不改变产品需求/金额口径，无新依赖。S08复核真实交互 |

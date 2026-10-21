@@ -84,6 +84,11 @@ export function registerIpcHandlers(router: IpcRouter, deps: HandlerDependencies
     deps.store.listTransactions(request.payload),
   );
 
+  router.handle(CHANNEL_SPECS.statisticsSeries, (request) => deps.store.statisticsSeries(request.payload));
+  router.handle(CHANNEL_SPECS.statisticsSummary, (request) => deps.store.statisticsSummary(request.payload));
+  router.handle(CHANNEL_SPECS.statisticsTopTransactions, (request) => deps.store.statisticsTopTransactions(request.payload));
+  router.handle(CHANNEL_SPECS.statisticsTopCategories, (request) => deps.store.statisticsTopCategories(request.payload));
+
   router.handle(CHANNEL_SPECS.backupCreate, (request) =>
     deps.store.createBackup(request.payload, request.mutationId),
   );

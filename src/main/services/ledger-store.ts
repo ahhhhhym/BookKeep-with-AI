@@ -95,6 +95,8 @@ import {
   type ServiceResult,
 } from './ledger-service';
 import { createTokenCodec, type TokenCodec } from './signed-token';
+import type { StatisticsInput, TopCategoriesInput, TopTransactionsInput } from '../../shared/statistics';
+import { statisticsSeries, statisticsSummary, statisticsTopCategories, statisticsTopTransactions } from './statistics-service';
 
 export interface LedgerStoreOptions {
   readonly layout: StorageLayout;
@@ -566,6 +568,12 @@ export class LedgerStore {
     this.revision = result.snapshotRevision;
     return result;
   }
+
+  /** S07既定统计只读操作。 */
+  statisticsSeries(input: StatisticsInput) { this.assertOpen(); return statisticsSeries(this.context(), input); }
+  statisticsSummary(input: StatisticsInput) { this.assertOpen(); return statisticsSummary(this.context(), input); }
+  statisticsTopTransactions(input: TopTransactionsInput) { this.assertOpen(); return statisticsTopTransactions(this.context(), input); }
+  statisticsTopCategories(input: TopCategoriesInput) { this.assertOpen(); return statisticsTopCategories(this.context(), input); }
 
   /** S11 批准路径的内部入口；不暴露 IPC。 */
   createAiTransaction(input: AiTransactionInput): TransactionMutationResult {

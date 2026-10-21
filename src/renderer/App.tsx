@@ -15,8 +15,13 @@ import { BRIDGE_UNAVAILABLE_TEXT, describeError } from './lib/messages';
 import type { NavId } from '../shared/nav';
 import type { AiSettingsView, ProviderCapabilitiesView, SecretStatusView } from '../shared/dto';
 import type { LeaveGuard } from './components/ExpenseEditor';
+import type { StatisticsInput } from '../shared/statistics';
+import type { TransactionFilter } from '../shared/entities';
+import { todayInShanghai } from '../shared/date';
 
 export function App(): JSX.Element {
+  const [statisticsInput, setStatisticsInput] = useState<StatisticsInput>(() => ({ period: 'month', anchorDate: todayInShanghai(), categoryIds: [], snapshotRevision: null }));
+  const [detailFilter, setDetailFilter] = useState<TransactionFilter | undefined>();
   const [navId, setNavId] = useState<NavId>('ledger');
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [ai, setAi] = useState<AiSettingsView | null>(null);
@@ -126,8 +131,8 @@ export function App(): JSX.Element {
       <NavShell current={navId} onNavigate={navigate} open={drawerOpen} onClose={() => setDrawerOpen(false)} />
 
       <main id="main-content" className="main" tabIndex={-1}>
-        {navId === 'ledger' ? <LedgerPage onManageCategories={() => navigate('categories')} registerGuard={registerGuard} newRequest={newRequest} onNewRequestHandled={consumeNewRequest} /> : null}
-        {navId === 'statistics' ? <StatisticsPage /> : null}
+        {navId === 'ledger' ? <LedgerPage initialFilter={detailFilter} onManageCategories={() => navigate('categories')} registerGuard={registerGuard} newRequest={newRequest} onNewRequestHandled={consumeNewRequest} /> : null}
+        {navId === 'statistics' ? <StatisticsPage input={statisticsInput} onInput={setStatisticsInput} onDetails={(filter) => { setDetailFilter(filter); navigate('ledger'); }} /> : null}
         {navId === 'import' ? <ImportPage onError={setLastError} /> : null}
         {navId === 'queue' ? <QueuePage /> : null}
         {navId === 'review' ? <ReviewPage /> : null}

@@ -55,9 +55,9 @@ function mutation(payload: unknown, extra: Record<string, unknown> = {}): Record
 }
 
 describe('IPC 通道白名单', () => {
-  it('S05 开放 18 个通道（17 个业务 + 1 个骨架诊断），无 ipcRenderer 直通', () => {
-    expect(ALL_CHANNELS).toHaveLength(18);
-    expect(BUSINESS_CHANNELS).toHaveLength(17);
+  it('S07 开放 22 个通道（21 个业务 + 1 个骨架诊断），无 ipcRenderer 直通', () => {
+    expect(ALL_CHANNELS).toHaveLength(22);
+    expect(BUSINESS_CHANNELS).toHaveLength(21);
     expect(SKELETON_CHANNELS).toEqual([IPC.skeletonMockRecognition]);
     expect(BUSINESS_CHANNELS).not.toContain(IPC.skeletonMockRecognition);
     for (const channel of ALL_CHANNELS) {

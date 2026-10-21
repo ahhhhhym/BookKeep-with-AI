@@ -221,3 +221,9 @@ R1新增目录重建不能削弱hash校验：已知创建hash须作为基准持�
 S05 的 DB-only .bkdb、内部 backupId 选择与全量目录仅作为基础阶段适配；S15 统一最终文件格式、分页、外部选择 token、恢复操作状态核实、孤儿补偿和故障恢复，需兼容或明确转换已有档案。S11 前 sourceCandidateId 仅唯一约束预留，候选外键/批准关联后补；这些阶段边界不等于 AC11/16 已通过。
 
 S06按D45落实客户端世代栅栏：列表快照与编辑/删除/恢复意图保存读取时dataEpoch，preload发送显式世代，主进程原有校验拒绝旧表单；桥接透传既有信封epoch/revision，跨代分页不能混拼，迟到旧响应不回写新缓存。详见CONTRACTS§10.3；不改变schema/IPC业务载荷，S08另轮复核。
+
+## 12. S07统计实现选择（D47/D48）
+
+统计服务使用现有LedgerStore上下文和正式transaction表，在单次DEFERRED只读事务中读取revision、日聚合和分类/Top3。只读取本账本deleted_at为空且在[start,effectiveEnd)的记录；类别停用不删历史额。SQL SUM转十进制字符串，BigInt累计及显示，SQLite整数溢出及跨组64位超限统一AMOUNT_TOTAL_OVERFLOW。所有视图、排行、点详情以相同scope绑定；不从列表已加载分页计算。
+
+S04依赖未锁ECharts，S07选择本地SVG，避免为有限折线引入新运行依赖，保留建议架构的主进程统计与受限渲染职责。图形只把服务已计算的整数额换成像素坐标；可访问性采用单Tab图入口、键盘导航、正常流详情及同值数据表。无迁移、无新依赖、无网络/API调用。
