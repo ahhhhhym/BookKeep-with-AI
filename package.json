@@ -20,7 +20,6 @@
     "db:report": "node scripts/db-report.mjs",
     "licenses": "node scripts/collect-licenses.mjs",
     "smoke:electron": "node scripts/smoke-electron.mjs",
-    "capture:ui": "node scripts/capture-ui.mjs",
     "icon:generate": "node scripts/make-icon.mjs",
     "verify": "npm run typecheck && npm run test && npm run verify:icons && npm run build && npm run smoke:electron",
     "package:zip": "node scripts/package-zip.mjs",

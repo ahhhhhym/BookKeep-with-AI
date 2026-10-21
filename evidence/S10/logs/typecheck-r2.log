@@ -1,5 +1,0 @@
-
-> bookkeepai@0.1.0 typecheck
-> tsc -p tsconfig.main.json --noEmit && tsc -p tsconfig.renderer.json --noEmit && tsc -p tsconfig.tests.json --noEmit
-
-tests/unit/db/s10-imports.test.ts(3,22): error TS6133: 'readFileSync' is declared but its value is never read.
