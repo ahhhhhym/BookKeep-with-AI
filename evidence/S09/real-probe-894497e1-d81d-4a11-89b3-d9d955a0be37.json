@@ -1,0 +1,48 @@
+{
+  "id": "894497e1-d81d-4a11-89b3-d9d955a0be37",
+  "kind": "real-api",
+  "startedAt": "2026-10-21T10:23:23.313Z",
+  "finishedAt": "2026-10-21T10:23:24.800Z",
+  "requestedModel": "deepseek-flash",
+  "actualModel": "deepseek-flash",
+  "promptVersion": "bk-prompt.v1-s09",
+  "schemaVersion": "bk-candidate.v1",
+  "fixtureId": "s09-receipt-v1",
+  "imageSha256": "0136644513a3a9ebebec66bf893d81c31694f01d95057856190d965b5133d2d8",
+  "imageBytes": 26450,
+  "imageSource": "BookKeepAI self-generated synthetic PNG, scripts/make-s09-fixture.ps1",
+  "endpoint": "https://api.deepseek.com/chat/completions",
+  "responseFormat": "json_object",
+  "imageAttached": true,
+  "requestCount": 1,
+  "durationMs": 1487,
+  "httpStatus": 200,
+  "usage": {
+    "promptTokens": 847,
+    "completionTokens": 234,
+    "totalTokens": 1081
+  },
+  "schemaValid": false,
+  "matches": {
+    "amount": false,
+    "date": false,
+    "name": false
+  },
+  "fields": {
+    "amountFen": null,
+    "occurredDate": null,
+    "name": null
+  },
+  "passed": false,
+  "errorCode": "OUTPUT_SCHEMA_INVALID",
+  "diagnostics": {
+    "stage": "candidate-schema",
+    "finishReason": "stop",
+    "issues": [
+      {
+        "path": "root.candidates[0].missingFields",
+        "code": "UNKNOWN_FIELD"
+      }
+    ]
+  }
+}

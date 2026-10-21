@@ -1,0 +1,332 @@
+{
+  "ok": true,
+  "generatedAt": "2026-10-21T10:27:04.521Z",
+  "environment": {
+    "appVersion": "0.1.0",
+    "platform": "win32",
+    "arch": "x64",
+    "electron": "44.9.1",
+    "chrome": "152.0.7977.167",
+    "node": "24.22.0",
+    "modules": "149",
+    "allowedOrigins": [
+      "bookkeep://app"
+    ],
+    "devServer": false
+  },
+  "checks": [
+    {
+      "id": "environment.versions",
+      "ok": true,
+      "detail": {
+        "electron": "44.9.1",
+        "chrome": "152.0.7977.167",
+        "node": "24.22.0",
+        "modules": "149",
+        "napi": "10",
+        "platform": "win32",
+        "arch": "x64",
+        "appVersion": "0.1.0",
+        "contractVersion": "bookkeep.v1"
+      }
+    },
+    {
+      "id": "storage.localAppDataRoot",
+      "ok": true,
+      "detail": {
+        "rootSuffix": "C:\\Users\\Administrator\\AppData\\Local\\Temp\\BookKeep S09 startup 中文 xLjm6O\\BookKeepAI",
+        "reason": null
+      }
+    },
+    {
+      "id": "window.webPreferences",
+      "ok": true,
+      "detail": {
+        "source": "creation-time webPreferences + 运行时 renderer 隔离证据",
+        "sandbox": true,
+        "contextIsolation": true,
+        "nodeIntegration": false,
+        "webviewTag": false
+      }
+    },
+    {
+      "id": "app.singleInstanceLock",
+      "ok": true,
+      "detail": {}
+    },
+    {
+      "id": "renderer.nodeIsolation",
+      "ok": true,
+      "detail": {
+        "requireType": "undefined",
+        "processType": "undefined",
+        "moduleType": "undefined",
+        "globalType": "undefined",
+        "bridgeType": "object",
+        "bridgeKeys": [
+          "backup",
+          "category",
+          "contractVersion",
+          "ledger",
+          "provider",
+          "settings",
+          "skeleton",
+          "skeletonStage",
+          "statistics",
+          "transaction"
+        ],
+        "statisticsKeys": [
+          "series",
+          "summary",
+          "topCategories",
+          "topTransactions"
+        ],
+        "ipcRendererType": "undefined",
+        "electronType": "undefined"
+      }
+    },
+    {
+      "id": "preload.bridgeSurface",
+      "ok": true,
+      "detail": {
+        "bridgeType": "object",
+        "bridgeKeys": [
+          "backup",
+          "category",
+          "contractVersion",
+          "ledger",
+          "provider",
+          "settings",
+          "skeleton",
+          "skeletonStage",
+          "statistics",
+          "transaction"
+        ],
+        "statisticsKeys": [
+          "series",
+          "summary",
+          "topCategories",
+          "topTransactions"
+        ]
+      }
+    },
+    {
+      "id": "db.schemaAndLocation",
+      "ok": true,
+      "detail": {
+        "schemaVersion": 1,
+        "databaseRelativePath": "data/generations/30006d1e-8a2d-4e40-932e-705a91312d3a/ledger.db",
+        "databaseExists": true,
+        "outsideProgramDirectory": true
+      }
+    },
+    {
+      "id": "db.defaultLedgerSeed",
+      "ok": true,
+      "detail": {
+        "ledgerId": "d17f7627-beec-4ea3-af6c-a97d55e6e359",
+        "dataEpoch": "a48f1350-6a03-4383-9c99-da2653a59f96",
+        "categoryCount": 34,
+        "ledgerCount": 1,
+        "transactionCount": 0,
+        "dataRevision": 0,
+        "generationId": "30006d1e-8a2d-4e40-932e-705a91312d3a",
+        "migrationState": "clean"
+      }
+    },
+    {
+      "id": "renderer.mounted",
+      "ok": true,
+      "detail": {
+        "shell": "ready",
+        "navItems": 8
+      }
+    },
+    {
+      "id": "renderer.stylesApplied",
+      "ok": true,
+      "detail": {
+        "background": "rgb(245, 247, 251)"
+      }
+    },
+    {
+      "id": "renderer.contentSecurityPolicy",
+      "ok": true,
+      "detail": {
+        "missing": [],
+        "origin": "bookkeep://app"
+      }
+    },
+    {
+      "id": "renderer.noRemoteResources",
+      "ok": true,
+      "detail": {
+        "remoteResources": 0
+      }
+    },
+    {
+      "id": "ipc.settingsAi",
+      "ok": true,
+      "detail": {
+        "ok": true,
+        "readiness": "needs_probe",
+        "model": "deepseek-flash",
+        "ledgerIdMatches": true
+      }
+    },
+    {
+      "id": "ipc.settingsReadStatus",
+      "ok": true,
+      "detail": {
+        "ok": true,
+        "configured": false,
+        "mode": "absent"
+      }
+    },
+    {
+      "id": "ipc.rejectsUnknownPayloadKey",
+      "ok": true,
+      "detail": {
+        "code": "PAYLOAD_INVALID"
+      }
+    },
+    {
+      "id": "ipc.secretVersionRequired",
+      "ok": true,
+      "detail": {
+        "code": "PAYLOAD_INVALID"
+      }
+    },
+    {
+      "id": "provider.mockTwoExpenses",
+      "ok": true,
+      "detail": {
+        "ok": true,
+        "candidates": 2,
+        "blocking": [
+          false,
+          false
+        ]
+      }
+    },
+    {
+      "id": "provider.mockMissingFieldsBlock",
+      "ok": true,
+      "detail": {
+        "ok": true,
+        "blocking": true,
+        "missing": [
+          "amountFen",
+          "occurredDate",
+          "categoryId"
+        ]
+      }
+    },
+    {
+      "id": "provider.deepseekStub",
+      "ok": true,
+      "detail": {
+        "status": "unverified"
+      }
+    },
+    {
+      "id": "ipc.ledgerEnsureDefault",
+      "ok": true,
+      "detail": {
+        "ok": true,
+        "categories": 34,
+        "uniqueCategoryIds": 34,
+        "uniqueSystemKeys": 34,
+        "hasSettingsEntry": false
+      }
+    },
+    {
+      "id": "ipc.categoryList",
+      "ok": true,
+      "detail": {
+        "ok": true,
+        "categories": 34
+      }
+    },
+    {
+      "id": "ipc.transactionList",
+      "ok": true,
+      "detail": {
+        "ok": true,
+        "totalCount": 0,
+        "filteredTotalFen": "0"
+      }
+    },
+    {
+      "id": "ipc.backupList",
+      "ok": true,
+      "detail": {
+        "ok": true
+      }
+    },
+    {
+      "id": "ipc.channelWhitelist",
+      "ok": true,
+      "detail": {
+        "channels": [
+          "settings.ai",
+          "settings.readStatus",
+          "settings.saveSecret",
+          "provider.capabilities",
+          "provider.probe",
+          "ledger.ensureDefault",
+          "category.list",
+          "category.create",
+          "category.update",
+          "category.disable",
+          "transaction.create",
+          "transaction.update",
+          "transaction.softDelete",
+          "transaction.restore",
+          "transaction.list",
+          "statistics.series",
+          "statistics.summary",
+          "statistics.topTransactions",
+          "statistics.topCategories",
+          "backup.create",
+          "backup.list",
+          "backup.restore",
+          "skeleton.mockRecognition"
+        ]
+      }
+    },
+    {
+      "id": "sqlite.better-sqlite3",
+      "ok": true,
+      "detail": {
+        "sqliteVersion": "3.53.4",
+        "modules": "149",
+        "napi": "10",
+        "amountFen": 4426
+      }
+    },
+    {
+      "id": "window.openDenied",
+      "ok": true,
+      "detail": {
+        "returnedNull": true
+      }
+    },
+    {
+      "id": "navigation.remoteBlocked",
+      "ok": true,
+      "detail": {
+        "before": "bookkeep://app/index.html",
+        "after": "bookkeep://app/index.html"
+      }
+    },
+    {
+      "id": "renderer.origin",
+      "ok": true,
+      "detail": {
+        "origin": "bookkeep://app",
+        "expected": "bookkeep://app"
+      }
+    }
+  ]
+}

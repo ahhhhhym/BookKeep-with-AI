@@ -9,7 +9,7 @@ import { notImplemented } from '../../../shared/errors';
 import type { ProviderCapabilitiesView } from '../../../shared/dto';
 import type { ProviderResult, RecognitionProvider, RecognitionRequest } from './types';
 
-export const DEEPSEEK_ADAPTER_VERSION = 'deepseek-adapter/0.0.0-stub';
+export const DEEPSEEK_ADAPTER_VERSION = 'deepseek-adapter/0.1.0-probe';
 
 export const deepseekProvider: RecognitionProvider = {
   id: 'deepseek',
@@ -27,6 +27,6 @@ export const deepseekProvider: RecognitionProvider = {
   },
 
   async recognize(_request: RecognitionRequest): Promise<ProviderResult> {
-    throw notImplemented('provider.deepseek.recognize', 'S09');
+    throw notImplemented('provider.deepseek.recognize.image-handle-scheduler', 'S10');
   },
 };

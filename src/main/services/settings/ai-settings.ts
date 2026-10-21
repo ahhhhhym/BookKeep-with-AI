@@ -1,50 +1,90 @@
-/**
- * AI 设置与密钥状态（S04 骨架）。
- * 只读状态是真实的：不伪造 configured。写入在 S04 明确 NOT_IMPLEMENTED，
- * 真实加密存取由 S09 通过同一受限接口实现，S15 加固。
- */
-
+/** S09: main-process-only secret store; Windows safeStorage user-bound encryption. */
+import { closeSync, existsSync, fsyncSync, mkdirSync, openSync, readFileSync, renameSync, unlinkSync, writeFileSync } from 'node:fs';
+import path from 'node:path';
+import { randomUUID } from 'node:crypto';
 import { CANDIDATE_SCHEMA_VERSION, DEEPSEEK_MODEL, PROMPT_VERSION } from '../../../shared/constants';
-import { notImplemented } from '../../../shared/errors';
-import type { AiSettingsView, SecretStatusView } from '../../../shared/dto';
+import { AppError } from '../../../shared/errors';
+import type { AiSettingsView, SecretSaveResult, SecretStatusView } from '../../../shared/dto';
 import type { SaveSecretInput } from '../../../shared/ipc';
 
-export interface SettingsEnvironment {
-  /** 由主进程调用 safeStorage.isEncryptionAvailable() 得到，不接受渲染层传入。 */
-  readonly encryptionAvailable: boolean;
-  /** 当前默认账本；启动读取时允许为 null（首次初始化前）。 */
-  readonly ledgerId?: string | null;
+export interface SecretEncryption {
+  isEncryptionAvailable(): boolean;
+  encryptString(value: string): Buffer;
+  decryptString(value: Buffer): string;
 }
-
-export function readAiSettings(env: SettingsEnvironment): AiSettingsView {
-  return {
-    provider: 'deepseek',
-    model: DEEPSEEK_MODEL,
-    promptVersion: PROMPT_VERSION,
-    schemaVersion: CANDIDATE_SCHEMA_VERSION,
-    // 真实识图/JSON 组合尚未验证，S04/S05 一律 stub；不得展示为 ready。
-    readiness: 'stub',
-    secretMode: 'absent',
-    configured: false,
-    settingsVersion: 0,
-    ledgerId: env.ledgerId ?? null,
-  };
+export class SecretStore {
+  private session: string | null = null;
+  private mode: 'absent' | 'encrypted' | 'session' = 'absent';
+  private version = 0;
+  private unreadable = false;
+  private readonly receipts = new Map<string, SecretSaveResult>();
+  private readonly file: string;
+  constructor(directory: string, private readonly encryption: SecretEncryption) {
+    this.file = path.join(directory, 'deepseek.secret.json');
+    try {
+      if (!existsSync(this.file)) return;
+      const raw = readFileSync(this.file);
+      if (raw.length > 16384) throw new Error();
+      const value = JSON.parse(raw.toString('utf8'));
+      if (!Number.isSafeInteger(value.version) || value.version < 0 || !['absent', 'encrypted'].includes(value.mode)) throw new Error();
+      this.version = value.version; this.mode = value.mode;
+      if (value.mode === 'encrypted') this.readForProvider();
+    } catch { this.unreadable = true; }
+  }
+  status(): SecretStatusView {
+    return { configured: !this.unreadable && this.mode !== 'absent', mode: this.mode,
+      encryptionAvailable: this.encryption.isEncryptionAvailable(), version: this.version,
+      lastErrorCode: this.unreadable ? 'SECRET_UNREADABLE' : null };
+  }
+  /** Never exposed over IPC. No env/config/tool credential fallback. */
+  readForProvider(): string {
+    if (this.unreadable) throw new AppError('SECRET_UNREADABLE');
+    if (this.mode === 'session' && this.session !== null) return this.session;
+    if (this.mode === 'absent') throw new AppError('SECRET_REQUIRED');
+    try {
+      if (!this.encryption.isEncryptionAvailable()) throw new Error();
+      const value = JSON.parse(readFileSync(this.file, 'utf8'));
+      const key = this.encryption.decryptString(Buffer.from(value.blob, 'base64'));
+      validateSecret(key); return key;
+    } catch { this.unreadable = true; throw new AppError('SECRET_UNREADABLE'); }
+  }
+  save(input: SaveSecretInput, mutationId: string): SecretSaveResult {
+    const previous = this.receipts.get(mutationId);
+    if (previous) return { ...previous };
+    if (this.receipts.size >= 1000) throw new AppError('SECRET_RATE_LIMIT');
+    if (input.expectedVersion !== this.version) throw new AppError('VERSION_CONFLICT', { details: { currentVersion: this.version } });
+    if (this.version >= Number.MAX_SAFE_INTEGER) throw new AppError('VERSION_EXHAUSTED');
+    if (this.unreadable && input.action !== 'remove') throw new AppError('SECRET_UNREADABLE');
+    if (input.action === 'save') validateSecret(input.secret);
+    const nextMode = input.action === 'remove' ? 'absent' : input.persistence === 'encrypted' && this.encryption.isEncryptionAvailable() ? 'encrypted' : 'session';
+    const version = this.version + 1;
+    const temp = this.file + '.' + randomUUID() + '.tmp';
+    try {
+      mkdirSync(path.dirname(this.file), { recursive: true });
+      const blob = nextMode === 'encrypted' ? this.encryption.encryptString(input.secret!).toString('base64') : null;
+      const bytes = JSON.stringify({ version, mode: nextMode === 'encrypted' ? 'encrypted' : 'absent', blob });
+      const fd = openSync(temp, 'wx');
+      try { writeFileSync(fd, bytes, 'utf8'); fsyncSync(fd); } finally { closeSync(fd); }
+      const check = JSON.parse(readFileSync(temp, 'utf8'));
+      if (check.version !== version || (blob !== null && this.encryption.decryptString(Buffer.from(check.blob, 'base64')) !== input.secret)) throw new Error();
+      renameSync(temp, this.file);
+    } catch {
+      try { if (existsSync(temp)) unlinkSync(temp); } catch { /* encrypted temporary blob only */ }
+      throw new AppError('STORAGE_UNAVAILABLE');
+    }
+    this.mode = nextMode; this.version = version; this.unreadable = false;
+    this.session = nextMode === 'session' ? input.secret! : null;
+    const result: SecretSaveResult = { configured: nextMode !== 'absent', mode: nextMode, version };
+    this.receipts.set(mutationId, result); return { ...result };
+  }
+  clearSession(): void { this.session = null; }
 }
-
-export function readSecretStatus(env: SettingsEnvironment): SecretStatusView {
-  return {
-    configured: false,
-    mode: 'absent',
-    encryptionAvailable: env.encryptionAvailable,
-    version: 0,
-    lastErrorCode: null,
-  };
+export function validateSecret(value: unknown): asserts value is string {
+  if (typeof value !== 'string' || value.length < 1 || value.length > 512 || value.trim() !== value || /[\u0000-\u0020\u007f]/.test(value)) throw new AppError('SECRET_INVALID');
 }
-
-/** S04 只允许校验后拒绝：不接收、不保存、不回显任何密钥。 */
-export function saveSecretStub(input: SaveSecretInput): never {
-  throw notImplemented(
-    input.action === 'save' ? 'settings.saveSecret.save' : 'settings.saveSecret.remove',
-    'S09',
-  );
+export function readAiSettings(secret: SecretStore, ledgerId: string | null, verified = false): AiSettingsView {
+  const status = secret.status();
+  return { provider: 'deepseek', model: DEEPSEEK_MODEL, promptVersion: PROMPT_VERSION,
+    schemaVersion: CANDIDATE_SCHEMA_VERSION, readiness: verified ? 'ready' : 'needs_probe',
+    secretMode: status.mode, configured: status.configured, settingsVersion: status.version, ledgerId };
 }

@@ -1,7 +1,7 @@
 /** 构建：主进程/preload 用 esbuild 打包，渲染层用 Vite 构建，并刷新许可与图标清单。 */
 
 import { build as esbuild } from 'esbuild';
-import { existsSync, mkdirSync, rmSync } from 'node:fs';
+import { copyFileSync, existsSync, mkdirSync, rmSync } from 'node:fs';
 import path from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { build as viteBuild } from 'vite';
@@ -46,6 +46,8 @@ export async function buildMainProcesses() {
   mkdirSync(path.join(DIST, 'preload'), { recursive: true });
   await esbuild(mainBuildOptions());
   await esbuild(preloadBuildOptions());
+  mkdirSync(path.join(DIST, 'main', 'probe'), { recursive: true });
+  copyFileSync(path.join(ROOT, 'assets/probe/s09-receipt-v1.png'), path.join(DIST, 'main/probe/s09-receipt-v1.png'));
 }
 
 export async function buildRenderer() {

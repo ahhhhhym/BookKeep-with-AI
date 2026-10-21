@@ -5,6 +5,7 @@ import type { ApiResult, BookKeepApi } from '../shared/api';
 import { CONTRACT_VERSION } from '../shared/constants';
 import type { AppErrorPayload } from '../shared/errors';
 import { IPC } from '../shared/ipc';
+import type { ProbeInput, ProbeReport } from '../shared/probe';
 import type { CategoryListInput, ProviderCapabilitiesInput, SaveSecretInput } from '../shared/ipc';
 import type { AiSettingsView, MockRecognitionInput, MockRecognitionView, ProviderCapabilitiesView, SecretSaveResult, SecretStatusView } from '../shared/dto';
 import type {
@@ -134,6 +135,7 @@ const api: BookKeepApi = {
       invoke(IPC.settingsSaveSecret, input, mutationOptions()),
   },
   provider: {
+    probe: (input: ProbeInput): Promise<ApiResult<ProbeReport>> => invoke(IPC.providerProbe, input, mutationOptions()),
     capabilities: (input: ProviderCapabilitiesInput): Promise<ApiResult<ProviderCapabilitiesView>> =>
       invoke(IPC.providerCapabilities, input, { mutation: false }),
   },

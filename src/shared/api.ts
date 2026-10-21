@@ -31,6 +31,7 @@ import type {
 } from './entities';
 import type { CategoryListInput, ProviderCapabilitiesInput, SaveSecretInput } from './ipc';
 import type { AppErrorPayload } from './errors';
+import type { ProbeInput, ProbeReport } from './probe';
 import type { StatisticsInput, StatisticsSeries, StatisticsSummary, TopTransactionsInput, TopTransactionsResult, TopCategoriesInput, TopCategoriesResult } from './statistics';
 
 /** 桥接结果对象：错误以数据形式返回，不跨上下文抛自定义异常（避免丢字段）。 */
@@ -48,10 +49,11 @@ export interface BookKeepApi {
     readAi(): Promise<ApiResult<AiSettingsView>>;
     /** 本机密钥状态；只返回 configured/mode/version，不返回掩码或片段。 */
     readStatus(): Promise<ApiResult<SecretStatusView>>;
-    /** 受限密钥写入入口：S05 仍返回 NOT_IMPLEMENTED，S09 实现安全存储。 */
+    /** 受限密钥写入；版本冲突拒绝，存储结果不含密钥。 */
     saveSecret(input: SaveSecretInput): Promise<ApiResult<SecretSaveResult>>;
   };
   readonly provider: {
+    probe(input: ProbeInput): Promise<ApiResult<ProbeReport>>;
     capabilities(input: ProviderCapabilitiesInput): Promise<ApiResult<ProviderCapabilitiesView>>;
   };
   readonly ledger: {

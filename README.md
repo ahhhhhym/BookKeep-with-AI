@@ -1,17 +1,17 @@
-# BookKeepAI（S07 手工记账与统计阶段接收版）
+# BookKeepAI（S09 安全配置与图片探针接收版）
 
-当前进度（2026-10-21）：S06和S07均已通过本阶段接收；S07同源统计、周/月/年折线、周期/分类选择、日交易/月分类Top3及键盘交互已复验。下一步由用户启动S08完整基础验收；G1～G6尚未通过，正式ZIP仍未生成。证据与限制见 [S07接收](handoff/S07/ACCEPTANCE-R1.md)，原[S07实现自测交接](handoff/S07/HANDOFF.md)保留。
+当前进度（2026-10-21）：**S09-R1接收通过，G1、G2通过**，见[最新接收](handoff/S09/ACCEPTANCE-R1.md)和[本轮证据](evidence/RECEIPT-S09-R1/RECEIPT.md)。214测试、配置/IPC/重启与新真实图片868b8828验证通过。基础AC01～AC06、AC07-A/B依据[S08-R2](handoff/S08/ACCEPTANCE-R2.md)保留；C仍“未执行，待S11/G3验证、S17复验”，AC07父项未通过。S10等待用户另行启动，G3～G6未通过、正式ZIP未生成。原失败/自测证据保留。
 
-中文 Windows 桌面 AI 辅助记账软件。**当前为 S07 阶段接收版**：沿用 S05 SQLite
+中文 Windows 桌面 AI 辅助记账软件。**当前为 S09 阶段接收版**：沿用 S05 SQLite
 迁移、默认账本与 34 个分类种子、分类/交易仓储与受限 IPC、版本冲突、软删除与审计、
-一致快照备份与恢复基础，并接入手工记账表单、日期列表与筛选、同源统计图表。真实识图、审核入账与 CSV 导出尚未实现。
+一致快照备份与恢复基础，并接入手工记账表单、日期列表与筛选、同源统计图表及安全密钥配置/固定合成图真实探针。业务图片导入、队列/候选、审核入账与 CSV 导出尚未实现。
 
 - 完成状态：S01～S03文档、S04工程骨架、S05数据/仓储已通过对应阶段接收，最新为
   [S05-R2接收](handoff/S05/ACCEPTANCE-R2.md)。该轮148项测试、13项定向回归及两次28/28启动自检
-  属于既有S05接收证据；S06/S07亦通过本阶段接收。S07-R1复跑全量181项测试、22项统计UI、15项手工流程和28+28启动自检通过；新增7组验收探针含123范围独立整数对照通过。AC只有子层证据，G1～G6均未通过。
+  属于既有S05接收证据；S06/S07亦通过本阶段接收。S08-R2本轮重新执行181测试、15+22+15+7组既有流程、28+28启动及123范围；新增D49 29组和补充13组，G1通过，AC07-C/父项未通过。
 - 后续负责人：**S06～S20全部交给Codex**，包括编程、测试、修复、验收、构建打包与说明；
   DSH保留S04/S05历史实现归属。见[AGENTS](AGENTS.md)、[决策D43](docs/DECISIONS.md)和
-  [分步中文提示词](分步中文提示词.md)。S07本阶段接收通过；下一步S08由用户另行启动。
+  [分步中文提示词](分步中文提示词.md)。下一步S10由用户另行启动，本轮未实施。
 - 实现自测与S08/S17/S19验收分轮，验收固定版本且当轮不改被验代码；失败返回对应Codex实现步骤。
   同一会话兼任实现/验收须披露；人类仍提供样本/真值、本地密钥、必要补验并决定最终发布。
 - 规格来源：`docs/PRD.md`、`docs/ARCHITECTURE.md`、`docs/CONTRACTS.md`、`docs/UX.md`、
@@ -19,6 +19,7 @@
 - S06交接：`tasks/S06.md`、`handoff/S06/HANDOFF.md`、`evidence/S06/`。
 - S07交接：`tasks/S07.md`、`handoff/S07/HANDOFF.md`、`evidence/S07/`。
 - S07接收：`handoff/S07/ACCEPTANCE-R1.md`、`evidence/RECEIPT-S07-R1/`，不替代S08/G1。
+- S09接收：[ACCEPTANCE-R1](handoff/S09/ACCEPTANCE-R1.md)、[验收报告](evidence/RECEIPT-S09-R1/RECEIPT.md)；原实现自测在`handoff/S09/HANDOFF.md`，两者分开保留。
 - 历史S05交接：`tasks/S05.md`、`handoff/S05/HANDOFF.md`、`handoff/S05/REWORK-R1.md`、
   `handoff/S05/REWORK-R2.md`、`evidence/S05/`、`evidence/S05-R1/`、`evidence/S05-R2/`。
 
@@ -124,7 +125,7 @@ mock 两场景、DeepSeek 能力 `unverified`、better-sqlite3 在 Electron ABI 
   来源白名单 + 当前 dataEpoch）、信封、契约版本、载荷键与取值。所有变更走主进程事务，
   渲染层不能指定 source/sourceCandidateId/状态/版本。
 - UI 不接触密钥：S04 的 `settings.saveSecret` 校验载荷后返回 `NOT_IMPLEMENTED`，不保存、
-  不回显；密码框提交后立即清空。真实加密存储与探针由 S09 实现。
+  不回显；密码框提交后立即清空。S09真实加密存储与固定图探针已接收，后续S15继续加固。
 - mock provider 明确标注“本地模拟，不代表真实识图”，`actualModel=null`，不出网、不写库。
 
 ## 8. 常见问题

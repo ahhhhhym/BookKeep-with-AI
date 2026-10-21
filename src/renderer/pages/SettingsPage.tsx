@@ -1,4 +1,5 @@
-import { useCallback, useState, type JSX } from 'react';
+import { useCallback, useEffect, useRef, useState, type JSX } from 'react';
+import type { ProbeReport } from '../../shared/probe';
 import { Badge, MetaList, Notice, PageHeader, Panel } from '../components/ui';
 import type { AiSettingsView, ProviderCapabilitiesView, SecretStatusView } from '../../shared/dto';
 import type { NavId } from '../../shared/nav';
@@ -12,6 +13,8 @@ export interface SettingsPageProps {
   readonly capabilities: readonly ProviderCapabilitiesView[];
   readonly onNavigate: (id: NavId) => void;
   readonly onError: (message: string | null) => void;
+  readonly onAiChange: (value: AiSettingsView) => void;
+  readonly onSecretChange: (value: SecretStatusView) => void;
 }
 
 const READINESS_LABEL: Record<AiSettingsView['readiness'], string> = {
@@ -26,16 +29,35 @@ const SECRET_LABEL: Record<SecretStatusView['mode'], string> = {
   session: '密钥仅在本次会话保留，退出后需重新输入。',
 };
 
-/** P07 设置：S04 只提供受限密钥入口与只读状态；安全存储与真实探针由 S09 实现。 */
-export function SettingsPage({ ai, secret, capabilities, onNavigate, onError }: SettingsPageProps): JSX.Element {
-  const [secretValue, setSecretValue] = useState('');
+/** P07 设置：S09 安全配置与固定无隐私合成图探针。 */
+export function SettingsPage({ ai: initialAi, secret: initialSecret, capabilities: initialCapabilities, onNavigate, onError, onAiChange, onSecretChange }: SettingsPageProps): JSX.Element {
+  const [localCapabilities, setLocalCapabilities] = useState<readonly ProviderCapabilitiesView[] | null>(null);
+  const capabilities = localCapabilities ?? initialCapabilities;
+  const [localAi, setLocalAi] = useState<AiSettingsView | null>(null);
+  const [localSecret, setLocalSecret] = useState<SecretStatusView | null>(null);
+  const ai = localAi ?? initialAi;
+  const secret = localSecret ?? initialSecret;
+  const secretInput = useRef<HTMLInputElement>(null);
+  const [consent, setConsent] = useState(false);
+  const [probe, setProbe] = useState<ProbeReport | null>(null);
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const refresh = useCallback(async () => {
+    try {
+      const [status, settings] = await Promise.all([call((api) => api.settings.readStatus()), call((api) => api.settings.readAi())]);
+      setLocalSecret(status); setLocalAi(settings);
+      onSecretChange(status); onAiChange(settings);
+      setLocalCapabilities(await Promise.all([call((api) => api.provider.capabilities({ providerId: 'deepseek' })), call((api) => api.provider.capabilities({ providerId: 'mock' }))]));
+    } catch (caught) { setError(describeError(caught)); }
+  }, [onAiChange, onSecretChange]);
+  useEffect(() => { void refresh(); }, [refresh]);
 
   const submitSecret = useCallback(
     async (persistence: 'encrypted' | 'session') => {
-      if (secretValue.length === 0) {
+      const value = secretInput.current?.value ?? '';
+      if (secretInput.current) secretInput.current.value = '';
+      if (value.length === 0) {
         setError('请先在密码框中输入密钥。');
         return;
       }
@@ -44,21 +66,21 @@ export function SettingsPage({ ai, secret, capabilities, onNavigate, onError }: 
       setMessage(null);
       onError(null);
       try {
-        await call((api) =>
-          api.settings.saveSecret({ action: 'save', secret: secretValue, persistence }),
+        const result = await call((api) =>
+          api.settings.saveSecret({ action: 'save', expectedVersion: secret?.version ?? 0, secret: value, persistence }),
         );
-        setMessage('已保存安全配置。');
+        setMessage(result.mode === 'session' ? '密钥仅在本次会话保留；退出后需重新输入。' : '已为当前 Windows 用户加密保存。');
       } catch (caught) {
         const text = describeError(caught);
         setError(text);
         onError(text);
       } finally {
         // 提交后立即清空输入，无论成功失败都不保留明文。
-        setSecretValue('');
+        await refresh();
         setBusy(false);
       }
     },
-    [onError, secretValue],
+    [onError, secret?.version, refresh],
   );
 
   const removeSecret = useCallback(async () => {
@@ -66,16 +88,28 @@ export function SettingsPage({ ai, secret, capabilities, onNavigate, onError }: 
     setError(null);
     onError(null);
     try {
-      await call((api) => api.settings.saveSecret({ action: 'remove' }));
+      if (secretInput.current) secretInput.current.value = '';
+      await call((api) => api.settings.saveSecret({ action: 'remove', expectedVersion: secret?.version ?? 0 }));
       setMessage('已移除密钥。');
     } catch (caught) {
       const text = describeError(caught);
       setError(text);
       onError(text);
     } finally {
+      await refresh();
       setBusy(false);
     }
-  }, [onError]);
+  }, [onError, secret?.version, refresh]);
+
+  const runProbe = async () => {
+    setBusy(true); setError(null); setProbe(null); setMessage(null);
+    try {
+      const report = await call((api) => api.provider.probe({ fixtureId: 's09-receipt-v1', uploadConsent: true, possibleChargeAccepted: true }));
+      setProbe(report);
+      setMessage(report.passed ? '真实图片、JSON、契约与可见字段均通过。' : `真实探针未通过：${report.errorCode ?? 'PROVIDER_NOT_READY'}`);
+    } catch (caught) { setError(describeError(caught)); }
+    finally { await refresh(); setBusy(false); }
+  };
 
   return (
     <div className="page">
@@ -100,7 +134,7 @@ export function SettingsPage({ ai, secret, capabilities, onNavigate, onError }: 
           ))}
         </ul>
         <Notice>
-          S05 不实现真实 HTTP 调用；DeepSeek 适配器返回 NOT_IMPLEMENTED，mock 结果显著标记为本地模拟。真实图片探针与 JSON 组合在 S09 用本地密钥验证。
+          当前仅提供 S09 固定合成图探针。识别质量仍为实验性；图片导入、队列和审核闭环由后续步骤实现。mock 为本地模拟，不能证明真实 API 可用。
         </Notice>
       </Panel>
 
@@ -119,9 +153,9 @@ export function SettingsPage({ ai, secret, capabilities, onNavigate, onError }: 
             type="password"
             autoComplete="off"
             spellCheck={false}
-            value={secretValue}
-            placeholder="仅在提交时短暂持有，不会保存到页面状态之外"
-            onChange={(event) => setSecretValue(event.target.value)}
+            ref={secretInput}
+            disabled={busy}
+            placeholder="请输入 DeepSeek API 密钥"
             aria-describedby="secret-hint"
           />
           <span className="field-hint" id="secret-hint">
@@ -134,7 +168,6 @@ export function SettingsPage({ ai, secret, capabilities, onNavigate, onError }: 
             className="button button-primary"
             onClick={() => void submitSecret('encrypted')}
             disabled={busy}
-            title="此功能尚未实现（S09）"
           >
             保存到本机加密存储
           </button>
@@ -143,11 +176,10 @@ export function SettingsPage({ ai, secret, capabilities, onNavigate, onError }: 
             className="button"
             onClick={() => void submitSecret('session')}
             disabled={busy}
-            title="此功能尚未实现（S09）"
           >
             仅本次会话
           </button>
-          <button type="button" className="button" onClick={() => void removeSecret()} disabled={busy} title="此功能尚未实现（S09）">
+          <button type="button" className="button" onClick={() => void removeSecret()} disabled={busy}>
             移除密钥
           </button>
         </div>
@@ -160,6 +192,16 @@ export function SettingsPage({ ai, secret, capabilities, onNavigate, onError }: 
         <p className="tiny">
           系统加密可用：{secret ? (secret.encryptionAvailable ? '是' : '否（将仅本次会话保留）') : '读取中…'}
         </p>
+        {secret?.lastErrorCode ? <p role="alert">密钥不可读取，请明确移除后重新配置：{secret.lastErrorCode}</p> : null}
+      </Panel>
+
+      <Panel title="真实图片探针（S09）">
+        <p>仅上传程序内置的无隐私合成消费图，验证图片输入和 JSON 输出；不会上传账本，也不会入账或加入数据集。单次请求可能收费，最长等待90秒，不自动重试。</p>
+        <label><input type="checkbox" checked={consent} disabled={busy} onChange={(event) => setConsent(event.target.checked)} />我同意上传合成测试图并接受本次 API 费用</label>
+        <div className="form-actions"><button type="button" className="button button-primary" disabled={busy || !consent || !secret?.configured} onClick={() => void runProbe()}>运行一次真实图片探针</button></div>
+        {!secret?.configured ? <p>请先通过上方密码框配置本应用密钥，无需粘贴到聊天。</p> : null}
+        {busy ? <p role="status">正在处理实际操作，请稍候…</p> : null}
+        {probe ? <pre style={{ whiteSpace: 'pre-wrap', overflowWrap: 'anywhere' }} data-probe-result>{JSON.stringify(probe, null, 2)}</pre> : null}
       </Panel>
 
       <Panel title="本地数据">
@@ -176,7 +218,7 @@ export function SettingsPage({ ai, secret, capabilities, onNavigate, onError }: 
       <Panel title="关于">
         <MetaList
           entries={[
-            ['应用', 'BookKeepAI 0.1.0（S05 本地账本与持久化）'],
+            ['应用', 'BookKeepAI 0.1.0（S09 安全配置与图片探针）'],
             ['契约版本', CONTRACT_VERSION],
             ['AI 状态', '实验性：真实识别质量尚未验收'],
             ['第三方许可', 'Electron / React / Lucide（ISC + MIT）等，见随包 licenses 目录'],

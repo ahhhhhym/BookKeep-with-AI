@@ -1,0 +1,73 @@
+{
+  "startedAt": "2026-10-21T17:22:12.0492608+08:00",
+  "requestedShell": "C:\\Users\\Administrator\\AppData\\Local\\Microsoft\\WindowsApps\\pwsh.exe",
+  "actualProcess": "C:\\Program Files\\WindowsApps\\Microsoft.PowerShell_7.6.7.0_x64__8wekyb3d8bbwe\\pwsh.exe",
+  "version": "7.6.7",
+  "edition": "Core",
+  "head": "65d2e16fa316f8a58797a5842942d9b0c1b7916b",
+  "branch": "codex/s07-statistics",
+  "initialGitStatus": [
+    " M AGENTS.md",
+    " M README.md",
+    " M docs/ACCEPTANCE.md",
+    " M docs/DECISIONS.md",
+    " M docs/FIXTURES.md",
+    " M docs/PRD.md",
+    " M issues/BK-S08-001.md",
+    " M 交接与验收.md",
+    " M 分步中文提示词.md",
+    " M 开发方案.md",
+    " M 开始阅读.md",
+    " M 执行看板.md",
+    " M 文档审阅记录.md",
+    "?? evidence/S07-AC07-REWORK/",
+    "?? evidence/S08-R2/",
+    "?? handoff/S07/AC07-REWORK.md",
+    "?? tasks/S08.md",
+    "?? tasks/S11.md",
+    "?? tasks/S17.md"
+  ],
+  "versions": [
+    {
+      "ref": "47b60fe503c38e05497e0252879587f2dfc6d5bc",
+      "commit": "47b60fe503c38e05497e0252879587f2dfc6d5bc",
+      "ancestorOfHead": true,
+      "subject": "docs: accept S07 frozen statistics baseline with separate evidence"
+    },
+    {
+      "ref": "ecc97950b62cf6eb71dddc69c15039e2374f6ed0",
+      "commit": "ecc97950b62cf6eb71dddc69c15039e2374f6ed0",
+      "ancestorOfHead": true,
+      "subject": "feat(S07): same-source statistics, accessible trends and period Top3"
+    },
+    {
+      "ref": "65d2e16",
+      "commit": "65d2e16fa316f8a58797a5842942d9b0c1b7916b",
+      "ancestorOfHead": true,
+      "subject": "docs(S08): record frozen basic acceptance and AC07 prerequisite blocker"
+    }
+  ],
+  "productDiffs": [
+    {
+      "ref": "47b60fe",
+      "names": []
+    },
+    {
+      "ref": "ecc9795",
+      "names": []
+    }
+  ],
+  "projectProcesses": [],
+  "node": "v24.19.0",
+  "npm": "11.17.0",
+  "os": {
+    "Caption": "Microsoft Windows 10 专业版",
+    "Version": "10.0.19045",
+    "OSArchitecture": "64 位"
+  },
+  "timezone": "China Standard Time",
+  "role": "Codex previously implemented; separate acceptance phase/evidence, no different-author independence",
+  "initialChangesOrigin": "D49 documents: all modified tracked paths listed by prior final-check, and outputs validated",
+  "trackedCount": 750,
+  "buildCount": 5
+}

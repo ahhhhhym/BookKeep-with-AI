@@ -277,7 +277,7 @@ export async function runSelfTest(deps: SelfTestDependencies): Promise<SelfTestR
     check(
       'ipc.settingsAi',
       readAi.ok === true &&
-        readAiData.readiness === 'stub' &&
+        ['needs_probe', 'ready'].includes(String(readAiData.readiness)) &&
         readAiData.ledgerId === deps.database.ledgerId,
       {
         ok: readAi.ok,
@@ -316,7 +316,7 @@ export async function runSelfTest(deps: SelfTestDependencies): Promise<SelfTestR
     `(async () => window.bookkeep.settings.saveSecret({ action: 'remove' }))()`,
   );
   checks.push(
-    check('ipc.saveSecretStub', saveSecret.ok === false && saveSecret.error?.code === 'NOT_IMPLEMENTED', {
+    check('ipc.secretVersionRequired', saveSecret.ok === false && saveSecret.error?.code === 'PAYLOAD_INVALID', {
       code: saveSecret.error?.code ?? null,
     }),
   );

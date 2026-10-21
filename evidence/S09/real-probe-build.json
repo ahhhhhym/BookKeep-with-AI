@@ -1,0 +1,17 @@
+[
+  {
+    "Algorithm": "SHA256",
+    "Hash": "6B8E888C7984FDE5B17BAF45E8A22187BDC075FCF51BD7A616650643A60A4408",
+    "Path": "D:\\BookKeep with AI\\dist\\main\\index.cjs"
+  },
+  {
+    "Algorithm": "SHA256",
+    "Hash": "69AEC44E6ABF21733E1C261E79AFD4ED0AEC70ECF77CE06FD173C646CC7F5861",
+    "Path": "D:\\BookKeep with AI\\dist\\preload\\index.cjs"
+  },
+  {
+    "Algorithm": "SHA256",
+    "Hash": "CAD70AA3A5A60F439BC125F55BB3E30C4B60A4372F5840771FBB38C0DE30BCF3",
+    "Path": "D:\\BookKeep with AI\\dist\\renderer\\index.html"
+  }
+]

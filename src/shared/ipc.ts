@@ -8,6 +8,7 @@
  */
 
 import type { RequestSpec } from './envelope.js';
+import type { ProbeInput } from './probe';
 import type {
   BackupCreateInput,
   BackupRestoreInput,
@@ -32,6 +33,7 @@ export const IPC = {
   settingsReadStatus: 'settings.readStatus',
   settingsSaveSecret: 'settings.saveSecret',
   providerCapabilities: 'provider.capabilities',
+  providerProbe: 'provider.probe',
   skeletonMockRecognition: 'skeleton.mockRecognition',
   ledgerEnsureDefault: 'ledger.ensureDefault',
   categoryList: 'category.list',
@@ -66,6 +68,7 @@ export interface ChannelSpec<TPayload = unknown> {
 }
 
 export interface SaveSecretInput {
+  expectedVersion: number;
   action: 'save' | 'remove';
   secret?: string;
   persistence?: 'encrypted' | 'session';
@@ -248,6 +251,7 @@ function validateEmptyPayload(): Issue[] {
 
 function validateSecretPayload(payload: Record<string, unknown>): Issue[] {
   const issues: Issue[] = [];
+  if (!isSafeIntegerInRange(payload.expectedVersion, 0, Number.MAX_SAFE_INTEGER)) issues.push({ path: 'payload.expectedVersion', code: 'EXPECTED_VERSION' });
   const action = payload.action;
   if (action !== 'save' && action !== 'remove') {
     issues.push({ path: 'payload.action', code: 'EXPECTED_SAVE_OR_REMOVE' });
@@ -266,7 +270,7 @@ function validateSecretPayload(payload: Record<string, unknown>): Issue[] {
       issues.push({ path: 'payload.secret', code: 'SECRET_LENGTH' });
     }
     // 密钥为不透明输入：不做 trim/NFC 改写，含控制字符直接拒绝。
-    if (/[\u0000-\u001f\u007f]/.test(secret)) {
+    if (secret.trim() !== secret || /[\u0000-\u0020\u007f]/.test(secret)) {
       issues.push({ path: 'payload.secret', code: 'CONTROL_CHARACTER' });
     }
   }
@@ -448,6 +452,7 @@ export const CHANNEL_SPECS: {
   readonly settingsReadStatus: ChannelSpec<Record<string, never>>;
   readonly settingsSaveSecret: ChannelSpec<SaveSecretInput>;
   readonly providerCapabilities: ChannelSpec<ProviderCapabilitiesInput>;
+  readonly providerProbe: ChannelSpec<ProbeInput>;
   readonly skeletonMockRecognition: ChannelSpec<MockRecognitionInput>;
   readonly ledgerEnsureDefault: ChannelSpec<Record<string, never>>;
   readonly categoryList: ChannelSpec<CategoryListInput>;
@@ -467,6 +472,11 @@ export const CHANNEL_SPECS: {
   readonly backupList: ChannelSpec<BackupListInput>;
   readonly backupRestore: ChannelSpec<BackupRestoreInput>;
 } = {
+  providerProbe: { channel: IPC.providerProbe, permission: 'U', skeletonOnly: false, request: {
+    required: ['fixtureId', 'uploadConsent', 'possibleChargeAccepted'], optional: [], allowNullEpoch: false, requireMutationId: true,
+    validatePayload: (payload) => payload.fixtureId === 's09-receipt-v1' && payload.uploadConsent === true && payload.possibleChargeAccepted === true ? [] : [{ path: 'payload', code: 'PROBE_CONSENT_REQUIRED' }],
+    cast: (payload) => payload as unknown as ProbeInput,
+  } },
   statisticsSeries: statisticsSpec<StatisticsInput>(IPC.statisticsSeries),
   statisticsSummary: statisticsSpec<StatisticsInput>(IPC.statisticsSummary),
   statisticsTopTransactions: statisticsSpec<TopTransactionsInput>(IPC.statisticsTopTransactions, 'pointDate'),
@@ -488,7 +498,7 @@ export const CHANNEL_SPECS: {
     permission: 'S',
     skeletonOnly: false,
     request: {
-      required: ['action'],
+      required: ['action', 'expectedVersion'],
       optional: ['secret', 'persistence'],
       allowNullEpoch: false,
       requireMutationId: true,
@@ -690,6 +700,7 @@ export const BUSINESS_CHANNELS: readonly IpcChannel[] = [
   IPC.settingsReadStatus,
   IPC.settingsSaveSecret,
   IPC.providerCapabilities,
+  IPC.providerProbe,
   IPC.ledgerEnsureDefault,
   IPC.categoryList,
   IPC.categoryCreate,

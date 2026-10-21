@@ -1,0 +1,25 @@
+[
+  {
+    "label": "visual-review",
+    "executable": "node.exe",
+    "arguments": [
+      "evidence/S08-R2/visual-review.mjs"
+    ],
+    "startedAt": "2026-10-21T17:32:12.8457943+08:00",
+    "finishedAt": "2026-10-21T17:32:14.8796210+08:00",
+    "exitCode": 0
+  },
+  {
+    "label": "db-report",
+    "executable": "node.exe",
+    "arguments": [
+      "scripts/db-report.mjs",
+      "--json=evidence/S08-R2/db-report.json",
+      "--schema=evidence/S08-R2/schema.sql"
+    ],
+    "localAppData": "C:\\Users\\Administrator\\AppData\\Local\\Temp\\BookKeepAI S08-R2 actual-current 中文 kLwWCg",
+    "startedAt": "2026-10-21T17:32:15.1427541+08:00",
+    "finishedAt": "2026-10-21T17:32:15.2503536+08:00",
+    "exitCode": 0
+  }
+]

@@ -1,0 +1,126 @@
+[
+  {
+    "label": "typecheck",
+    "executable": "npm.cmd",
+    "arguments": [
+      "run",
+      "typecheck"
+    ],
+    "startedAt": "2026-10-21T17:23:29.3494688+08:00",
+    "finishedAt": "2026-10-21T17:23:35.6559515+08:00",
+    "exitCode": 0,
+    "log": "logs/typecheck.log",
+    "shellVersion": "7.6.7",
+    "shellProcess": "C:\\Program Files\\WindowsApps\\Microsoft.PowerShell_7.6.7.0_x64__8wekyb3d8bbwe\\pwsh.exe"
+  },
+  {
+    "label": "tests",
+    "executable": "npm.cmd",
+    "arguments": [
+      "test",
+      "--",
+      "--maxWorkers=2",
+      "--reporter=json",
+      "--outputFile=evidence/S08-R2/unit-results.json"
+    ],
+    "startedAt": "2026-10-21T17:23:35.6841908+08:00",
+    "finishedAt": "2026-10-21T17:23:41.7535649+08:00",
+    "exitCode": 0,
+    "log": "logs/tests.log",
+    "shellVersion": "7.6.7",
+    "shellProcess": "C:\\Program Files\\WindowsApps\\Microsoft.PowerShell_7.6.7.0_x64__8wekyb3d8bbwe\\pwsh.exe"
+  },
+  {
+    "label": "icons",
+    "executable": "npm.cmd",
+    "arguments": [
+      "run",
+      "verify:icons"
+    ],
+    "startedAt": "2026-10-21T17:23:41.7558492+08:00",
+    "finishedAt": "2026-10-21T17:23:42.2559867+08:00",
+    "exitCode": 0,
+    "log": "logs/icons.log",
+    "shellVersion": "7.6.7",
+    "shellProcess": "C:\\Program Files\\WindowsApps\\Microsoft.PowerShell_7.6.7.0_x64__8wekyb3d8bbwe\\pwsh.exe"
+  },
+  {
+    "label": "build",
+    "executable": "npm.cmd",
+    "arguments": [
+      "run",
+      "build"
+    ],
+    "startedAt": "2026-10-21T17:23:42.2585781+08:00",
+    "finishedAt": "2026-10-21T17:23:43.4988046+08:00",
+    "exitCode": 0,
+    "log": "logs/build.log",
+    "shellVersion": "7.6.7",
+    "shellProcess": "C:\\Program Files\\WindowsApps\\Microsoft.PowerShell_7.6.7.0_x64__8wekyb3d8bbwe\\pwsh.exe"
+  },
+  {
+    "label": "startup",
+    "executable": "node.exe",
+    "arguments": [
+      "evidence/S08-R2/startup-probe.mjs"
+    ],
+    "startedAt": "2026-10-21T17:23:43.5004606+08:00",
+    "finishedAt": "2026-10-21T17:23:45.4177732+08:00",
+    "exitCode": 0,
+    "log": "logs/startup.log",
+    "shellVersion": "7.6.7",
+    "shellProcess": "C:\\Program Files\\WindowsApps\\Microsoft.PowerShell_7.6.7.0_x64__8wekyb3d8bbwe\\pwsh.exe"
+  },
+  {
+    "label": "manual",
+    "executable": "node.exe",
+    "arguments": [
+      "evidence/S08-R2/replay-s06.mjs"
+    ],
+    "startedAt": "2026-10-21T17:23:45.4195794+08:00",
+    "finishedAt": "2026-10-21T17:23:50.2991731+08:00",
+    "exitCode": 0,
+    "log": "logs/manual.log",
+    "shellVersion": "7.6.7",
+    "shellProcess": "C:\\Program Files\\WindowsApps\\Microsoft.PowerShell_7.6.7.0_x64__8wekyb3d8bbwe\\pwsh.exe"
+  },
+  {
+    "label": "statistics",
+    "executable": "node.exe",
+    "arguments": [
+      "evidence/S08-R2/replay-s07.mjs"
+    ],
+    "startedAt": "2026-10-21T17:23:50.3009932+08:00",
+    "finishedAt": "2026-10-21T17:23:54.7363837+08:00",
+    "exitCode": 0,
+    "log": "logs/statistics.log",
+    "shellVersion": "7.6.7",
+    "shellProcess": "C:\\Program Files\\WindowsApps\\Microsoft.PowerShell_7.6.7.0_x64__8wekyb3d8bbwe\\pwsh.exe"
+  },
+  {
+    "label": "manual-probes",
+    "executable": "node.exe",
+    "arguments": [
+      "evidence/S08-R2/replay-s06-probes.mjs"
+    ],
+    "startedAt": "2026-10-21T17:23:54.7378836+08:00",
+    "finishedAt": "2026-10-21T17:23:59.2885638+08:00",
+    "exitCode": 0,
+    "log": "logs/manual-probes.log",
+    "shellVersion": "7.6.7",
+    "shellProcess": "C:\\Program Files\\WindowsApps\\Microsoft.PowerShell_7.6.7.0_x64__8wekyb3d8bbwe\\pwsh.exe"
+  },
+  {
+    "label": "statistics-probes",
+    "executable": "node.exe",
+    "arguments": [
+      "evidence/S08-R2/replay-s07-probes.mjs"
+    ],
+    "startedAt": "2026-10-21T17:23:59.2902627+08:00",
+    "finishedAt": "2026-10-21T17:24:03.1106608+08:00",
+    "exitCode": 0,
+    "log": "logs/statistics-probes.log",
+    "shellVersion": "7.6.7",
+    "shellProcess": "C:\\Program Files\\WindowsApps\\Microsoft.PowerShell_7.6.7.0_x64__8wekyb3d8bbwe\\pwsh.exe"
+  }
+]

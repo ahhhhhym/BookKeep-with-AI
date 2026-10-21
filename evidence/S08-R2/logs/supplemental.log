@@ -1,0 +1,14 @@
+PASS AC02-minimum/saved
+PASS AC02-minimum/restart
+PASS AC02-maximum/saved
+PASS AC02-maximum/restart
+PASS AC02-invalid/before
+PASS AC02-invalid/restart-no-write
+PASS invalid/8-cases-no-count-or-total-change
+PASS F03-S/same-amount
+PASS F03-S/restart
+PASS F03-S/real-UI-known-time-ID-top3-total-includes-five
+PASS F03-C/category-tie
+PASS F03-C/restart
+PASS F03-C/real-UI-category-tie-ID-fourth-counted
+{"ok":true,"checks":13,"branches":5,"error":null}

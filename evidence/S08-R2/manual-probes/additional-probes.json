@@ -1,0 +1,656 @@
+{
+  "ok": true,
+  "localAppData": "C:\\Users\\Administrator\\AppData\\Local\\Temp\\BookKeepAI S06 receipt 中文 DjrVLh",
+  "checks": [
+    {
+      "id": "UI-invalid-amounts-no-SQL-write",
+      "ok": true,
+      "detail": {
+        "cases": 8
+      }
+    },
+    {
+      "id": "UI-missing-name-category-no-SQL-write",
+      "ok": true,
+      "detail": {}
+    },
+    {
+      "id": "UI-min-max-integer-fen",
+      "ok": true,
+      "detail": {
+        "n": 2,
+        "fen": 1000000000
+      }
+    },
+    {
+      "id": "UI-future-explicit-confirm-and-unknown-time",
+      "ok": true,
+      "detail": {
+        "name": "未来合成记录",
+        "amount_fen": 200,
+        "occurred_date": "2099-01-01",
+        "occurred_time": null,
+        "time_precision": "date",
+        "deleted_at": null
+      }
+    },
+    {
+      "id": "isolated-empty-snapshot-restored-before-F02",
+      "ok": true,
+      "detail": {}
+    },
+    {
+      "id": "F02-six-records-UI-SQL-group-totals",
+      "ok": true,
+      "detail": {}
+    },
+    {
+      "id": "UI-name-date-category-AND-inclusive-and-clear",
+      "ok": true,
+      "detail": {}
+    },
+    {
+      "id": "UI-multiple-category-union",
+      "ok": true,
+      "detail": {}
+    },
+    {
+      "id": "UI-ASCII-case-search-and-literal-percent",
+      "ok": true,
+      "detail": {}
+    },
+    {
+      "id": "real-UI-pagination-66-unique-full-group-subtotal",
+      "ok": true,
+      "detail": {}
+    },
+    {
+      "id": "real-UI-stale-cursor-resets-first-page-and-reloads",
+      "ok": true,
+      "detail": {}
+    },
+    {
+      "id": "real-IPC-concurrent-update-CAS-and-same-key-replay",
+      "ok": true,
+      "detail": {
+        "error": "VERSION_CONFLICT",
+        "replayed": true
+      }
+    },
+    {
+      "id": "UI-required-date-edit-all-fields-and-synthetic-IME-guard",
+      "ok": true,
+      "detail": {
+        "id": "4fa64d5e-2291-4a31-a7ea-5b66ee472cbe",
+        "categoryId": "cat_fruit",
+        "occurredDate": "2025-12-31",
+        "occurredTime": "23:59"
+      }
+    },
+    {
+      "id": "category-renaming-keeps-history-ID-and-total",
+      "ok": true,
+      "detail": {}
+    },
+    {
+      "id": "additional-process-restart-and-SQL-integrity",
+      "ok": true,
+      "detail": {
+        "n": 67,
+        "fen": 102538
+      }
+    }
+  ],
+  "errors": [],
+  "kind": "additional S06 receipt probes; not G1",
+  "finalDatabase": {
+    "active": {
+      "n": 67,
+      "fen": 102538
+    },
+    "all": [
+      {
+        "name": "iPad保护膜",
+        "amount_fen": 5554,
+        "occurred_date": "2026-09-09",
+        "occurred_time": null,
+        "time_precision": "date",
+        "deleted_at": null
+      },
+      {
+        "name": "iPad维修",
+        "amount_fen": 85000,
+        "occurred_date": "2026-09-09",
+        "occurred_time": null,
+        "time_precision": "date",
+        "deleted_at": null
+      },
+      {
+        "name": "分页合成0",
+        "amount_fen": 100,
+        "occurred_date": "2026-09-09",
+        "occurred_time": null,
+        "time_precision": "date",
+        "deleted_at": null
+      },
+      {
+        "name": "分页合成1",
+        "amount_fen": 100,
+        "occurred_date": "2026-09-09",
+        "occurred_time": null,
+        "time_precision": "date",
+        "deleted_at": null
+      },
+      {
+        "name": "分页合成10",
+        "amount_fen": 100,
+        "occurred_date": "2026-09-09",
+        "occurred_time": null,
+        "time_precision": "date",
+        "deleted_at": null
+      },
+      {
+        "name": "分页合成11",
+        "amount_fen": 100,
+        "occurred_date": "2026-09-09",
+        "occurred_time": null,
+        "time_precision": "date",
+        "deleted_at": null
+      },
+      {
+        "name": "分页合成12",
+        "amount_fen": 100,
+        "occurred_date": "2026-09-09",
+        "occurred_time": null,
+        "time_precision": "date",
+        "deleted_at": null
+      },
+      {
+        "name": "分页合成13",
+        "amount_fen": 100,
+        "occurred_date": "2026-09-09",
+        "occurred_time": null,
+        "time_precision": "date",
+        "deleted_at": null
+      },
+      {
+        "name": "分页合成14",
+        "amount_fen": 100,
+        "occurred_date": "2026-09-09",
+        "occurred_time": null,
+        "time_precision": "date",
+        "deleted_at": null
+      },
+      {
+        "name": "分页合成15",
+        "amount_fen": 100,
+        "occurred_date": "2026-09-09",
+        "occurred_time": null,
+        "time_precision": "date",
+        "deleted_at": null
+      },
+      {
+        "name": "分页合成16",
+        "amount_fen": 100,
+        "occurred_date": "2026-09-09",
+        "occurred_time": null,
+        "time_precision": "date",
+        "deleted_at": null
+      },
+      {
+        "name": "分页合成17",
+        "amount_fen": 100,
+        "occurred_date": "2026-09-09",
+        "occurred_time": null,
+        "time_precision": "date",
+        "deleted_at": null
+      },
+      {
+        "name": "分页合成18",
+        "amount_fen": 100,
+        "occurred_date": "2026-09-09",
+        "occurred_time": null,
+        "time_precision": "date",
+        "deleted_at": null
+      },
+      {
+        "name": "分页合成19",
+        "amount_fen": 100,
+        "occurred_date": "2026-09-09",
+        "occurred_time": null,
+        "time_precision": "date",
+        "deleted_at": null
+      },
+      {
+        "name": "分页合成2",
+        "amount_fen": 100,
+        "occurred_date": "2026-09-09",
+        "occurred_time": null,
+        "time_precision": "date",
+        "deleted_at": null
+      },
+      {
+        "name": "分页合成20",
+        "amount_fen": 100,
+        "occurred_date": "2026-09-09",
+        "occurred_time": null,
+        "time_precision": "date",
+        "deleted_at": null
+      },
+      {
+        "name": "分页合成21",
+        "amount_fen": 100,
+        "occurred_date": "2026-09-09",
+        "occurred_time": null,
+        "time_precision": "date",
+        "deleted_at": null
+      },
+      {
+        "name": "分页合成22",
+        "amount_fen": 100,
+        "occurred_date": "2026-09-09",
+        "occurred_time": null,
+        "time_precision": "date",
+        "deleted_at": null
+      },
+      {
+        "name": "分页合成23",
+        "amount_fen": 100,
+        "occurred_date": "2026-09-09",
+        "occurred_time": null,
+        "time_precision": "date",
+        "deleted_at": null
+      },
+      {
+        "name": "分页合成24",
+        "amount_fen": 100,
+        "occurred_date": "2026-09-09",
+        "occurred_time": null,
+        "time_precision": "date",
+        "deleted_at": null
+      },
+      {
+        "name": "分页合成25",
+        "amount_fen": 100,
+        "occurred_date": "2026-09-09",
+        "occurred_time": null,
+        "time_precision": "date",
+        "deleted_at": null
+      },
+      {
+        "name": "分页合成26",
+        "amount_fen": 100,
+        "occurred_date": "2026-09-09",
+        "occurred_time": null,
+        "time_precision": "date",
+        "deleted_at": null
+      },
+      {
+        "name": "分页合成27",
+        "amount_fen": 100,
+        "occurred_date": "2026-09-09",
+        "occurred_time": null,
+        "time_precision": "date",
+        "deleted_at": null
+      },
+      {
+        "name": "分页合成28",
+        "amount_fen": 100,
+        "occurred_date": "2026-09-09",
+        "occurred_time": null,
+        "time_precision": "date",
+        "deleted_at": null
+      },
+      {
+        "name": "分页合成29",
+        "amount_fen": 100,
+        "occurred_date": "2026-09-09",
+        "occurred_time": null,
+        "time_precision": "date",
+        "deleted_at": null
+      },
+      {
+        "name": "分页合成3",
+        "amount_fen": 100,
+        "occurred_date": "2026-09-09",
+        "occurred_time": null,
+        "time_precision": "date",
+        "deleted_at": null
+      },
+      {
+        "name": "分页合成30",
+        "amount_fen": 100,
+        "occurred_date": "2026-09-09",
+        "occurred_time": null,
+        "time_precision": "date",
+        "deleted_at": null
+      },
+      {
+        "name": "分页合成31",
+        "amount_fen": 100,
+        "occurred_date": "2026-09-09",
+        "occurred_time": null,
+        "time_precision": "date",
+        "deleted_at": null
+      },
+      {
+        "name": "分页合成32",
+        "amount_fen": 100,
+        "occurred_date": "2026-09-09",
+        "occurred_time": null,
+        "time_precision": "date",
+        "deleted_at": null
+      },
+      {
+        "name": "分页合成33",
+        "amount_fen": 100,
+        "occurred_date": "2026-09-09",
+        "occurred_time": null,
+        "time_precision": "date",
+        "deleted_at": null
+      },
+      {
+        "name": "分页合成34",
+        "amount_fen": 100,
+        "occurred_date": "2026-09-09",
+        "occurred_time": null,
+        "time_precision": "date",
+        "deleted_at": null
+      },
+      {
+        "name": "分页合成35",
+        "amount_fen": 100,
+        "occurred_date": "2026-09-09",
+        "occurred_time": null,
+        "time_precision": "date",
+        "deleted_at": null
+      },
+      {
+        "name": "分页合成36",
+        "amount_fen": 100,
+        "occurred_date": "2026-09-09",
+        "occurred_time": null,
+        "time_precision": "date",
+        "deleted_at": null
+      },
+      {
+        "name": "分页合成37",
+        "amount_fen": 100,
+        "occurred_date": "2026-09-09",
+        "occurred_time": null,
+        "time_precision": "date",
+        "deleted_at": null
+      },
+      {
+        "name": "分页合成38",
+        "amount_fen": 100,
+        "occurred_date": "2026-09-09",
+        "occurred_time": null,
+        "time_precision": "date",
+        "deleted_at": null
+      },
+      {
+        "name": "分页合成39",
+        "amount_fen": 100,
+        "occurred_date": "2026-09-09",
+        "occurred_time": null,
+        "time_precision": "date",
+        "deleted_at": null
+      },
+      {
+        "name": "分页合成4",
+        "amount_fen": 100,
+        "occurred_date": "2026-09-09",
+        "occurred_time": null,
+        "time_precision": "date",
+        "deleted_at": null
+      },
+      {
+        "name": "分页合成40",
+        "amount_fen": 100,
+        "occurred_date": "2026-09-09",
+        "occurred_time": null,
+        "time_precision": "date",
+        "deleted_at": null
+      },
+      {
+        "name": "分页合成41",
+        "amount_fen": 100,
+        "occurred_date": "2026-09-09",
+        "occurred_time": null,
+        "time_precision": "date",
+        "deleted_at": null
+      },
+      {
+        "name": "分页合成42",
+        "amount_fen": 100,
+        "occurred_date": "2026-09-09",
+        "occurred_time": null,
+        "time_precision": "date",
+        "deleted_at": null
+      },
+      {
+        "name": "分页合成43",
+        "amount_fen": 100,
+        "occurred_date": "2026-09-09",
+        "occurred_time": null,
+        "time_precision": "date",
+        "deleted_at": null
+      },
+      {
+        "name": "分页合成44",
+        "amount_fen": 100,
+        "occurred_date": "2026-09-09",
+        "occurred_time": null,
+        "time_precision": "date",
+        "deleted_at": null
+      },
+      {
+        "name": "分页合成45",
+        "amount_fen": 100,
+        "occurred_date": "2026-09-09",
+        "occurred_time": null,
+        "time_precision": "date",
+        "deleted_at": null
+      },
+      {
+        "name": "分页合成46",
+        "amount_fen": 100,
+        "occurred_date": "2026-09-09",
+        "occurred_time": null,
+        "time_precision": "date",
+        "deleted_at": null
+      },
+      {
+        "name": "分页合成47",
+        "amount_fen": 100,
+        "occurred_date": "2026-09-09",
+        "occurred_time": null,
+        "time_precision": "date",
+        "deleted_at": null
+      },
+      {
+        "name": "分页合成48",
+        "amount_fen": 100,
+        "occurred_date": "2026-09-09",
+        "occurred_time": null,
+        "time_precision": "date",
+        "deleted_at": null
+      },
+      {
+        "name": "分页合成49",
+        "amount_fen": 100,
+        "occurred_date": "2026-09-09",
+        "occurred_time": null,
+        "time_precision": "date",
+        "deleted_at": null
+      },
+      {
+        "name": "分页合成5",
+        "amount_fen": 100,
+        "occurred_date": "2026-09-09",
+        "occurred_time": null,
+        "time_precision": "date",
+        "deleted_at": null
+      },
+      {
+        "name": "分页合成50",
+        "amount_fen": 100,
+        "occurred_date": "2026-09-09",
+        "occurred_time": null,
+        "time_precision": "date",
+        "deleted_at": null
+      },
+      {
+        "name": "分页合成51",
+        "amount_fen": 100,
+        "occurred_date": "2026-09-09",
+        "occurred_time": null,
+        "time_precision": "date",
+        "deleted_at": null
+      },
+      {
+        "name": "分页合成52",
+        "amount_fen": 100,
+        "occurred_date": "2026-09-09",
+        "occurred_time": null,
+        "time_precision": "date",
+        "deleted_at": null
+      },
+      {
+        "name": "分页合成53",
+        "amount_fen": 100,
+        "occurred_date": "2026-09-09",
+        "occurred_time": null,
+        "time_precision": "date",
+        "deleted_at": null
+      },
+      {
+        "name": "分页合成54",
+        "amount_fen": 100,
+        "occurred_date": "2026-09-09",
+        "occurred_time": null,
+        "time_precision": "date",
+        "deleted_at": null
+      },
+      {
+        "name": "分页合成55",
+        "amount_fen": 100,
+        "occurred_date": "2026-09-09",
+        "occurred_time": null,
+        "time_precision": "date",
+        "deleted_at": null
+      },
+      {
+        "name": "分页合成56",
+        "amount_fen": 100,
+        "occurred_date": "2026-09-09",
+        "occurred_time": null,
+        "time_precision": "date",
+        "deleted_at": null
+      },
+      {
+        "name": "分页合成57",
+        "amount_fen": 100,
+        "occurred_date": "2026-09-09",
+        "occurred_time": null,
+        "time_precision": "date",
+        "deleted_at": null
+      },
+      {
+        "name": "分页合成58",
+        "amount_fen": 100,
+        "occurred_date": "2026-09-09",
+        "occurred_time": null,
+        "time_precision": "date",
+        "deleted_at": null
+      },
+      {
+        "name": "分页合成59",
+        "amount_fen": 100,
+        "occurred_date": "2026-09-09",
+        "occurred_time": null,
+        "time_precision": "date",
+        "deleted_at": null
+      },
+      {
+        "name": "分页合成6",
+        "amount_fen": 100,
+        "occurred_date": "2026-09-09",
+        "occurred_time": null,
+        "time_precision": "date",
+        "deleted_at": null
+      },
+      {
+        "name": "分页合成7",
+        "amount_fen": 100,
+        "occurred_date": "2026-09-09",
+        "occurred_time": null,
+        "time_precision": "date",
+        "deleted_at": null
+      },
+      {
+        "name": "分页合成8",
+        "amount_fen": 100,
+        "occurred_date": "2026-09-09",
+        "occurred_time": null,
+        "time_precision": "date",
+        "deleted_at": null
+      },
+      {
+        "name": "分页合成9",
+        "amount_fen": 100,
+        "occurred_date": "2026-09-09",
+        "occurred_time": null,
+        "time_precision": "date",
+        "deleted_at": null
+      },
+      {
+        "name": "午餐",
+        "amount_fen": 1800,
+        "occurred_date": "2026-09-08",
+        "occurred_time": null,
+        "time_precision": "date",
+        "deleted_at": null
+      },
+      {
+        "name": "午餐",
+        "amount_fen": 1550,
+        "occurred_date": "2026-09-09",
+        "occurred_time": null,
+        "time_precision": "date",
+        "deleted_at": null
+      },
+      {
+        "name": "晚餐",
+        "amount_fen": 1000,
+        "occurred_date": "2026-09-08",
+        "occurred_time": null,
+        "time_precision": "date",
+        "deleted_at": null
+      },
+      {
+        "name": "编辑字段验收",
+        "amount_fen": 8,
+        "occurred_date": "2025-12-31",
+        "occurred_time": "23:59",
+        "time_precision": "minute",
+        "deleted_at": null
+      },
+      {
+        "name": "购买水果",
+        "amount_fen": 1626,
+        "occurred_date": "2026-09-08",
+        "occurred_time": null,
+        "time_precision": "date",
+        "deleted_at": null
+      }
+    ],
+    "integrity": [
+      {
+        "quick_check": "ok"
+      }
+    ],
+    "foreignKeys": []
+  }
+}

@@ -9,12 +9,14 @@ import { SYSTEM_CATEGORIES } from '../../shared/categories';
 import type { IpcRouter } from './registry';
 import { createRateLimiter } from './rate-limit';
 import { getProvider } from '../services/providers';
-import { readAiSettings, readSecretStatus, saveSecretStub } from '../services/settings/ai-settings';
+import { readAiSettings, type SecretStore } from '../services/settings/ai-settings';
+import type { ProbeService } from '../services/providers/probe';
 import type { LedgerStore } from '../services/ledger-store';
 
 export interface HandlerDependencies {
   readonly store: LedgerStore;
-  readonly encryptionAvailable: () => boolean;
+  readonly secrets: SecretStore;
+  readonly probe: ProbeService;
 }
 
 export function registerIpcHandlers(router: IpcRouter, deps: HandlerDependencies): void {
@@ -24,14 +26,11 @@ export function registerIpcHandlers(router: IpcRouter, deps: HandlerDependencies
   );
 
   router.handle(CHANNEL_SPECS.settingsReadAi, () =>
-    readAiSettings({
-      encryptionAvailable: deps.encryptionAvailable(),
-      ledgerId: deps.store.currentLedgerId,
-    }),
+    readAiSettings(deps.secrets, deps.store.currentLedgerId, deps.probe.verified),
   );
 
   router.handle(CHANNEL_SPECS.settingsReadStatus, () =>
-    readSecretStatus({ encryptionAvailable: deps.encryptionAvailable() }),
+    deps.secrets.status(),
   );
 
   router.handle(CHANNEL_SPECS.settingsSaveSecret, (request) => {
@@ -39,12 +38,13 @@ export function registerIpcHandlers(router: IpcRouter, deps: HandlerDependencies
     if (!decision.ok) {
       throw new AppError('SECRET_RATE_LIMIT', { retryAfterMs: decision.retryAfterMs });
     }
-    return saveSecretStub(request.payload);
+    return deps.secrets.save(request.payload, request.mutationId!);
   });
 
   router.handle(CHANNEL_SPECS.providerCapabilities, (request) =>
-    getProvider(request.payload.providerId).capabilities(),
+    ({ ...getProvider(request.payload.providerId).capabilities(), ...(request.payload.providerId === 'deepseek' && deps.probe.verified ? { structuredOutputStatus: 'verified' as const, probeEvidenceId: deps.probe.verifiedEvidenceId } : {}) }),
   );
+  router.handle(CHANNEL_SPECS.providerProbe, (request) => deps.probe.run(request.mutationId!));
 
   router.handle(CHANNEL_SPECS.ledgerEnsureDefault, () => deps.store.ensureDefault());
 

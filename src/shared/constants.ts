@@ -9,8 +9,8 @@ export const CANDIDATE_SCHEMA_VERSION = 'bk-candidate.v1';
 /** 请求 DeepSeek 时使用的模型别名（真实标识只能来自响应）。 */
 export const DEEPSEEK_MODEL = 'deepseek-flash';
 
-/** S04 骨架提示词版本；真实提示词由 S09/S10 固化并替换。 */
-export const PROMPT_VERSION = 'bk-prompt.v0-skeleton';
+/** S09 固定合成图真实探针提示词版本。 */
+export const PROMPT_VERSION = 'bk-prompt.v2-s09';
 
 /** 本地模拟 provider 的模型标识（不是真实模型）。 */
 export const MOCK_MODEL = 'mock-deterministic-v1';

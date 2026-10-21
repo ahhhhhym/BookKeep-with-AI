@@ -145,6 +145,8 @@ export function App(): JSX.Element {
             capabilities={capabilities}
             onNavigate={navigate}
             onError={setLastError}
+            onAiChange={setAi}
+            onSecretChange={setSecret}
           />
         ) : null}
       </main>

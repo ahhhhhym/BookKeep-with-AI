@@ -1,0 +1,225 @@
+{
+  "kind": "real-api-S09-R1",
+  "localAppData": "C:\\Users\\Administrator\\AppData\\Local",
+  "checks": [
+    {
+      "id": "new-process-readiness-not-inherited-from-history",
+      "detail": {},
+      "ok": true
+    },
+    {
+      "id": "one-real-UI-action-returned-report",
+      "detail": {
+        "id": "868b8828-537c-4e51-b0e3-473d9abad53c",
+        "passed": true,
+        "errorCode": null
+      },
+      "ok": true
+    },
+    {
+      "id": "replay-no-second-HTTP-and-exact-image-no-truth-in-text",
+      "detail": {
+        "calls": 1,
+        "requests": [
+          {
+            "endpoint": "https://api.deepseek.com/chat/completions",
+            "method": "POST",
+            "redirect": "error",
+            "model": "deepseek-flash",
+            "responseFormat": "json_object",
+            "thinking": "disabled",
+            "imageBytes": 26450,
+            "imageSha256": "0136644513a3a9ebebec66bf893d81c31694f01d95057856190d965b5133d2d8",
+            "textContainsTruth": false,
+            "containsLedger": false
+          }
+        ]
+      },
+      "ok": true
+    },
+    {
+      "id": "real-success-readiness-binds-this-report",
+      "detail": {},
+      "ok": true
+    },
+    {
+      "id": "all-business-tables-counts-and-content-hashes-unchanged",
+      "detail": {},
+      "ok": true
+    },
+    {
+      "id": "restart-keeps-business-tables-and-resets-session-verification",
+      "detail": {},
+      "ok": true
+    }
+  ],
+  "ok": true,
+  "databaseBefore": {
+    "tables": [
+      {
+        "name": "app_meta",
+        "rows": 1,
+        "sha256": "b54dc92f476508b1cb2dca55e6fea8c6072a03f51b33c1b0fdfdd926a8b25e93"
+      },
+      {
+        "name": "audit_event",
+        "rows": 1,
+        "sha256": "342a4f41ab09f4ab599d20df08703d850195e962b0d14796ecf9cba45ebd0d31"
+      },
+      {
+        "name": "backup_record",
+        "rows": 0,
+        "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+      },
+      {
+        "name": "category",
+        "rows": 34,
+        "sha256": "4c9fedaacb876144d19c5c95da57c89c704ef88c5b84e02f6c89a42af7970f25"
+      },
+      {
+        "name": "ledger",
+        "rows": 1,
+        "sha256": "81ef7712d09dffd256547ac59c042425072cc77876b2af1d28899f0382aaa702"
+      },
+      {
+        "name": "migration_record",
+        "rows": 1,
+        "sha256": "606802a7c84a64828fa055f7b1cad020398ed4732323ef5e2feef297a0d02d74"
+      },
+      {
+        "name": "mutation_receipt",
+        "rows": 0,
+        "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+      },
+      {
+        "name": "transaction",
+        "rows": 0,
+        "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+      }
+    ],
+    "quickCheck": [
+      {
+        "quick_check": "ok"
+      }
+    ],
+    "foreignKeys": []
+  },
+  "secretStatus": {
+    "configured": true,
+    "mode": "encrypted",
+    "encryptionAvailable": true,
+    "version": 1,
+    "lastErrorCode": null
+  },
+  "realReportId": "868b8828-537c-4e51-b0e3-473d9abad53c",
+  "report": {
+    "id": "868b8828-537c-4e51-b0e3-473d9abad53c",
+    "kind": "real-api",
+    "startedAt": "2026-10-21T10:39:51.465Z",
+    "finishedAt": "2026-10-21T10:39:53.030Z",
+    "requestedModel": "deepseek-flash",
+    "actualModel": "deepseek-flash",
+    "promptVersion": "bk-prompt.v2-s09",
+    "schemaVersion": "bk-candidate.v1",
+    "fixtureId": "s09-receipt-v1",
+    "imageSha256": "0136644513a3a9ebebec66bf893d81c31694f01d95057856190d965b5133d2d8",
+    "imageBytes": 26450,
+    "imageSource": "BookKeepAI self-generated synthetic PNG, scripts/make-s09-fixture.ps1",
+    "endpoint": "https://api.deepseek.com/chat/completions",
+    "responseFormat": "json_object",
+    "imageAttached": true,
+    "requestCount": 1,
+    "durationMs": 1565,
+    "httpStatus": 200,
+    "usage": {
+      "promptTokens": 952,
+      "completionTokens": 252,
+      "totalTokens": 1204
+    },
+    "schemaValid": true,
+    "matches": {
+      "amount": true,
+      "date": true,
+      "name": true
+    },
+    "fields": {
+      "amountFen": 3742,
+      "occurredDate": "2026-08-19",
+      "name": "燕麦饼干"
+    },
+    "passed": true,
+    "errorCode": null,
+    "diagnostics": {
+      "stage": "validated",
+      "finishReason": "stop",
+      "issues": []
+    }
+  },
+  "transport": {
+    "calls": 1,
+    "requests": [
+      {
+        "endpoint": "https://api.deepseek.com/chat/completions",
+        "method": "POST",
+        "redirect": "error",
+        "model": "deepseek-flash",
+        "responseFormat": "json_object",
+        "thinking": "disabled",
+        "imageBytes": 26450,
+        "imageSha256": "0136644513a3a9ebebec66bf893d81c31694f01d95057856190d965b5133d2d8",
+        "textContainsTruth": false,
+        "containsLedger": false
+      }
+    ]
+  },
+  "databaseAfter": {
+    "tables": [
+      {
+        "name": "app_meta",
+        "rows": 1,
+        "sha256": "b54dc92f476508b1cb2dca55e6fea8c6072a03f51b33c1b0fdfdd926a8b25e93"
+      },
+      {
+        "name": "audit_event",
+        "rows": 1,
+        "sha256": "342a4f41ab09f4ab599d20df08703d850195e962b0d14796ecf9cba45ebd0d31"
+      },
+      {
+        "name": "backup_record",
+        "rows": 0,
+        "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+      },
+      {
+        "name": "category",
+        "rows": 34,
+        "sha256": "4c9fedaacb876144d19c5c95da57c89c704ef88c5b84e02f6c89a42af7970f25"
+      },
+      {
+        "name": "ledger",
+        "rows": 1,
+        "sha256": "81ef7712d09dffd256547ac59c042425072cc77876b2af1d28899f0382aaa702"
+      },
+      {
+        "name": "migration_record",
+        "rows": 1,
+        "sha256": "606802a7c84a64828fa055f7b1cad020398ed4732323ef5e2feef297a0d02d74"
+      },
+      {
+        "name": "mutation_receipt",
+        "rows": 0,
+        "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+      },
+      {
+        "name": "transaction",
+        "rows": 0,
+        "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+      }
+    ],
+    "quickCheck": [
+      {
+        "quick_check": "ok"
+      }
+    ],
+    "foreignKeys": []
+  }
+}

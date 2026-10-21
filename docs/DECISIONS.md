@@ -148,3 +148,39 @@ R1前的决策/契约/架构和看板原字节保存在evidence/RECEIPT-S05-R1/b
 |---|---|---|
 | D47 | 将既定statistics四操作落实为受限只读IPC；输出scope包含period/anchorDate/categoryIds、ledgerId/dataEpoch/revision/today/timezone及start/end/effectiveEnd，scopeId为这些规范字段的SHA256。snapshotRevision首读null、后续绑定首读revision；渲染比较完整scopeId及信封epoch，午夜/恢复/变更不匹配则整组重取，迟到应答丢弃。单次操作使用SQLite DEFERRED只读事务。零额类别不生成虚假排行项，空排行[] | CONTRACTS§11、shared统计DTO/schema、主进程服务、preload、renderer及测试；bookkeep.v1/dbSchemaVersion1不变，无新增迁移 |
 | D48 | 保持已锁依赖，用本地SVG绘制折线，金额/序列/排序仍全部来自统计服务；精确金额只在像素坐标转换为近似数。图表单Tab入口、方向键/Home/End、点击/Enter/Space固定、Esc关闭；详情用图下正常流卡片，优先确保小屏/缩放不遮挡周期和焦点控件，提供同值数据表及查看明细 | ARCHITECTURE§12、UX§5实施注、StatisticsPage/图表；对原ECharts建议的有记录替代，不改变产品需求/金额口径，无新依赖。S08复核真实交互 |
+
+## 15. D49：AC07分阶段验收与依赖修订（2026-10-21）
+
+来源：用户本轮针对BK-S08-001明确授权“将AC07按实现成熟度划分为三个可追踪子场景，保留AC07原编号和全部最终要求”，并明确本授权不包含自动通过G1、提前实现后续功能或发布。Codex据此采纳本决策，无须再次请求范围批准。本轮仅规格与任务衔接返工，不写业务代码、不执行S08复验、不启动S09。
+
+问题性质：S08-R1冻结47b60fe，统计实现ecc9795，验收材料65d2e16（完整commit及输入哈希见本轮input-verification.json）。BK-S08-001是验收前置冲突，未复现金额错误；原失败结论和证据保留，不追认为当时通过。
+
+| 依赖 | 调整前 | D49调整后 |
+|---|---|---|
+| S08/G1 | 要求AC01～AC07整项；AC07含S10/S11尚未实现的持久化隔离 | 仅要求AC01～AC06、AC07-A/B及相关基础持久化通过，无基础链路阻断缺陷 |
+| 后续入口 | G1→S09/G2→S10→S11，但完整G1又依赖S10/S11 | S08/G1(A/B)→S09/G2→S10真实任务/候选→S11接收/G3(C)→S17复验；无反向依赖 |
+| AC07整项 | 各子项均须真实证据，部分通过不算整项通过 | 规则保持：A/B/C均有真实证据后才可标通过；G1通过不代表AC07整项或审核隔离通过 |
+
+| 子场景 | 实现步骤 | 验收责任 | 证据要求 | 当前状态 |
+|---|---|---|---|---|
+| AC07-A | S05～S07 | Codex S08；S17全量复核 | F02六笔列表/日期小计/周月年/排行/日Top3交易/月Top3分类/日均；真实UI、受限IPC、SQLite整数及重启一致 | R1有通过证据；新口径S08-R2未执行，不据此自动通过G1 |
+| AC07-B | S05～S07 | Codex S08；S17全量复核 | 正式交易编辑、软删、恢复，同范围列表与各统计同源，重复恢复不增加 | R1有通过证据；新口径S08-R2未执行 |
+| AC07-C | S10真实任务/候选持久化；S11拒绝/逐笔批准及原子幂等关联，自测 | Codex S11单列接收/G3验证；Codex S17冻结候选复验 | F03-I-C：待审99元、拒绝88元、失败任务持久化及重启后统计增量0；人工批准99元后仅增9900分；UI/IPC/SQLite状态/关联/审计与全范围统计一致，批准失败回滚及重试新增0 | 未执行，待S11/G3验证、S17复验 |
+
+不变量保持：仅正式未删除交易参与统计；候选/拒绝/失败影响为0；每笔AI交易人工批准；事务原子且sourceCandidateId唯一（含软删），双击/重试/并发/重启不重复；未知字段补填、截图指令无执行权、密钥与样本边界、P0/P1阻发布及人类最终发布决定均不降低。mock识别可用于后续合成流程注入，但必须经真实持久化和审核链路，不以临时mock不写库替代AC07-C；真实图片API仍由G2独立证明。
+
+影响清单：AGENTS.md、开发方案.md、交接与验收.md、执行看板.md、分步中文提示词.md、docs/PRD.md、docs/ACCEPTANCE.md、docs/FIXTURES.md、本DECISIONS、README.md、开始阅读.md、文档审阅记录.md、issues/BK-S08-001.md；新增tasks/S08.md、tasks/S11.md、tasks/S17.md、handoff/S07/AC07-REWORK.md及evidence/S07-AC07-REWORK。ARCHITECTURE/CONTRACTS/UX无须修改：未改变统计查询、schema、IPC、审核事务或安全契约。tasks/S01～S07、历史handoff及evidence保留原字节。
+
+强制追踪入口：[S11/G3待办](../tasks/S11.md)、[S17复验待办](../tasks/S17.md)。C实现前不得关闭；G3需真实隔离及批准增量证据，S17仍须复验，缺项阻止相应门通过。BK-S08-001状态改为“范围/依赖已修订，待S08按新口径复验”；关闭须另轮S08-R2真实通过新G1并核对C待办保留。本轮G1仍未通过、S09仍未开始。下一唯一负责人为Codex执行单独一轮S08复验，由用户另步启动，任务书为[tasks/S08.md](../tasks/S08.md)。
+
+## 16. D50：S09安全配置及固定合成图探针（2026-10-21）
+
+用户明确启动S09；S08-R2 OUTPUTS 454项全部匹配，G1按D49通过。只实现S09，AC07-C不提前升级。
+
+- 当天复核官方Vision、JSON Output、updates：base https://api.deepseek.com，model deepseek-flash，Chat Completions user.image_url内联PNG；response_format=json_object，显式json和结构例子，thinking disabled，max_tokens=4096；不探测不必要组合。10/17更新名V4.1-Flash-1017只是官方映射，实际标识必须记录响应model，不从别名推定。
+- 修复骨架缺少expectedVersion及密钥首尾空白验证（BK-S09-001）；saveSecret强制CAS。单文件存安全version/mode及系统加密blob，临时文件flush/校验/原子替换；失败保持旧状态。不持久化key摘要或幂等payload，专用主进程会话收据只含mutationId/安全结果。
+- 新增受限provider.probe：只接受本地固定fixtureId、uploadConsent=true、possibleChargeAccepted=true，mutationId会话去重（失败也不隐式重发）；无任意URL/路径/图片IPC。读取主进程本地PNG、固定SHA256、必要分类与提示词；不含真值文本，不写业务库。
+- 探针返回有限安全报告：日期、图片hash/来源、提示版本、requested/actualModel、耗时、用量、HTTP状态、错误、schema及真值匹配。模型自由文本不进日志/UI，字段仅回显与公开合成真值一致部分。正式识别provider接口留S10句柄调度，不提前实现导入/持久化候选/审核。
+- 影响：CONTRACTS §6/§11、主进程settings/provider、IPC/preload/DTO、SettingsPage、自检、测试和构建资源复制；无依赖/数据库迁移，无AC范围变更。加密入口/UI及HTTP错误测试是实现自测，真实图成功另列；无key/余额/网络则G2未通过。
+
+D50实现结果：先后共3次真实单请求，无自动重试。v1两次OUTPUT_SCHEMA_INVALID；安全诊断定位missingFields未知枚举，v2只加强提示、不放宽schema；真实75e4eb46通过G2。确切字段/模型/用量及失败报告在evidence/S09。配置状态同步至页面和全局状态条，重开页面会刷新，不误显旧配置。所有实现与测试在S09，不当作S08/S17/S19独立验收，不自动启动S10。

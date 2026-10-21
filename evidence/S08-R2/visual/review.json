@@ -1,0 +1,20 @@
+[
+  {
+    "name": "F03-S",
+    "localAppData": "C:\\Users\\Administrator\\AppData\\Local\\Temp\\BookKeepAI S08-R2 F03-S 中文 5cCnv6",
+    "point": "2026-09-11",
+    "period": "月",
+    "screenshot": "evidence\\S08-R2\\visual\\F03-S-detail-visible.png",
+    "text": "关闭详情\n2026-09-11\n\n当日总支出 ¥50.00\n\n最大3笔交易\nT201消费\n¥10.00\nT202消费\n¥10.00\nT203消费\n¥10.00\n\n仅列前三项，总额含全部支出。\n\n查看明细",
+    "kind": "read-only UI observation; no business writes"
+  },
+  {
+    "name": "F03-C",
+    "localAppData": "C:\\Users\\Administrator\\AppData\\Local\\Temp\\BookKeepAI S08-R2 F03-C 中文 KzDoUQ",
+    "point": "2026-09",
+    "period": "年",
+    "screenshot": "evidence\\S08-R2\\visual\\F03-C-detail-visible.png",
+    "text": "关闭详情\n2026年9月\n\n当月总支出 ¥60.00\n\n前三消费分类\n书籍\n¥20.00\n学习\n¥20.00\n餐饮\n¥10.00\n\n仅列前三项，总额含全部支出。\n\n查看明细",
+    "kind": "read-only UI observation; no business writes"
+  }
+]

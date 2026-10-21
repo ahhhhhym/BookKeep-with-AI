@@ -1,0 +1,101 @@
+{
+  "kind": "isolated-IPC-and-mock-S09-R1-NOT-G2",
+  "localAppData": "C:\\Users\\Administrator\\AppData\\Local\\Temp\\BookKeep S09 R1 中文 MrEnzZ",
+  "checks": [
+    {
+      "id": "new-process-readiness-not-inherited-from-history",
+      "detail": {},
+      "ok": true
+    },
+    {
+      "id": "upload-consent-required",
+      "detail": {
+        "code": "FIELD_INVALID"
+      },
+      "ok": true
+    },
+    {
+      "id": "charge-consent-required",
+      "detail": {
+        "code": "FIELD_INVALID"
+      },
+      "ok": true
+    },
+    {
+      "id": "fixed-fixture-required",
+      "detail": {
+        "code": "FIELD_INVALID"
+      },
+      "ok": true
+    },
+    {
+      "id": "no-arbitrary-url-path-key",
+      "detail": {
+        "code": "PAYLOAD_INVALID"
+      },
+      "ok": true
+    },
+    {
+      "id": "missing-key-zero-HTTP",
+      "detail": {},
+      "ok": true
+    },
+    {
+      "id": "mock-provider-does-not-verify-deepseek",
+      "detail": {},
+      "ok": true
+    }
+  ],
+  "ok": false,
+  "databaseBefore": {
+    "tables": [
+      {
+        "name": "app_meta",
+        "rows": 1,
+        "sha256": "b7e3303e679f2d7ce603b39f55fc21514932998a05d7c4592f05bfb7fdce7c18"
+      },
+      {
+        "name": "audit_event",
+        "rows": 1,
+        "sha256": "fb098337ee9a4153fc03ffb4c00da11007752bcc79aa48a270618338fbeac8c6"
+      },
+      {
+        "name": "backup_record",
+        "rows": 0,
+        "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+      },
+      {
+        "name": "category",
+        "rows": 34,
+        "sha256": "8ce39a125940616dc8bf2cdc777e2591a79dc3a5730bce9d9e62d5049785c81f"
+      },
+      {
+        "name": "ledger",
+        "rows": 1,
+        "sha256": "751f3a43c682b9d91f03ece6640e11c501bb9afca05c2b9cab2b327ac2f84bf8"
+      },
+      {
+        "name": "migration_record",
+        "rows": 1,
+        "sha256": "613e97dcf762ccd6a0ea0f26999b4dc6bc32c431f2b9e11b2a8708d4fcfb0237"
+      },
+      {
+        "name": "mutation_receipt",
+        "rows": 0,
+        "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+      },
+      {
+        "name": "transaction",
+        "rows": 0,
+        "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+      }
+    ],
+    "quickCheck": [
+      {
+        "quick_check": "ok"
+      }
+    ],
+    "foreignKeys": []
+  },
+  "error": "TypeError: Cannot read properties of undefined (reading 'code')\n    at file:///D:/BookKeep%20with%20AI/evidence/RECEIPT-S09-R1/acceptance-probes.mjs:102:87"
+}

@@ -1,0 +1,22 @@
+[
+  {
+    "path": "dist/main/index.cjs",
+    "sha256": "635515815D4359155DBBB2425CEC8482CC746F1AE26F9E410C8E41EC3604E46E"
+  },
+  {
+    "path": "dist/preload/index.cjs",
+    "sha256": "42E7D0AE9591F8E435F2D1B5E75A1B814654FD1CE3E92B4DE7E7D07EFC358C55"
+  },
+  {
+    "path": "dist/renderer/index.html",
+    "sha256": "D835C81A9969D7C3979BEF8C45FC1AC3746567F97F266C7F5463FE3880799CA2"
+  },
+  {
+    "path": "dist/renderer/assets/index-D4oEXpRK.js",
+    "sha256": "E51E8DA2FA49C10AAECFF59217CD762CE58E44EAE1842869AB400E32688D6F21"
+  },
+  {
+    "path": "dist/renderer/assets/index-D67qUMaw.css",
+    "sha256": "6150EFD0EAE06B933D8A6CBBABBC750428B5123086EA32F41BCFC82EC6673524"
+  }
+]

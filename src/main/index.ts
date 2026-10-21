@@ -10,6 +10,9 @@ import { resolveStorageLayout } from './paths';
 import { registerAppScheme, serveRendererAssets } from './protocol';
 import { runSelfTest, writeSelfTestReport } from './selftest';
 import { LedgerStore } from './services/ledger-store';
+import { SecretStore } from './services/settings/ai-settings';
+import { ProbeService } from './services/providers/probe';
+import path from 'node:path';
 import { isAllowedNavigation } from './security/window-options';
 import {
   createMainWindow,
@@ -38,6 +41,7 @@ const storage = resolveStorageLayout(process.env);
 
 let mainWindow: BrowserWindow | null = null;
 let store: LedgerStore | null = null;
+let secrets: SecretStore | null = null;
 
 app.setAppUserModelId('ai.bookkeep.desktop');
 if (storage.ok) {
@@ -159,9 +163,11 @@ async function bootstrap(): Promise<void> {
       console.error('[bookkeep] unexpected IPC failure', error instanceof Error ? error.message : 'unknown');
     },
   });
+  secrets = new SecretStore(storage.layout.secrets, safeStorage);
+  const probe = new ProbeService(secrets, path.join(__dirname, 'probe/s09-receipt-v1.png'), storage.layout.logs);
   registerIpcHandlers(router, {
     store,
-    encryptionAvailable: () => safeStorage.isEncryptionAvailable(),
+    secrets, probe,
   });
 
   const created = createMainWindow({
@@ -236,6 +242,7 @@ app.on('second-instance', () => {
 });
 
 app.on('will-quit', () => {
+  secrets?.clearSession();
   store?.close();
   store = null;
 });

@@ -276,3 +276,11 @@ S06落实补充（D45）：preload向渲染层ApiResult透传既有信封dataEpo
 scope完整字段：scopeId（规范字段SHA256）、period、anchorDate（规范为周期start）、categoryIds（去重ASCII排序）、ledgerId、dataEpoch、revision、today、timezone、start/end/effectiveEnd。snapshotRevision=null首读；后续请求带首次revision。相同周期内anchor等价；scopeId还绑定today和epoch，因此恢复或午夜不能混用旧序列/详情，即使revision相同。渲染校验series/summary/排行/分类字典的revision/epoch，点详情额外核对scopeId和点总额；冲突整组重取，最多3次后明确错误，不显示0冒充成功。
 
 summary.categoryTotals和topCategories(pointMonth=null)为实际有支出的全分类排行，零支出返回[]，不补虚假项目。pointMonth非null先全月聚合再截3项，其ratioPercent以该月全额为分母。金额/日均/占比精确整数半入四舍五入，只有图形像素与progress宽度用近似数。接口与数据库版本仍bookkeep.v1/schema1；完整类型见src/shared/statistics.ts，运行时白名单见src/shared/ipc.ts。S07仅实现自测，S08另轮验收。
+
+## 11. S09实现补充（D50，2026-10-21）
+
+settings.saveSecret落实§6：expectedVersion为必填非负安全整数；密码opaque，首尾空白/控制字符拒绝，不trim。会话mutationId只记安全结果，重启读取状态；encrypted不可用自动session并明确显示。切换session/移除时同步撤掉旧磁盘blob，避免重启恢复旧key；持久version与mode不含秘密。系统解密失败显示SECRET_UNREADABLE，不静默覆盖/明文回退。Windows safeStorage由当前用户保护，S15继续安全加固。
+
+provider.probe为S09诊断接口（U）：payload固定fixtureId=s09-receipt-v1、uploadConsent=true、possibleChargeAccepted=true；mutationId必填，epoch必需；本窗口受信主frame，每次重新动作新id，单在途/无自动重试。相同id返回同Promise/报告，错误也不自动重复付费。只发内置无隐私合成PNG，不从UI接受URL/path/base64/模型/key；每次发送前从主进程安全配置读取。响应ProbeReport有限字段，原始provider文本丢弃；结果不作为候选或正式交易，不改变数据revision。readiness仅本会话真实图片+JSON+schema+真值全通过时ready，能力verified绑定同一报告id；重启后needs_probe，不能以mock升级。404/不支持等真实错误如实记录，不自动尝试其它模型。
+
+DeepSeek内部transport以受控Buffer接收图片（≤10MiB），固定HTTPS endpoint、90秒超时覆盖正文、响应≤1MiB、redirect=error，不内嵌重试。HTTP 401/403/402/400/404/422/429/5xx分别映射安全错误；其它异常NETWORK_ERROR，解析/空/截断/schema坏均拒绝。原始异常、头、请求/响应正文及图片编码不进日志。用量仅保留非负整数，actualModel限定安全标识。

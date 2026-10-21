@@ -1,0 +1,7 @@
+{
+  "checked": 49,
+  "manifest": "evidence/RECEIPT-S09-R1/OUTPUTS.sha256",
+  "expectedStateChanges": [],
+  "ok": true,
+  "unexpectedChanges": []
+}

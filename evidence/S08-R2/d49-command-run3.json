@@ -1,0 +1,13 @@
+{
+  "label": "d49-run3",
+  "executable": "node.exe",
+  "arguments": [
+    "evidence/S08-R2/d49-probes-run3.mjs"
+  ],
+  "startedAt": "2026-10-21T17:29:14.9391187+08:00",
+  "finishedAt": "2026-10-21T17:29:48.1048631+08:00",
+  "exitCode": 0,
+  "version": "7.6.7",
+  "shellProcess": "C:\\Program Files\\WindowsApps\\Microsoft.PowerShell_7.6.7.0_x64__8wekyb3d8bbwe\\pwsh.exe",
+  "reason": "run2 collector assumed repeat restore success; existing contract permits STATE_CONFLICT NOT_DELETED; assert refusal and unchanged total, original product/tests untouched"
+}

@@ -1,0 +1,33 @@
+try{
+ for(const [name,value,fen]of [['minimum','0.01',1],['maximum','9999999.99',999999999]]){
+  await begin('AC02-'+name);branch.before=sql();await snap('empty-before');
+  await page.getByRole('button',{name:'记一笔',exact:true}).first().click();
+  await page.locator('#expense-amount').fill(value);await page.locator('#expense-date').fill('2026-09-08');await page.locator('#expense-name').fill('独立金额边界'+name);await page.locator('#expense-categoryId').selectOption('cat_food');
+  branch.inputScreenshot=await snap('input');await page.getByRole('button',{name:'保存支出',exact:true}).click();await page.getByRole('dialog').waitFor({state:'hidden'});
+  await snapshot('saved',fen);assert.equal(sql().rows.length,1);await restart();await snapshot('restart',fen);
+ }
+ await begin('AC02-invalid');await seed();await snapshot('before',96530);
+ await page.getByRole('button',{name:'记账',exact:true}).click();await page.getByRole('button',{name:'记一笔',exact:true}).first().click();
+ await page.locator('#expense-date').fill('2026-09-08');await page.locator('#expense-name').fill('非法金额不得入账');await page.locator('#expense-categoryId').selectOption('cat_food');branch.invalid=[];
+ for(const [i,value]of ['', '0','-1','1.001','abc','1e2','10,000.00','10000000.00'].entries()){
+  await page.locator('#expense-amount').fill(value);await page.getByRole('button',{name:'保存支出',exact:true}).click();await page.locator('#expense-amount-error').waitFor();
+  const after=sql();assert.equal(after.active[0].totalFen,'96530');assert.equal(after.rows.length,6);
+  branch.invalid.push({value,error:await page.locator('#expense-amount-error').innerText(),sql:after,screenshot:await snap('invalid-'+i)});
+ }
+ await page.keyboard.press('Escape');await page.getByRole('button',{name:'放弃修改',exact:true}).click();await restart();await snapshot('restart-no-write',96530);check('invalid/8-cases-no-count-or-total-change');
+ await begin('F03-S');
+ await add('T201','2026-09-11','T201消费','cat_food',1000,'18:00');await add('T202','2026-09-11','T202消费','cat_food',1000,'18:00');await add('T203','2026-09-11','T203消费','cat_food',1000,'12:00');await add('T204','2026-09-11','T204消费','cat_food',1000);await add('T205','2026-09-11','T205消费','cat_food',1000);
+ await snapshot('same-amount',5000,'2026-09-11');
+ const series=await api('statistics','series',{period:'month',anchorDate:'2026-09-11',categoryIds:[],snapshotRevision:null});
+ const top=await api('statistics','topTransactions',{period:'month',anchorDate:'2026-09-11',categoryIds:[],snapshotRevision:series.scope.revision,pointDate:'2026-09-11'});
+ const expected=[branch.aliases.T201,branch.aliases.T202].sort().concat(branch.aliases.T203);assert.deepEqual(top.items.map(t=>t.transactionId),expected);assert.equal(top.pointTotalFen,'5000');
+ await page.getByRole('group',{name:'统计周期',exact:true}).getByRole('button',{name:'月',exact:true}).click();await page.getByLabel('选择周期日期',{exact:true}).fill('2026-09-11');await page.getByRole('button',{name:'选择周期',exact:true}).click();await waitTotal('[data-statistics-total]',5000);
+ await page.locator('[data-point-key="2026-09-11"] rect').click();const detail=page.getByRole('region',{name:'统计点详情',exact:true});await detail.locator('.top-items li').first().waitFor();
+ assert.deepEqual(await detail.locator('.top-items li').evaluateAll(nodes=>nodes.map(n=>n.textContent)),top.items.map(t=>`${t.name}¥10.00`));branch.tie={top,screenshot:await snap('day-tie-detail'),text:await detail.innerText()};await restart();await snapshot('restart',5000,'2026-09-11');check('F03-S/real-UI-known-time-ID-top3-total-includes-five');
+ await begin('F03-C');await add('T211','2026-09-12','书','cat_books',2000);await add('T212','2026-09-12','课程','cat_study',2000);await add('T213','2026-09-13','午餐','cat_food',1000);await add('T214','2026-09-13','水果','cat_fruit',1000);await snapshot('category-tie',6000,'2026-09-12');
+ await page.locator('[data-point-key="2026-09"] rect').click();await page.getByRole('region',{name:'统计点详情',exact:true}).locator('.top-items li').first().waitFor();
+ branch.tieText=await page.getByRole('region',{name:'统计点详情',exact:true}).innerText();assert.ok(branch.tieText.includes('书籍'));assert.ok(branch.tieText.includes('学习'));assert.ok(branch.tieText.includes('餐饮'));assert.ok(!branch.tieText.includes('水果'));branch.tieScreenshot=await snap('month-tie-detail');
+ await restart();await snapshot('restart',6000,'2026-09-12');check('F03-C/real-UI-category-tie-ID-fourth-counted');
+ assert.deepEqual(report.pageErrors,[]);report.ok=true;
+}catch(e){report.error=e.stack;process.exitCode=1;console.error(e);if(page&&!page.isClosed())report.failureScreenshot=await snap('failure').catch(()=>null);}
+finally{await close().catch(()=>{});report.finishedAt=new Date().toISOString();flush();writeFileSync(path.join(target,'results.json'),JSON.stringify(report,null,2)+'\n',{flag:'wx'});console.log(JSON.stringify({ok:report.ok,checks:report.checks.length,branches:report.branches.length,error:report.error||null}));}

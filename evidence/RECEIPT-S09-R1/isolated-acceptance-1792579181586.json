@@ -1,0 +1,276 @@
+{
+  "kind": "isolated-IPC-and-mock-S09-R1-NOT-G2",
+  "localAppData": "C:\\Users\\Administrator\\AppData\\Local\\Temp\\BookKeep S09 R1 中文 W38Io3",
+  "checks": [
+    {
+      "id": "new-process-readiness-not-inherited-from-history",
+      "detail": {},
+      "ok": true
+    },
+    {
+      "id": "upload-consent-required",
+      "detail": {
+        "code": "FIELD_INVALID"
+      },
+      "ok": true
+    },
+    {
+      "id": "charge-consent-required",
+      "detail": {
+        "code": "FIELD_INVALID"
+      },
+      "ok": true
+    },
+    {
+      "id": "fixed-fixture-required",
+      "detail": {
+        "code": "FIELD_INVALID"
+      },
+      "ok": true
+    },
+    {
+      "id": "no-arbitrary-url-path-key",
+      "detail": {
+        "code": "PAYLOAD_INVALID"
+      },
+      "ok": true
+    },
+    {
+      "id": "missing-key-zero-HTTP",
+      "detail": {},
+      "ok": true
+    },
+    {
+      "id": "mock-provider-does-not-verify-deepseek",
+      "detail": {},
+      "ok": true
+    },
+    {
+      "id": "different-mutation-concurrent-probe-rejected",
+      "detail": {
+        "code": "STATE_CONFLICT"
+      },
+      "ok": true
+    },
+    {
+      "id": "same-mutation-concurrent-replay-same-report",
+      "detail": {},
+      "ok": true
+    },
+    {
+      "id": "replay-no-second-HTTP-and-exact-image-no-truth-in-text",
+      "detail": {
+        "calls": 1,
+        "requests": [
+          {
+            "endpoint": "https://api.deepseek.com/chat/completions",
+            "method": "POST",
+            "redirect": "error",
+            "model": "deepseek-flash",
+            "responseFormat": "json_object",
+            "thinking": "disabled",
+            "imageBytes": 26450,
+            "imageSha256": "0136644513a3a9ebebec66bf893d81c31694f01d95057856190d965b5133d2d8",
+            "textContainsTruth": false,
+            "containsLedger": false
+          }
+        ]
+      },
+      "ok": true
+    },
+    {
+      "id": "MOCK-valid-response-gates-readiness-NOT-G2",
+      "detail": {},
+      "ok": true
+    },
+    {
+      "id": "all-business-tables-counts-and-content-hashes-unchanged",
+      "detail": {},
+      "ok": true
+    },
+    {
+      "id": "key-version-change-invalidates-verified-evidence",
+      "detail": {},
+      "ok": true
+    },
+    {
+      "id": "restart-keeps-business-tables-and-resets-session-verification",
+      "detail": {},
+      "ok": true
+    }
+  ],
+  "ok": true,
+  "databaseBefore": {
+    "tables": [
+      {
+        "name": "app_meta",
+        "rows": 1,
+        "sha256": "aa78517aae5948f99f39652c2642f9e41539fe8ec85fd437ba05ed263e16945f"
+      },
+      {
+        "name": "audit_event",
+        "rows": 1,
+        "sha256": "0ee966d42fd796238a6b24b76059bd50e4e5bd95b2a7d1a6f941d04a6422b763"
+      },
+      {
+        "name": "backup_record",
+        "rows": 0,
+        "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+      },
+      {
+        "name": "category",
+        "rows": 34,
+        "sha256": "5f1d3653fd998c65846fbbd5aa3dc391197b0179072d1fa9c79586ff90bebf1f"
+      },
+      {
+        "name": "ledger",
+        "rows": 1,
+        "sha256": "8fa3946baa7efd445884261a42fb3b85b380c206134b5afb59b5c1ca7c21c64c"
+      },
+      {
+        "name": "migration_record",
+        "rows": 1,
+        "sha256": "9f0cc51834d55f4f45dc9a17461d11a0c1c179c30ef102329e71d9f795abaa41"
+      },
+      {
+        "name": "mutation_receipt",
+        "rows": 0,
+        "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+      },
+      {
+        "name": "transaction",
+        "rows": 0,
+        "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+      }
+    ],
+    "quickCheck": [
+      {
+        "quick_check": "ok"
+      }
+    ],
+    "foreignKeys": []
+  },
+  "concurrentResponse": {
+    "ok": false,
+    "error": {
+      "code": "STATE_CONFLICT",
+      "message": "STATE_CONFLICT",
+      "fieldErrors": [],
+      "details": {},
+      "retryable": false,
+      "retryAfterMs": null
+    },
+    "dataEpoch": "937065df-b279-4433-a1b6-a0ac44864d26",
+    "dataRevision": 0
+  },
+  "report": {
+    "id": "a3a5887c-bbb2-439a-b809-58cd69754793",
+    "kind": "real-api",
+    "startedAt": "2026-10-21T10:39:40.281Z",
+    "finishedAt": "2026-10-21T10:39:40.363Z",
+    "requestedModel": "deepseek-flash",
+    "actualModel": "deepseek-flash",
+    "promptVersion": "bk-prompt.v2-s09",
+    "schemaVersion": "bk-candidate.v1",
+    "fixtureId": "s09-receipt-v1",
+    "imageSha256": "0136644513a3a9ebebec66bf893d81c31694f01d95057856190d965b5133d2d8",
+    "imageBytes": 26450,
+    "imageSource": "BookKeepAI self-generated synthetic PNG, scripts/make-s09-fixture.ps1",
+    "endpoint": "https://api.deepseek.com/chat/completions",
+    "responseFormat": "json_object",
+    "imageAttached": true,
+    "requestCount": 1,
+    "durationMs": 82,
+    "httpStatus": 200,
+    "usage": {
+      "promptTokens": 1,
+      "completionTokens": 1,
+      "totalTokens": 2
+    },
+    "schemaValid": true,
+    "matches": {
+      "amount": true,
+      "date": true,
+      "name": true
+    },
+    "fields": {
+      "amountFen": 3742,
+      "occurredDate": "2026-08-19",
+      "name": "燕麦饼干"
+    },
+    "passed": true,
+    "errorCode": null,
+    "diagnostics": {
+      "stage": "validated",
+      "finishReason": "stop",
+      "issues": []
+    }
+  },
+  "transport": {
+    "calls": 1,
+    "requests": [
+      {
+        "endpoint": "https://api.deepseek.com/chat/completions",
+        "method": "POST",
+        "redirect": "error",
+        "model": "deepseek-flash",
+        "responseFormat": "json_object",
+        "thinking": "disabled",
+        "imageBytes": 26450,
+        "imageSha256": "0136644513a3a9ebebec66bf893d81c31694f01d95057856190d965b5133d2d8",
+        "textContainsTruth": false,
+        "containsLedger": false
+      }
+    ]
+  },
+  "databaseAfter": {
+    "tables": [
+      {
+        "name": "app_meta",
+        "rows": 1,
+        "sha256": "aa78517aae5948f99f39652c2642f9e41539fe8ec85fd437ba05ed263e16945f"
+      },
+      {
+        "name": "audit_event",
+        "rows": 1,
+        "sha256": "0ee966d42fd796238a6b24b76059bd50e4e5bd95b2a7d1a6f941d04a6422b763"
+      },
+      {
+        "name": "backup_record",
+        "rows": 0,
+        "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+      },
+      {
+        "name": "category",
+        "rows": 34,
+        "sha256": "5f1d3653fd998c65846fbbd5aa3dc391197b0179072d1fa9c79586ff90bebf1f"
+      },
+      {
+        "name": "ledger",
+        "rows": 1,
+        "sha256": "8fa3946baa7efd445884261a42fb3b85b380c206134b5afb59b5c1ca7c21c64c"
+      },
+      {
+        "name": "migration_record",
+        "rows": 1,
+        "sha256": "9f0cc51834d55f4f45dc9a17461d11a0c1c179c30ef102329e71d9f795abaa41"
+      },
+      {
+        "name": "mutation_receipt",
+        "rows": 0,
+        "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+      },
+      {
+        "name": "transaction",
+        "rows": 0,
+        "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+      }
+    ],
+    "quickCheck": [
+      {
+        "quick_check": "ok"
+      }
+    ],
+    "foreignKeys": []
+  }
+}

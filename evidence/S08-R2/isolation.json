@@ -1,0 +1,352 @@
+{
+  "scope": "all new main/supplemental independent branches; existing replay branches separately listed",
+  "branches": [
+    {
+      "name": "AC01",
+      "localAppData": "C:\\Users\\Administrator\\AppData\\Local\\Temp\\BookKeepAI S08-R2 AC01 中文 y4t8MQ",
+      "databasePaths": [],
+      "launches": [
+        {
+          "at": "2026-10-21T09:29:15.689Z",
+          "pid": 30712,
+          "url": "bookkeep://app/index.html",
+          "title": "BookKeepAI",
+          "offlineSimulation": true
+        },
+        {
+          "at": "2026-10-21T09:29:16.981Z",
+          "pid": 26196,
+          "url": "bookkeep://app/index.html",
+          "title": "BookKeepAI",
+          "offlineSimulation": true
+        }
+      ],
+      "singleDefaultLedger": true
+    },
+    {
+      "name": "F01",
+      "localAppData": "C:\\Users\\Administrator\\AppData\\Local\\Temp\\BookKeepAI S08-R2 F01 中文 tBmYrN",
+      "databasePaths": [
+        "C:\\Users\\Administrator\\AppData\\Local\\Temp\\BookKeepAI S08-R2 F01 中文 tBmYrN\\BookKeepAI\\data\\generations\\0544867d-63c5-481f-9a00-aba80b65b7ac\\ledger.db"
+      ],
+      "launches": [
+        {
+          "at": "2026-10-21T09:29:17.485Z",
+          "pid": 25268,
+          "url": "bookkeep://app/index.html",
+          "title": "BookKeepAI",
+          "offlineSimulation": true
+        },
+        {
+          "at": "2026-10-21T09:29:21.068Z",
+          "pid": 1400,
+          "url": "bookkeep://app/index.html",
+          "title": "BookKeepAI",
+          "offlineSimulation": true
+        }
+      ],
+      "singleDefaultLedger": true
+    },
+    {
+      "name": "F02",
+      "localAppData": "C:\\Users\\Administrator\\AppData\\Local\\Temp\\BookKeepAI S08-R2 F02 中文 5bcC4K",
+      "databasePaths": [
+        "C:\\Users\\Administrator\\AppData\\Local\\Temp\\BookKeepAI S08-R2 F02 中文 5bcC4K\\BookKeepAI\\data\\generations\\0dc896ab-5c23-4ad8-b92e-8069e91143a9\\ledger.db"
+      ],
+      "launches": [
+        {
+          "at": "2026-10-21T09:29:22.673Z",
+          "pid": 1176,
+          "url": "bookkeep://app/index.html",
+          "title": "BookKeepAI",
+          "offlineSimulation": true
+        },
+        {
+          "at": "2026-10-21T09:29:24.692Z",
+          "pid": 25848,
+          "url": "bookkeep://app/index.html",
+          "title": "BookKeepAI",
+          "offlineSimulation": true
+        }
+      ],
+      "singleDefaultLedger": true
+    },
+    {
+      "name": "F03-I-B-T241",
+      "localAppData": "C:\\Users\\Administrator\\AppData\\Local\\Temp\\BookKeepAI S08-R2 F03-I-B-T241 中文 KtJp2n",
+      "databasePaths": [
+        "C:\\Users\\Administrator\\AppData\\Local\\Temp\\BookKeepAI S08-R2 F03-I-B-T241 中文 KtJp2n\\BookKeepAI\\data\\generations\\8c82b091-3196-4364-b444-7709e38b6f0d\\ledger.db"
+      ],
+      "launches": [
+        {
+          "at": "2026-10-21T09:29:25.793Z",
+          "pid": 7304,
+          "url": "bookkeep://app/index.html",
+          "title": "BookKeepAI",
+          "offlineSimulation": true
+        },
+        {
+          "at": "2026-10-21T09:29:28.525Z",
+          "pid": 31212,
+          "url": "bookkeep://app/index.html",
+          "title": "BookKeepAI",
+          "offlineSimulation": true
+        }
+      ],
+      "singleDefaultLedger": true
+    },
+    {
+      "name": "F03-I-B-delete-restore",
+      "localAppData": "C:\\Users\\Administrator\\AppData\\Local\\Temp\\BookKeepAI S08-R2 F03-I-B-delete-restore 中文 j2fHQP",
+      "databasePaths": [
+        "C:\\Users\\Administrator\\AppData\\Local\\Temp\\BookKeepAI S08-R2 F03-I-B-delete-restore 中文 j2fHQP\\BookKeepAI\\data\\generations\\876ac4d1-3171-4073-830e-15bdd2217b3d\\ledger.db"
+      ],
+      "launches": [
+        {
+          "at": "2026-10-21T09:29:29.618Z",
+          "pid": 15224,
+          "url": "bookkeep://app/index.html",
+          "title": "BookKeepAI",
+          "offlineSimulation": true
+        },
+        {
+          "at": "2026-10-21T09:29:33.029Z",
+          "pid": 32424,
+          "url": "bookkeep://app/index.html",
+          "title": "BookKeepAI",
+          "offlineSimulation": true
+        }
+      ],
+      "singleDefaultLedger": true
+    },
+    {
+      "name": "F03-I-B-edit",
+      "localAppData": "C:\\Users\\Administrator\\AppData\\Local\\Temp\\BookKeepAI S08-R2 F03-I-B-edit 中文 bCVSZd",
+      "databasePaths": [
+        "C:\\Users\\Administrator\\AppData\\Local\\Temp\\BookKeepAI S08-R2 F03-I-B-edit 中文 bCVSZd\\BookKeepAI\\data\\generations\\21356d9c-9bd0-42a0-b710-fcc95d8e3677\\ledger.db"
+      ],
+      "launches": [
+        {
+          "at": "2026-10-21T09:29:34.664Z",
+          "pid": 31752,
+          "url": "bookkeep://app/index.html",
+          "title": "BookKeepAI",
+          "offlineSimulation": true
+        },
+        {
+          "at": "2026-10-21T09:29:37.963Z",
+          "pid": 33360,
+          "url": "bookkeep://app/index.html",
+          "title": "BookKeepAI",
+          "offlineSimulation": true
+        }
+      ],
+      "singleDefaultLedger": true
+    },
+    {
+      "name": "F03-I-B-category",
+      "localAppData": "C:\\Users\\Administrator\\AppData\\Local\\Temp\\BookKeepAI S08-R2 F03-I-B-category 中文 9AK5Be",
+      "databasePaths": [
+        "C:\\Users\\Administrator\\AppData\\Local\\Temp\\BookKeepAI S08-R2 F03-I-B-category 中文 9AK5Be\\BookKeepAI\\data\\generations\\f0485747-2c03-4d9c-8f25-0bd348dcb3c2\\ledger.db"
+      ],
+      "launches": [
+        {
+          "at": "2026-10-21T09:29:39.545Z",
+          "pid": 21716,
+          "url": "bookkeep://app/index.html",
+          "title": "BookKeepAI",
+          "offlineSimulation": true
+        },
+        {
+          "at": "2026-10-21T09:29:42.106Z",
+          "pid": 29112,
+          "url": "bookkeep://app/index.html",
+          "title": "BookKeepAI",
+          "offlineSimulation": true
+        }
+      ],
+      "singleDefaultLedger": true
+    },
+    {
+      "name": "F03-I-B-pagination",
+      "localAppData": "C:\\Users\\Administrator\\AppData\\Local\\Temp\\BookKeepAI S08-R2 F03-I-B-pagination 中文 oSztpG",
+      "databasePaths": [
+        "C:\\Users\\Administrator\\AppData\\Local\\Temp\\BookKeepAI S08-R2 F03-I-B-pagination 中文 oSztpG\\BookKeepAI\\data\\generations\\b52f351e-f0ba-449c-aa5b-6865f8b1fbdf\\ledger.db"
+      ],
+      "launches": [
+        {
+          "at": "2026-10-21T09:29:43.675Z",
+          "pid": 8160,
+          "url": "bookkeep://app/index.html",
+          "title": "BookKeepAI",
+          "offlineSimulation": true
+        },
+        {
+          "at": "2026-10-21T09:29:45.030Z",
+          "pid": 25220,
+          "url": "bookkeep://app/index.html",
+          "title": "BookKeepAI",
+          "offlineSimulation": true
+        }
+      ],
+      "singleDefaultLedger": true
+    },
+    {
+      "name": "actual-current",
+      "localAppData": "C:\\Users\\Administrator\\AppData\\Local\\Temp\\BookKeepAI S08-R2 actual-current 中文 kLwWCg",
+      "databasePaths": [
+        "C:\\Users\\Administrator\\AppData\\Local\\Temp\\BookKeepAI S08-R2 actual-current 中文 kLwWCg\\BookKeepAI\\data\\generations\\e8a774a5-c2ab-4a7f-a7c9-695a1810c3c9\\ledger.db"
+      ],
+      "launches": [
+        {
+          "at": "2026-10-21T09:29:46.133Z",
+          "pid": 2392,
+          "url": "bookkeep://app/index.html",
+          "title": "BookKeepAI",
+          "offlineSimulation": true
+        }
+      ],
+      "singleDefaultLedger": true
+    },
+    {
+      "name": "AC02-minimum",
+      "localAppData": "C:\\Users\\Administrator\\AppData\\Local\\Temp\\BookKeepAI S08-R2 AC02-minimum 中文 8wEf9C",
+      "databasePaths": [
+        "C:\\Users\\Administrator\\AppData\\Local\\Temp\\BookKeepAI S08-R2 AC02-minimum 中文 8wEf9C\\BookKeepAI\\data\\generations\\59e4b87f-d7e1-401e-bccb-ff334875aac7\\ledger.db"
+      ],
+      "launches": [
+        {
+          "at": "2026-10-21T09:30:51.215Z",
+          "pid": 33584,
+          "url": "bookkeep://app/index.html",
+          "title": "BookKeepAI",
+          "offlineSimulation": true
+        },
+        {
+          "at": "2026-10-21T09:30:53.175Z",
+          "pid": 7048,
+          "url": "bookkeep://app/index.html",
+          "title": "BookKeepAI",
+          "offlineSimulation": true
+        }
+      ],
+      "singleDefaultLedger": true
+    },
+    {
+      "name": "AC02-maximum",
+      "localAppData": "C:\\Users\\Administrator\\AppData\\Local\\Temp\\BookKeepAI S08-R2 AC02-maximum 中文 3OHuxG",
+      "databasePaths": [
+        "C:\\Users\\Administrator\\AppData\\Local\\Temp\\BookKeepAI S08-R2 AC02-maximum 中文 3OHuxG\\BookKeepAI\\data\\generations\\a391dc23-3975-46a6-9065-895afc8d65b9\\ledger.db"
+      ],
+      "launches": [
+        {
+          "at": "2026-10-21T09:30:54.385Z",
+          "pid": 24352,
+          "url": "bookkeep://app/index.html",
+          "title": "BookKeepAI",
+          "offlineSimulation": true
+        },
+        {
+          "at": "2026-10-21T09:30:56.431Z",
+          "pid": 29264,
+          "url": "bookkeep://app/index.html",
+          "title": "BookKeepAI",
+          "offlineSimulation": true
+        }
+      ],
+      "singleDefaultLedger": true
+    },
+    {
+      "name": "AC02-invalid",
+      "localAppData": "C:\\Users\\Administrator\\AppData\\Local\\Temp\\BookKeepAI S08-R2 AC02-invalid 中文 y5Jz11",
+      "databasePaths": [
+        "C:\\Users\\Administrator\\AppData\\Local\\Temp\\BookKeepAI S08-R2 AC02-invalid 中文 y5Jz11\\BookKeepAI\\data\\generations\\d7c26bd9-5132-4752-8075-045281ebd4fa\\ledger.db"
+      ],
+      "launches": [
+        {
+          "at": "2026-10-21T09:30:57.678Z",
+          "pid": 19184,
+          "url": "bookkeep://app/index.html",
+          "title": "BookKeepAI",
+          "offlineSimulation": true
+        },
+        {
+          "at": "2026-10-21T09:31:00.216Z",
+          "pid": 22780,
+          "url": "bookkeep://app/index.html",
+          "title": "BookKeepAI",
+          "offlineSimulation": true
+        }
+      ],
+      "singleDefaultLedger": true
+    },
+    {
+      "name": "F03-S",
+      "localAppData": "C:\\Users\\Administrator\\AppData\\Local\\Temp\\BookKeepAI S08-R2 F03-S 中文 5cCnv6",
+      "databasePaths": [
+        "C:\\Users\\Administrator\\AppData\\Local\\Temp\\BookKeepAI S08-R2 F03-S 中文 5cCnv6\\BookKeepAI\\data\\generations\\69906052-0608-4827-bf50-bd42bf764491\\ledger.db"
+      ],
+      "launches": [
+        {
+          "at": "2026-10-21T09:31:01.777Z",
+          "pid": 27188,
+          "url": "bookkeep://app/index.html",
+          "title": "BookKeepAI",
+          "offlineSimulation": true
+        },
+        {
+          "at": "2026-10-21T09:31:03.985Z",
+          "pid": 30064,
+          "url": "bookkeep://app/index.html",
+          "title": "BookKeepAI",
+          "offlineSimulation": true
+        }
+      ],
+      "singleDefaultLedger": true
+    },
+    {
+      "name": "F03-C",
+      "localAppData": "C:\\Users\\Administrator\\AppData\\Local\\Temp\\BookKeepAI S08-R2 F03-C 中文 KzDoUQ",
+      "databasePaths": [
+        "C:\\Users\\Administrator\\AppData\\Local\\Temp\\BookKeepAI S08-R2 F03-C 中文 KzDoUQ\\BookKeepAI\\data\\generations\\549b1814-fe71-47ee-beb1-06609e8fa518\\ledger.db"
+      ],
+      "launches": [
+        {
+          "at": "2026-10-21T09:31:05.220Z",
+          "pid": 23456,
+          "url": "bookkeep://app/index.html",
+          "title": "BookKeepAI",
+          "offlineSimulation": true
+        },
+        {
+          "at": "2026-10-21T09:31:07.556Z",
+          "pid": 23136,
+          "url": "bookkeep://app/index.html",
+          "title": "BookKeepAI",
+          "offlineSimulation": true
+        }
+      ],
+      "singleDefaultLedger": true
+    }
+  ],
+  "replays": [
+    {
+      "path": "manual/ui-workflow.json",
+      "localAppData": "C:\\Users\\Administrator\\AppData\\Local\\Temp\\BookKeepAI S06 中文 qACctZ"
+    },
+    {
+      "path": "statistics/ui-workflow.json",
+      "localAppData": "C:\\Users\\Administrator\\AppData\\Local\\Temp\\BookKeepAI S07 中文 RQ9QJb"
+    },
+    {
+      "path": "manual-probes/additional-probes.json",
+      "localAppData": "C:\\Users\\Administrator\\AppData\\Local\\Temp\\BookKeepAI S06 receipt 中文 DjrVLh"
+    },
+    {
+      "path": "statistics-probes/additional-probes.json",
+      "localAppData": "C:\\Users\\Administrator\\AppData\\Local\\Temp\\BookKeepAI S07 receipt 中文 SJn5mQ"
+    }
+  ],
+  "startupLocalAppData": "C:\\Users\\Administrator\\AppData\\Local\\Temp\\BookKeepAI S07 startup 中文 OnxDsP",
+  "noDatabaseOrAttachmentCopiedIntoRepository": true
+}

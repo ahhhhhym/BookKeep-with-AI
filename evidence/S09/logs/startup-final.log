@@ -1,0 +1,63 @@
+
+[bookkeep] self-test PASSED (28/28)
+[bookkeep] electron self-test (first start): PASSED (28/28 checks)
+[bookkeep]   ok   environment.versions
+[bookkeep]   ok   storage.localAppDataRoot
+[bookkeep]   ok   window.webPreferences
+[bookkeep]   ok   app.singleInstanceLock
+[bookkeep]   ok   renderer.nodeIsolation
+[bookkeep]   ok   preload.bridgeSurface
+[bookkeep]   ok   db.schemaAndLocation
+[bookkeep]   ok   db.defaultLedgerSeed
+[bookkeep]   ok   renderer.mounted
+[bookkeep]   ok   renderer.stylesApplied
+[bookkeep]   ok   renderer.contentSecurityPolicy
+[bookkeep]   ok   renderer.noRemoteResources
+[bookkeep]   ok   ipc.settingsAi
+[bookkeep]   ok   ipc.settingsReadStatus
+[bookkeep]   ok   ipc.rejectsUnknownPayloadKey
+[bookkeep]   ok   ipc.secretVersionRequired
+[bookkeep]   ok   provider.mockTwoExpenses
+[bookkeep]   ok   provider.mockMissingFieldsBlock
+[bookkeep]   ok   provider.deepseekStub
+[bookkeep]   ok   ipc.ledgerEnsureDefault
+[bookkeep]   ok   ipc.categoryList
+[bookkeep]   ok   ipc.transactionList
+[bookkeep]   ok   ipc.backupList
+[bookkeep]   ok   ipc.channelWhitelist
+[bookkeep]   ok   sqlite.better-sqlite3
+[bookkeep]   ok   window.openDenied
+[bookkeep]   ok   navigation.remoteBlocked
+[bookkeep]   ok   renderer.origin
+
+[bookkeep] self-test PASSED (28/28)
+[bookkeep] electron self-test (restart): PASSED (28/28 checks)
+[bookkeep]   ok   environment.versions
+[bookkeep]   ok   storage.localAppDataRoot
+[bookkeep]   ok   window.webPreferences
+[bookkeep]   ok   app.singleInstanceLock
+[bookkeep]   ok   renderer.nodeIsolation
+[bookkeep]   ok   preload.bridgeSurface
+[bookkeep]   ok   db.schemaAndLocation
+[bookkeep]   ok   db.defaultLedgerSeed
+[bookkeep]   ok   renderer.mounted
+[bookkeep]   ok   renderer.stylesApplied
+[bookkeep]   ok   renderer.contentSecurityPolicy
+[bookkeep]   ok   renderer.noRemoteResources
+[bookkeep]   ok   ipc.settingsAi
+[bookkeep]   ok   ipc.settingsReadStatus
+[bookkeep]   ok   ipc.rejectsUnknownPayloadKey
+[bookkeep]   ok   ipc.secretVersionRequired
+[bookkeep]   ok   provider.mockTwoExpenses
+[bookkeep]   ok   provider.mockMissingFieldsBlock
+[bookkeep]   ok   provider.deepseekStub
+[bookkeep]   ok   ipc.ledgerEnsureDefault
+[bookkeep]   ok   ipc.categoryList
+[bookkeep]   ok   ipc.transactionList
+[bookkeep]   ok   ipc.backupList
+[bookkeep]   ok   ipc.channelWhitelist
+[bookkeep]   ok   sqlite.better-sqlite3
+[bookkeep]   ok   window.openDenied
+[bookkeep]   ok   navigation.remoteBlocked
+[bookkeep]   ok   renderer.origin
+[bookkeep] restart idempotency: PASSED (ledger=d17f7627-beec-4ea3-af6c-a97d55e6e359, epoch=a48f1350-6a03-4383-9c99-da2653a59f96, categories=34)

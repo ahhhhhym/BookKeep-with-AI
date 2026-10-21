@@ -1,0 +1,1959 @@
+{
+  "ok": true,
+  "kind": "S07 R1 additional acceptance probes; not S08/G1",
+  "localAppData": "C:\\Users\\Administrator\\AppData\\Local\\Temp\\BookKeepAI S07 receipt 中文 SJn5mQ",
+  "checks": [
+    {
+      "id": "UI-fourth-transaction-in-total-but-top3-truncated",
+      "ok": true,
+      "detail": {
+        "totalFen": "5226",
+        "top3": [
+          "午餐",
+          "购买水果",
+          "晚餐"
+        ]
+      }
+    },
+    {
+      "id": "UI-multiple-category-filter-year-point-ledger-and-return",
+      "ok": true,
+      "detail": {
+        "selected": [
+          "cat_food",
+          "cat_fruit"
+        ],
+        "totalFen": "8776"
+      }
+    },
+    {
+      "id": "UI-renamed-disabled-category-retains-history-and-selected-filter",
+      "ok": true,
+      "detail": {}
+    },
+    {
+      "id": "independent-integer-oracle-120-scopes-through-real-preload",
+      "ok": true,
+      "detail": {
+        "scopes": 120,
+        "records": 132,
+        "includes": "calendar, zero and future, current denominator, category duplicates, one-row pagination, full-point values, ranking, all valid point Top3 in 12 scopes"
+      }
+    },
+    {
+      "id": "real-IPC-rejects-invalid-fields-dates-future-point-and-stale-revision",
+      "ok": true,
+      "detail": {}
+    },
+    {
+      "id": "real-backup-restore-changes-epoch-and-refreshes-filtered-UI",
+      "ok": true,
+      "detail": {}
+    },
+    {
+      "id": "SQL-native-integrity-offline-no-overlay-or-runtime-errors",
+      "ok": true,
+      "detail": {
+        "active": {
+          "count": 8,
+          "totalFen": "99330"
+        },
+        "quickCheck": [
+          {
+            "quick_check": "ok"
+          }
+        ],
+        "foreignKeys": []
+      }
+    }
+  ],
+  "errors": [],
+  "warnings": [],
+  "notices": [],
+  "oracleScopes": [
+    {
+      "input": {
+        "period": "week",
+        "anchorDate": "1900-01-01",
+        "categoryIds": [],
+        "snapshotRevision": null
+      },
+      "expected": "1",
+      "count": 1,
+      "denominatorDays": 7,
+      "points": 7,
+      "inspectedAllValidPointTop3": false
+    },
+    {
+      "input": {
+        "period": "week",
+        "anchorDate": "1900-01-01",
+        "categoryIds": [
+          "cat_books"
+        ],
+        "snapshotRevision": null
+      },
+      "expected": "1",
+      "count": 1,
+      "denominatorDays": 7,
+      "points": 7,
+      "inspectedAllValidPointTop3": false
+    },
+    {
+      "input": {
+        "period": "week",
+        "anchorDate": "1900-01-01",
+        "categoryIds": [
+          "cat_fruit",
+          "cat_digital"
+        ],
+        "snapshotRevision": null
+      },
+      "expected": "0",
+      "count": 0,
+      "denominatorDays": 7,
+      "points": 7,
+      "inspectedAllValidPointTop3": false
+    },
+    {
+      "input": {
+        "period": "week",
+        "anchorDate": "1900-01-01",
+        "categoryIds": [
+          "cat_books",
+          "cat_books",
+          "cat_repair"
+        ],
+        "snapshotRevision": null
+      },
+      "expected": "1",
+      "count": 1,
+      "denominatorDays": 7,
+      "points": 7,
+      "inspectedAllValidPointTop3": false
+    },
+    {
+      "input": {
+        "period": "week",
+        "anchorDate": "2024-02-29",
+        "categoryIds": [],
+        "snapshotRevision": null
+      },
+      "expected": "17944",
+      "count": 2,
+      "denominatorDays": 7,
+      "points": 7,
+      "inspectedAllValidPointTop3": true
+    },
+    {
+      "input": {
+        "period": "week",
+        "anchorDate": "2024-02-29",
+        "categoryIds": [
+          "cat_books"
+        ],
+        "snapshotRevision": null
+      },
+      "expected": "999",
+      "count": 1,
+      "denominatorDays": 7,
+      "points": 7,
+      "inspectedAllValidPointTop3": false
+    },
+    {
+      "input": {
+        "period": "week",
+        "anchorDate": "2024-02-29",
+        "categoryIds": [
+          "cat_fruit",
+          "cat_digital"
+        ],
+        "snapshotRevision": null
+      },
+      "expected": "0",
+      "count": 0,
+      "denominatorDays": 7,
+      "points": 7,
+      "inspectedAllValidPointTop3": false
+    },
+    {
+      "input": {
+        "period": "week",
+        "anchorDate": "2024-02-29",
+        "categoryIds": [
+          "cat_books",
+          "cat_books",
+          "cat_repair"
+        ],
+        "snapshotRevision": null
+      },
+      "expected": "17944",
+      "count": 2,
+      "denominatorDays": 7,
+      "points": 7,
+      "inspectedAllValidPointTop3": false
+    },
+    {
+      "input": {
+        "period": "week",
+        "anchorDate": "2024-03-01",
+        "categoryIds": [],
+        "snapshotRevision": null
+      },
+      "expected": "17944",
+      "count": 2,
+      "denominatorDays": 7,
+      "points": 7,
+      "inspectedAllValidPointTop3": false
+    },
+    {
+      "input": {
+        "period": "week",
+        "anchorDate": "2024-03-01",
+        "categoryIds": [
+          "cat_books"
+        ],
+        "snapshotRevision": null
+      },
+      "expected": "999",
+      "count": 1,
+      "denominatorDays": 7,
+      "points": 7,
+      "inspectedAllValidPointTop3": false
+    },
+    {
+      "input": {
+        "period": "week",
+        "anchorDate": "2024-03-01",
+        "categoryIds": [
+          "cat_fruit",
+          "cat_digital"
+        ],
+        "snapshotRevision": null
+      },
+      "expected": "0",
+      "count": 0,
+      "denominatorDays": 7,
+      "points": 7,
+      "inspectedAllValidPointTop3": false
+    },
+    {
+      "input": {
+        "period": "week",
+        "anchorDate": "2024-03-01",
+        "categoryIds": [
+          "cat_books",
+          "cat_books",
+          "cat_repair"
+        ],
+        "snapshotRevision": null
+      },
+      "expected": "17944",
+      "count": 2,
+      "denominatorDays": 7,
+      "points": 7,
+      "inspectedAllValidPointTop3": false
+    },
+    {
+      "input": {
+        "period": "week",
+        "anchorDate": "2024-12-31",
+        "categoryIds": [],
+        "snapshotRevision": null
+      },
+      "expected": "47652",
+      "count": 3,
+      "denominatorDays": 7,
+      "points": 7,
+      "inspectedAllValidPointTop3": false
+    },
+    {
+      "input": {
+        "period": "week",
+        "anchorDate": "2024-12-31",
+        "categoryIds": [
+          "cat_books"
+        ],
+        "snapshotRevision": null
+      },
+      "expected": "2500",
+      "count": 2,
+      "denominatorDays": 7,
+      "points": 7,
+      "inspectedAllValidPointTop3": false
+    },
+    {
+      "input": {
+        "period": "week",
+        "anchorDate": "2024-12-31",
+        "categoryIds": [
+          "cat_fruit",
+          "cat_digital"
+        ],
+        "snapshotRevision": null
+      },
+      "expected": "45152",
+      "count": 1,
+      "denominatorDays": 7,
+      "points": 7,
+      "inspectedAllValidPointTop3": false
+    },
+    {
+      "input": {
+        "period": "week",
+        "anchorDate": "2024-12-31",
+        "categoryIds": [
+          "cat_books",
+          "cat_books",
+          "cat_repair"
+        ],
+        "snapshotRevision": null
+      },
+      "expected": "2500",
+      "count": 2,
+      "denominatorDays": 7,
+      "points": 7,
+      "inspectedAllValidPointTop3": false
+    },
+    {
+      "input": {
+        "period": "week",
+        "anchorDate": "2025-01-01",
+        "categoryIds": [],
+        "snapshotRevision": null
+      },
+      "expected": "47652",
+      "count": 3,
+      "denominatorDays": 7,
+      "points": 7,
+      "inspectedAllValidPointTop3": false
+    },
+    {
+      "input": {
+        "period": "week",
+        "anchorDate": "2025-01-01",
+        "categoryIds": [
+          "cat_books"
+        ],
+        "snapshotRevision": null
+      },
+      "expected": "2500",
+      "count": 2,
+      "denominatorDays": 7,
+      "points": 7,
+      "inspectedAllValidPointTop3": false
+    },
+    {
+      "input": {
+        "period": "week",
+        "anchorDate": "2025-01-01",
+        "categoryIds": [
+          "cat_fruit",
+          "cat_digital"
+        ],
+        "snapshotRevision": null
+      },
+      "expected": "45152",
+      "count": 1,
+      "denominatorDays": 7,
+      "points": 7,
+      "inspectedAllValidPointTop3": false
+    },
+    {
+      "input": {
+        "period": "week",
+        "anchorDate": "2025-01-01",
+        "categoryIds": [
+          "cat_books",
+          "cat_books",
+          "cat_repair"
+        ],
+        "snapshotRevision": null
+      },
+      "expected": "2500",
+      "count": 2,
+      "denominatorDays": 7,
+      "points": 7,
+      "inspectedAllValidPointTop3": false
+    },
+    {
+      "input": {
+        "period": "week",
+        "anchorDate": "2025-03-08",
+        "categoryIds": [],
+        "snapshotRevision": null
+      },
+      "expected": "37395",
+      "count": 6,
+      "denominatorDays": 7,
+      "points": 7,
+      "inspectedAllValidPointTop3": true
+    },
+    {
+      "input": {
+        "period": "week",
+        "anchorDate": "2025-03-08",
+        "categoryIds": [
+          "cat_books"
+        ],
+        "snapshotRevision": null
+      },
+      "expected": "6170",
+      "count": 5,
+      "denominatorDays": 7,
+      "points": 7,
+      "inspectedAllValidPointTop3": false
+    },
+    {
+      "input": {
+        "period": "week",
+        "anchorDate": "2025-03-08",
+        "categoryIds": [
+          "cat_fruit",
+          "cat_digital"
+        ],
+        "snapshotRevision": null
+      },
+      "expected": "31225",
+      "count": 1,
+      "denominatorDays": 7,
+      "points": 7,
+      "inspectedAllValidPointTop3": false
+    },
+    {
+      "input": {
+        "period": "week",
+        "anchorDate": "2025-03-08",
+        "categoryIds": [
+          "cat_books",
+          "cat_books",
+          "cat_repair"
+        ],
+        "snapshotRevision": null
+      },
+      "expected": "6170",
+      "count": 5,
+      "denominatorDays": 7,
+      "points": 7,
+      "inspectedAllValidPointTop3": false
+    },
+    {
+      "input": {
+        "period": "week",
+        "anchorDate": "2025-09-30",
+        "categoryIds": [],
+        "snapshotRevision": null
+      },
+      "expected": "999999999",
+      "count": 1,
+      "denominatorDays": 7,
+      "points": 7,
+      "inspectedAllValidPointTop3": false
+    },
+    {
+      "input": {
+        "period": "week",
+        "anchorDate": "2025-09-30",
+        "categoryIds": [
+          "cat_books"
+        ],
+        "snapshotRevision": null
+      },
+      "expected": "0",
+      "count": 0,
+      "denominatorDays": 7,
+      "points": 7,
+      "inspectedAllValidPointTop3": false
+    },
+    {
+      "input": {
+        "period": "week",
+        "anchorDate": "2025-09-30",
+        "categoryIds": [
+          "cat_fruit",
+          "cat_digital"
+        ],
+        "snapshotRevision": null
+      },
+      "expected": "0",
+      "count": 0,
+      "denominatorDays": 7,
+      "points": 7,
+      "inspectedAllValidPointTop3": false
+    },
+    {
+      "input": {
+        "period": "week",
+        "anchorDate": "2025-09-30",
+        "categoryIds": [
+          "cat_books",
+          "cat_books",
+          "cat_repair"
+        ],
+        "snapshotRevision": null
+      },
+      "expected": "999999999",
+      "count": 1,
+      "denominatorDays": 7,
+      "points": 7,
+      "inspectedAllValidPointTop3": false
+    },
+    {
+      "input": {
+        "period": "week",
+        "anchorDate": "2026-08-31",
+        "categoryIds": [],
+        "snapshotRevision": null
+      },
+      "expected": "58430",
+      "count": 2,
+      "denominatorDays": 7,
+      "points": 7,
+      "inspectedAllValidPointTop3": false
+    },
+    {
+      "input": {
+        "period": "week",
+        "anchorDate": "2026-08-31",
+        "categoryIds": [
+          "cat_books"
+        ],
+        "snapshotRevision": null
+      },
+      "expected": "15477",
+      "count": 1,
+      "denominatorDays": 7,
+      "points": 7,
+      "inspectedAllValidPointTop3": false
+    },
+    {
+      "input": {
+        "period": "week",
+        "anchorDate": "2026-08-31",
+        "categoryIds": [
+          "cat_fruit",
+          "cat_digital"
+        ],
+        "snapshotRevision": null
+      },
+      "expected": "42953",
+      "count": 1,
+      "denominatorDays": 7,
+      "points": 7,
+      "inspectedAllValidPointTop3": false
+    },
+    {
+      "input": {
+        "period": "week",
+        "anchorDate": "2026-08-31",
+        "categoryIds": [
+          "cat_books",
+          "cat_books",
+          "cat_repair"
+        ],
+        "snapshotRevision": null
+      },
+      "expected": "15477",
+      "count": 1,
+      "denominatorDays": 7,
+      "points": 7,
+      "inspectedAllValidPointTop3": false
+    },
+    {
+      "input": {
+        "period": "week",
+        "anchorDate": "2026-09-08",
+        "categoryIds": [],
+        "snapshotRevision": null
+      },
+      "expected": "99330",
+      "count": 8,
+      "denominatorDays": 7,
+      "points": 7,
+      "inspectedAllValidPointTop3": true
+    },
+    {
+      "input": {
+        "period": "week",
+        "anchorDate": "2026-09-08",
+        "categoryIds": [
+          "cat_books"
+        ],
+        "snapshotRevision": null
+      },
+      "expected": "0",
+      "count": 0,
+      "denominatorDays": 7,
+      "points": 7,
+      "inspectedAllValidPointTop3": false
+    },
+    {
+      "input": {
+        "period": "week",
+        "anchorDate": "2026-09-08",
+        "categoryIds": [
+          "cat_fruit",
+          "cat_digital"
+        ],
+        "snapshotRevision": null
+      },
+      "expected": "7180",
+      "count": 2,
+      "denominatorDays": 7,
+      "points": 7,
+      "inspectedAllValidPointTop3": false
+    },
+    {
+      "input": {
+        "period": "week",
+        "anchorDate": "2026-09-08",
+        "categoryIds": [
+          "cat_books",
+          "cat_books",
+          "cat_repair"
+        ],
+        "snapshotRevision": null
+      },
+      "expected": "85000",
+      "count": 1,
+      "denominatorDays": 7,
+      "points": 7,
+      "inspectedAllValidPointTop3": false
+    },
+    {
+      "input": {
+        "period": "week",
+        "anchorDate": "2026-10-21",
+        "categoryIds": [],
+        "snapshotRevision": null
+      },
+      "expected": "5",
+      "count": 1,
+      "denominatorDays": 3,
+      "points": 7,
+      "inspectedAllValidPointTop3": true
+    },
+    {
+      "input": {
+        "period": "week",
+        "anchorDate": "2026-10-21",
+        "categoryIds": [
+          "cat_books"
+        ],
+        "snapshotRevision": null
+      },
+      "expected": "5",
+      "count": 1,
+      "denominatorDays": 3,
+      "points": 7,
+      "inspectedAllValidPointTop3": false
+    },
+    {
+      "input": {
+        "period": "week",
+        "anchorDate": "2026-10-21",
+        "categoryIds": [
+          "cat_fruit",
+          "cat_digital"
+        ],
+        "snapshotRevision": null
+      },
+      "expected": "0",
+      "count": 0,
+      "denominatorDays": 3,
+      "points": 7,
+      "inspectedAllValidPointTop3": false
+    },
+    {
+      "input": {
+        "period": "week",
+        "anchorDate": "2026-10-21",
+        "categoryIds": [
+          "cat_books",
+          "cat_books",
+          "cat_repair"
+        ],
+        "snapshotRevision": null
+      },
+      "expected": "5",
+      "count": 1,
+      "denominatorDays": 3,
+      "points": 7,
+      "inspectedAllValidPointTop3": false
+    },
+    {
+      "input": {
+        "period": "month",
+        "anchorDate": "1900-01-01",
+        "categoryIds": [],
+        "snapshotRevision": null
+      },
+      "expected": "1",
+      "count": 1,
+      "denominatorDays": 31,
+      "points": 31,
+      "inspectedAllValidPointTop3": false
+    },
+    {
+      "input": {
+        "period": "month",
+        "anchorDate": "1900-01-01",
+        "categoryIds": [
+          "cat_books"
+        ],
+        "snapshotRevision": null
+      },
+      "expected": "1",
+      "count": 1,
+      "denominatorDays": 31,
+      "points": 31,
+      "inspectedAllValidPointTop3": false
+    },
+    {
+      "input": {
+        "period": "month",
+        "anchorDate": "1900-01-01",
+        "categoryIds": [
+          "cat_fruit",
+          "cat_digital"
+        ],
+        "snapshotRevision": null
+      },
+      "expected": "0",
+      "count": 0,
+      "denominatorDays": 31,
+      "points": 31,
+      "inspectedAllValidPointTop3": false
+    },
+    {
+      "input": {
+        "period": "month",
+        "anchorDate": "1900-01-01",
+        "categoryIds": [
+          "cat_books",
+          "cat_books",
+          "cat_repair"
+        ],
+        "snapshotRevision": null
+      },
+      "expected": "1",
+      "count": 1,
+      "denominatorDays": 31,
+      "points": 31,
+      "inspectedAllValidPointTop3": false
+    },
+    {
+      "input": {
+        "period": "month",
+        "anchorDate": "2024-02-29",
+        "categoryIds": [],
+        "snapshotRevision": null
+      },
+      "expected": "192523",
+      "count": 6,
+      "denominatorDays": 29,
+      "points": 29,
+      "inspectedAllValidPointTop3": true
+    },
+    {
+      "input": {
+        "period": "month",
+        "anchorDate": "2024-02-29",
+        "categoryIds": [
+          "cat_books"
+        ],
+        "snapshotRevision": null
+      },
+      "expected": "117019",
+      "count": 3,
+      "denominatorDays": 29,
+      "points": 29,
+      "inspectedAllValidPointTop3": false
+    },
+    {
+      "input": {
+        "period": "month",
+        "anchorDate": "2024-02-29",
+        "categoryIds": [
+          "cat_fruit",
+          "cat_digital"
+        ],
+        "snapshotRevision": null
+      },
+      "expected": "22438",
+      "count": 1,
+      "denominatorDays": 29,
+      "points": 29,
+      "inspectedAllValidPointTop3": false
+    },
+    {
+      "input": {
+        "period": "month",
+        "anchorDate": "2024-02-29",
+        "categoryIds": [
+          "cat_books",
+          "cat_books",
+          "cat_repair"
+        ],
+        "snapshotRevision": null
+      },
+      "expected": "170085",
+      "count": 5,
+      "denominatorDays": 29,
+      "points": 29,
+      "inspectedAllValidPointTop3": false
+    },
+    {
+      "input": {
+        "period": "month",
+        "anchorDate": "2024-03-01",
+        "categoryIds": [],
+        "snapshotRevision": null
+      },
+      "expected": "135497",
+      "count": 5,
+      "denominatorDays": 31,
+      "points": 31,
+      "inspectedAllValidPointTop3": false
+    },
+    {
+      "input": {
+        "period": "month",
+        "anchorDate": "2024-03-01",
+        "categoryIds": [
+          "cat_books"
+        ],
+        "snapshotRevision": null
+      },
+      "expected": "40247",
+      "count": 1,
+      "denominatorDays": 31,
+      "points": 31,
+      "inspectedAllValidPointTop3": false
+    },
+    {
+      "input": {
+        "period": "month",
+        "anchorDate": "2024-03-01",
+        "categoryIds": [
+          "cat_fruit",
+          "cat_digital"
+        ],
+        "snapshotRevision": null
+      },
+      "expected": "61758",
+      "count": 2,
+      "denominatorDays": 31,
+      "points": 31,
+      "inspectedAllValidPointTop3": false
+    },
+    {
+      "input": {
+        "period": "month",
+        "anchorDate": "2024-03-01",
+        "categoryIds": [
+          "cat_books",
+          "cat_books",
+          "cat_repair"
+        ],
+        "snapshotRevision": null
+      },
+      "expected": "73739",
+      "count": 3,
+      "denominatorDays": 31,
+      "points": 31,
+      "inspectedAllValidPointTop3": false
+    },
+    {
+      "input": {
+        "period": "month",
+        "anchorDate": "2024-12-31",
+        "categoryIds": [],
+        "snapshotRevision": null
+      },
+      "expected": "144302",
+      "count": 5,
+      "denominatorDays": 31,
+      "points": 31,
+      "inspectedAllValidPointTop3": false
+    },
+    {
+      "input": {
+        "period": "month",
+        "anchorDate": "2024-12-31",
+        "categoryIds": [
+          "cat_books"
+        ],
+        "snapshotRevision": null
+      },
+      "expected": "1200",
+      "count": 1,
+      "denominatorDays": 31,
+      "points": 31,
+      "inspectedAllValidPointTop3": false
+    },
+    {
+      "input": {
+        "period": "month",
+        "anchorDate": "2024-12-31",
+        "categoryIds": [
+          "cat_fruit",
+          "cat_digital"
+        ],
+        "snapshotRevision": null
+      },
+      "expected": "122473",
+      "count": 3,
+      "denominatorDays": 31,
+      "points": 31,
+      "inspectedAllValidPointTop3": false
+    },
+    {
+      "input": {
+        "period": "month",
+        "anchorDate": "2024-12-31",
+        "categoryIds": [
+          "cat_books",
+          "cat_books",
+          "cat_repair"
+        ],
+        "snapshotRevision": null
+      },
+      "expected": "21829",
+      "count": 2,
+      "denominatorDays": 31,
+      "points": 31,
+      "inspectedAllValidPointTop3": false
+    },
+    {
+      "input": {
+        "period": "month",
+        "anchorDate": "2025-01-01",
+        "categoryIds": [],
+        "snapshotRevision": null
+      },
+      "expected": "199258",
+      "count": 5,
+      "denominatorDays": 31,
+      "points": 31,
+      "inspectedAllValidPointTop3": false
+    },
+    {
+      "input": {
+        "period": "month",
+        "anchorDate": "2025-01-01",
+        "categoryIds": [
+          "cat_books"
+        ],
+        "snapshotRevision": null
+      },
+      "expected": "5885",
+      "count": 2,
+      "denominatorDays": 31,
+      "points": 31,
+      "inspectedAllValidPointTop3": false
+    },
+    {
+      "input": {
+        "period": "month",
+        "anchorDate": "2025-01-01",
+        "categoryIds": [
+          "cat_fruit",
+          "cat_digital"
+        ],
+        "snapshotRevision": null
+      },
+      "expected": "134707",
+      "count": 2,
+      "denominatorDays": 31,
+      "points": 31,
+      "inspectedAllValidPointTop3": false
+    },
+    {
+      "input": {
+        "period": "month",
+        "anchorDate": "2025-01-01",
+        "categoryIds": [
+          "cat_books",
+          "cat_books",
+          "cat_repair"
+        ],
+        "snapshotRevision": null
+      },
+      "expected": "64551",
+      "count": 3,
+      "denominatorDays": 31,
+      "points": 31,
+      "inspectedAllValidPointTop3": false
+    },
+    {
+      "input": {
+        "period": "month",
+        "anchorDate": "2025-03-08",
+        "categoryIds": [],
+        "snapshotRevision": null
+      },
+      "expected": "125347",
+      "count": 8,
+      "denominatorDays": 31,
+      "points": 31,
+      "inspectedAllValidPointTop3": true
+    },
+    {
+      "input": {
+        "period": "month",
+        "anchorDate": "2025-03-08",
+        "categoryIds": [
+          "cat_books"
+        ],
+        "snapshotRevision": null
+      },
+      "expected": "6170",
+      "count": 5,
+      "denominatorDays": 31,
+      "points": 31,
+      "inspectedAllValidPointTop3": false
+    },
+    {
+      "input": {
+        "period": "month",
+        "anchorDate": "2025-03-08",
+        "categoryIds": [
+          "cat_fruit",
+          "cat_digital"
+        ],
+        "snapshotRevision": null
+      },
+      "expected": "119177",
+      "count": 3,
+      "denominatorDays": 31,
+      "points": 31,
+      "inspectedAllValidPointTop3": false
+    },
+    {
+      "input": {
+        "period": "month",
+        "anchorDate": "2025-03-08",
+        "categoryIds": [
+          "cat_books",
+          "cat_books",
+          "cat_repair"
+        ],
+        "snapshotRevision": null
+      },
+      "expected": "6170",
+      "count": 5,
+      "denominatorDays": 31,
+      "points": 31,
+      "inspectedAllValidPointTop3": false
+    },
+    {
+      "input": {
+        "period": "month",
+        "anchorDate": "2025-09-30",
+        "categoryIds": [],
+        "snapshotRevision": null
+      },
+      "expected": "313574",
+      "count": 5,
+      "denominatorDays": 30,
+      "points": 30,
+      "inspectedAllValidPointTop3": false
+    },
+    {
+      "input": {
+        "period": "month",
+        "anchorDate": "2025-09-30",
+        "categoryIds": [
+          "cat_books"
+        ],
+        "snapshotRevision": null
+      },
+      "expected": "94450",
+      "count": 1,
+      "denominatorDays": 30,
+      "points": 30,
+      "inspectedAllValidPointTop3": false
+    },
+    {
+      "input": {
+        "period": "month",
+        "anchorDate": "2025-09-30",
+        "categoryIds": [
+          "cat_fruit",
+          "cat_digital"
+        ],
+        "snapshotRevision": null
+      },
+      "expected": "125520",
+      "count": 2,
+      "denominatorDays": 30,
+      "points": 30,
+      "inspectedAllValidPointTop3": false
+    },
+    {
+      "input": {
+        "period": "month",
+        "anchorDate": "2025-09-30",
+        "categoryIds": [
+          "cat_books",
+          "cat_books",
+          "cat_repair"
+        ],
+        "snapshotRevision": null
+      },
+      "expected": "188054",
+      "count": 3,
+      "denominatorDays": 30,
+      "points": 30,
+      "inspectedAllValidPointTop3": false
+    },
+    {
+      "input": {
+        "period": "month",
+        "anchorDate": "2026-08-31",
+        "categoryIds": [],
+        "snapshotRevision": null
+      },
+      "expected": "174372",
+      "count": 3,
+      "denominatorDays": 31,
+      "points": 31,
+      "inspectedAllValidPointTop3": false
+    },
+    {
+      "input": {
+        "period": "month",
+        "anchorDate": "2026-08-31",
+        "categoryIds": [
+          "cat_books"
+        ],
+        "snapshotRevision": null
+      },
+      "expected": "0",
+      "count": 0,
+      "denominatorDays": 31,
+      "points": 31,
+      "inspectedAllValidPointTop3": false
+    },
+    {
+      "input": {
+        "period": "month",
+        "anchorDate": "2026-08-31",
+        "categoryIds": [
+          "cat_fruit",
+          "cat_digital"
+        ],
+        "snapshotRevision": null
+      },
+      "expected": "132193",
+      "count": 2,
+      "denominatorDays": 31,
+      "points": 31,
+      "inspectedAllValidPointTop3": false
+    },
+    {
+      "input": {
+        "period": "month",
+        "anchorDate": "2026-08-31",
+        "categoryIds": [
+          "cat_books",
+          "cat_books",
+          "cat_repair"
+        ],
+        "snapshotRevision": null
+      },
+      "expected": "42179",
+      "count": 1,
+      "denominatorDays": 31,
+      "points": 31,
+      "inspectedAllValidPointTop3": false
+    },
+    {
+      "input": {
+        "period": "month",
+        "anchorDate": "2026-09-08",
+        "categoryIds": [],
+        "snapshotRevision": null
+      },
+      "expected": "263632",
+      "count": 12,
+      "denominatorDays": 30,
+      "points": 30,
+      "inspectedAllValidPointTop3": true
+    },
+    {
+      "input": {
+        "period": "month",
+        "anchorDate": "2026-09-08",
+        "categoryIds": [
+          "cat_books"
+        ],
+        "snapshotRevision": null
+      },
+      "expected": "84996",
+      "count": 2,
+      "denominatorDays": 30,
+      "points": 30,
+      "inspectedAllValidPointTop3": false
+    },
+    {
+      "input": {
+        "period": "month",
+        "anchorDate": "2026-09-08",
+        "categoryIds": [
+          "cat_fruit",
+          "cat_digital"
+        ],
+        "snapshotRevision": null
+      },
+      "expected": "50133",
+      "count": 3,
+      "denominatorDays": 30,
+      "points": 30,
+      "inspectedAllValidPointTop3": false
+    },
+    {
+      "input": {
+        "period": "month",
+        "anchorDate": "2026-09-08",
+        "categoryIds": [
+          "cat_books",
+          "cat_books",
+          "cat_repair"
+        ],
+        "snapshotRevision": null
+      },
+      "expected": "206349",
+      "count": 4,
+      "denominatorDays": 30,
+      "points": 30,
+      "inspectedAllValidPointTop3": false
+    },
+    {
+      "input": {
+        "period": "month",
+        "anchorDate": "2026-10-21",
+        "categoryIds": [],
+        "snapshotRevision": null
+      },
+      "expected": "60521",
+      "count": 2,
+      "denominatorDays": 21,
+      "points": 31,
+      "inspectedAllValidPointTop3": true
+    },
+    {
+      "input": {
+        "period": "month",
+        "anchorDate": "2026-10-21",
+        "categoryIds": [
+          "cat_books"
+        ],
+        "snapshotRevision": null
+      },
+      "expected": "5",
+      "count": 1,
+      "denominatorDays": 21,
+      "points": 31,
+      "inspectedAllValidPointTop3": false
+    },
+    {
+      "input": {
+        "period": "month",
+        "anchorDate": "2026-10-21",
+        "categoryIds": [
+          "cat_fruit",
+          "cat_digital"
+        ],
+        "snapshotRevision": null
+      },
+      "expected": "60516",
+      "count": 1,
+      "denominatorDays": 21,
+      "points": 31,
+      "inspectedAllValidPointTop3": false
+    },
+    {
+      "input": {
+        "period": "month",
+        "anchorDate": "2026-10-21",
+        "categoryIds": [
+          "cat_books",
+          "cat_books",
+          "cat_repair"
+        ],
+        "snapshotRevision": null
+      },
+      "expected": "5",
+      "count": 1,
+      "denominatorDays": 21,
+      "points": 31,
+      "inspectedAllValidPointTop3": false
+    },
+    {
+      "input": {
+        "period": "year",
+        "anchorDate": "1900-01-01",
+        "categoryIds": [],
+        "snapshotRevision": null
+      },
+      "expected": "1",
+      "count": 1,
+      "denominatorDays": 365,
+      "points": 12,
+      "inspectedAllValidPointTop3": false
+    },
+    {
+      "input": {
+        "period": "year",
+        "anchorDate": "1900-01-01",
+        "categoryIds": [
+          "cat_books"
+        ],
+        "snapshotRevision": null
+      },
+      "expected": "1",
+      "count": 1,
+      "denominatorDays": 365,
+      "points": 12,
+      "inspectedAllValidPointTop3": false
+    },
+    {
+      "input": {
+        "period": "year",
+        "anchorDate": "1900-01-01",
+        "categoryIds": [
+          "cat_fruit",
+          "cat_digital"
+        ],
+        "snapshotRevision": null
+      },
+      "expected": "0",
+      "count": 0,
+      "denominatorDays": 365,
+      "points": 12,
+      "inspectedAllValidPointTop3": false
+    },
+    {
+      "input": {
+        "period": "year",
+        "anchorDate": "1900-01-01",
+        "categoryIds": [
+          "cat_books",
+          "cat_books",
+          "cat_repair"
+        ],
+        "snapshotRevision": null
+      },
+      "expected": "1",
+      "count": 1,
+      "denominatorDays": 365,
+      "points": 12,
+      "inspectedAllValidPointTop3": false
+    },
+    {
+      "input": {
+        "period": "year",
+        "anchorDate": "2024-02-29",
+        "categoryIds": [],
+        "snapshotRevision": null
+      },
+      "expected": "1001577086",
+      "count": 41,
+      "denominatorDays": 366,
+      "points": 12,
+      "inspectedAllValidPointTop3": true
+    },
+    {
+      "input": {
+        "period": "year",
+        "anchorDate": "2024-02-29",
+        "categoryIds": [
+          "cat_books"
+        ],
+        "snapshotRevision": null
+      },
+      "expected": "371506",
+      "count": 11,
+      "denominatorDays": 366,
+      "points": 12,
+      "inspectedAllValidPointTop3": false
+    },
+    {
+      "input": {
+        "period": "year",
+        "anchorDate": "2024-02-29",
+        "categoryIds": [
+          "cat_fruit",
+          "cat_digital"
+        ],
+        "snapshotRevision": null
+      },
+      "expected": "904648",
+      "count": 18,
+      "denominatorDays": 366,
+      "points": 12,
+      "inspectedAllValidPointTop3": false
+    },
+    {
+      "input": {
+        "period": "year",
+        "anchorDate": "2024-02-29",
+        "categoryIds": [
+          "cat_books",
+          "cat_books",
+          "cat_repair"
+        ],
+        "snapshotRevision": null
+      },
+      "expected": "1000672438",
+      "count": 23,
+      "denominatorDays": 366,
+      "points": 12,
+      "inspectedAllValidPointTop3": false
+    },
+    {
+      "input": {
+        "period": "year",
+        "anchorDate": "2024-03-01",
+        "categoryIds": [],
+        "snapshotRevision": null
+      },
+      "expected": "1001577086",
+      "count": 41,
+      "denominatorDays": 366,
+      "points": 12,
+      "inspectedAllValidPointTop3": false
+    },
+    {
+      "input": {
+        "period": "year",
+        "anchorDate": "2024-03-01",
+        "categoryIds": [
+          "cat_books"
+        ],
+        "snapshotRevision": null
+      },
+      "expected": "371506",
+      "count": 11,
+      "denominatorDays": 366,
+      "points": 12,
+      "inspectedAllValidPointTop3": false
+    },
+    {
+      "input": {
+        "period": "year",
+        "anchorDate": "2024-03-01",
+        "categoryIds": [
+          "cat_fruit",
+          "cat_digital"
+        ],
+        "snapshotRevision": null
+      },
+      "expected": "904648",
+      "count": 18,
+      "denominatorDays": 366,
+      "points": 12,
+      "inspectedAllValidPointTop3": false
+    },
+    {
+      "input": {
+        "period": "year",
+        "anchorDate": "2024-03-01",
+        "categoryIds": [
+          "cat_books",
+          "cat_books",
+          "cat_repair"
+        ],
+        "snapshotRevision": null
+      },
+      "expected": "1000672438",
+      "count": 23,
+      "denominatorDays": 366,
+      "points": 12,
+      "inspectedAllValidPointTop3": false
+    },
+    {
+      "input": {
+        "period": "year",
+        "anchorDate": "2024-12-31",
+        "categoryIds": [],
+        "snapshotRevision": null
+      },
+      "expected": "1001577086",
+      "count": 41,
+      "denominatorDays": 366,
+      "points": 12,
+      "inspectedAllValidPointTop3": false
+    },
+    {
+      "input": {
+        "period": "year",
+        "anchorDate": "2024-12-31",
+        "categoryIds": [
+          "cat_books"
+        ],
+        "snapshotRevision": null
+      },
+      "expected": "371506",
+      "count": 11,
+      "denominatorDays": 366,
+      "points": 12,
+      "inspectedAllValidPointTop3": false
+    },
+    {
+      "input": {
+        "period": "year",
+        "anchorDate": "2024-12-31",
+        "categoryIds": [
+          "cat_fruit",
+          "cat_digital"
+        ],
+        "snapshotRevision": null
+      },
+      "expected": "904648",
+      "count": 18,
+      "denominatorDays": 366,
+      "points": 12,
+      "inspectedAllValidPointTop3": false
+    },
+    {
+      "input": {
+        "period": "year",
+        "anchorDate": "2024-12-31",
+        "categoryIds": [
+          "cat_books",
+          "cat_books",
+          "cat_repair"
+        ],
+        "snapshotRevision": null
+      },
+      "expected": "1000672438",
+      "count": 23,
+      "denominatorDays": 366,
+      "points": 12,
+      "inspectedAllValidPointTop3": false
+    },
+    {
+      "input": {
+        "period": "year",
+        "anchorDate": "2025-01-01",
+        "categoryIds": [],
+        "snapshotRevision": null
+      },
+      "expected": "1001960484",
+      "count": 44,
+      "denominatorDays": 365,
+      "points": 12,
+      "inspectedAllValidPointTop3": false
+    },
+    {
+      "input": {
+        "period": "year",
+        "anchorDate": "2025-01-01",
+        "categoryIds": [
+          "cat_books"
+        ],
+        "snapshotRevision": null
+      },
+      "expected": "299944",
+      "count": 14,
+      "denominatorDays": 365,
+      "points": 12,
+      "inspectedAllValidPointTop3": false
+    },
+    {
+      "input": {
+        "period": "year",
+        "anchorDate": "2025-01-01",
+        "categoryIds": [
+          "cat_fruit",
+          "cat_digital"
+        ],
+        "snapshotRevision": null
+      },
+      "expected": "1322186",
+      "count": 23,
+      "denominatorDays": 365,
+      "points": 12,
+      "inspectedAllValidPointTop3": false
+    },
+    {
+      "input": {
+        "period": "year",
+        "anchorDate": "2025-01-01",
+        "categoryIds": [
+          "cat_books",
+          "cat_books",
+          "cat_repair"
+        ],
+        "snapshotRevision": null
+      },
+      "expected": "1000638298",
+      "count": 21,
+      "denominatorDays": 365,
+      "points": 12,
+      "inspectedAllValidPointTop3": false
+    },
+    {
+      "input": {
+        "period": "year",
+        "anchorDate": "2025-03-08",
+        "categoryIds": [],
+        "snapshotRevision": null
+      },
+      "expected": "1001960484",
+      "count": 44,
+      "denominatorDays": 365,
+      "points": 12,
+      "inspectedAllValidPointTop3": true
+    },
+    {
+      "input": {
+        "period": "year",
+        "anchorDate": "2025-03-08",
+        "categoryIds": [
+          "cat_books"
+        ],
+        "snapshotRevision": null
+      },
+      "expected": "299944",
+      "count": 14,
+      "denominatorDays": 365,
+      "points": 12,
+      "inspectedAllValidPointTop3": false
+    },
+    {
+      "input": {
+        "period": "year",
+        "anchorDate": "2025-03-08",
+        "categoryIds": [
+          "cat_fruit",
+          "cat_digital"
+        ],
+        "snapshotRevision": null
+      },
+      "expected": "1322186",
+      "count": 23,
+      "denominatorDays": 365,
+      "points": 12,
+      "inspectedAllValidPointTop3": false
+    },
+    {
+      "input": {
+        "period": "year",
+        "anchorDate": "2025-03-08",
+        "categoryIds": [
+          "cat_books",
+          "cat_books",
+          "cat_repair"
+        ],
+        "snapshotRevision": null
+      },
+      "expected": "1000638298",
+      "count": 21,
+      "denominatorDays": 365,
+      "points": 12,
+      "inspectedAllValidPointTop3": false
+    },
+    {
+      "input": {
+        "period": "year",
+        "anchorDate": "2025-09-30",
+        "categoryIds": [],
+        "snapshotRevision": null
+      },
+      "expected": "1001960484",
+      "count": 44,
+      "denominatorDays": 365,
+      "points": 12,
+      "inspectedAllValidPointTop3": false
+    },
+    {
+      "input": {
+        "period": "year",
+        "anchorDate": "2025-09-30",
+        "categoryIds": [
+          "cat_books"
+        ],
+        "snapshotRevision": null
+      },
+      "expected": "299944",
+      "count": 14,
+      "denominatorDays": 365,
+      "points": 12,
+      "inspectedAllValidPointTop3": false
+    },
+    {
+      "input": {
+        "period": "year",
+        "anchorDate": "2025-09-30",
+        "categoryIds": [
+          "cat_fruit",
+          "cat_digital"
+        ],
+        "snapshotRevision": null
+      },
+      "expected": "1322186",
+      "count": 23,
+      "denominatorDays": 365,
+      "points": 12,
+      "inspectedAllValidPointTop3": false
+    },
+    {
+      "input": {
+        "period": "year",
+        "anchorDate": "2025-09-30",
+        "categoryIds": [
+          "cat_books",
+          "cat_books",
+          "cat_repair"
+        ],
+        "snapshotRevision": null
+      },
+      "expected": "1000638298",
+      "count": 21,
+      "denominatorDays": 365,
+      "points": 12,
+      "inspectedAllValidPointTop3": false
+    },
+    {
+      "input": {
+        "period": "year",
+        "anchorDate": "2026-08-31",
+        "categoryIds": [],
+        "snapshotRevision": null
+      },
+      "expected": "2001392904",
+      "count": 35,
+      "denominatorDays": 294,
+      "points": 12,
+      "inspectedAllValidPointTop3": false
+    },
+    {
+      "input": {
+        "period": "year",
+        "anchorDate": "2026-08-31",
+        "categoryIds": [
+          "cat_books"
+        ],
+        "snapshotRevision": null
+      },
+      "expected": "528382",
+      "count": 11,
+      "denominatorDays": 294,
+      "points": 12,
+      "inspectedAllValidPointTop3": false
+    },
+    {
+      "input": {
+        "period": "year",
+        "anchorDate": "2026-08-31",
+        "categoryIds": [
+          "cat_fruit",
+          "cat_digital"
+        ],
+        "snapshotRevision": null
+      },
+      "expected": "551253",
+      "count": 11,
+      "denominatorDays": 294,
+      "points": 12,
+      "inspectedAllValidPointTop3": false
+    },
+    {
+      "input": {
+        "period": "year",
+        "anchorDate": "2026-08-31",
+        "categoryIds": [
+          "cat_books",
+          "cat_books",
+          "cat_repair"
+        ],
+        "snapshotRevision": null
+      },
+      "expected": "2000834501",
+      "count": 19,
+      "denominatorDays": 294,
+      "points": 12,
+      "inspectedAllValidPointTop3": false
+    },
+    {
+      "input": {
+        "period": "year",
+        "anchorDate": "2026-09-08",
+        "categoryIds": [],
+        "snapshotRevision": null
+      },
+      "expected": "2001392904",
+      "count": 35,
+      "denominatorDays": 294,
+      "points": 12,
+      "inspectedAllValidPointTop3": true
+    },
+    {
+      "input": {
+        "period": "year",
+        "anchorDate": "2026-09-08",
+        "categoryIds": [
+          "cat_books"
+        ],
+        "snapshotRevision": null
+      },
+      "expected": "528382",
+      "count": 11,
+      "denominatorDays": 294,
+      "points": 12,
+      "inspectedAllValidPointTop3": false
+    },
+    {
+      "input": {
+        "period": "year",
+        "anchorDate": "2026-09-08",
+        "categoryIds": [
+          "cat_fruit",
+          "cat_digital"
+        ],
+        "snapshotRevision": null
+      },
+      "expected": "551253",
+      "count": 11,
+      "denominatorDays": 294,
+      "points": 12,
+      "inspectedAllValidPointTop3": false
+    },
+    {
+      "input": {
+        "period": "year",
+        "anchorDate": "2026-09-08",
+        "categoryIds": [
+          "cat_books",
+          "cat_books",
+          "cat_repair"
+        ],
+        "snapshotRevision": null
+      },
+      "expected": "2000834501",
+      "count": 19,
+      "denominatorDays": 294,
+      "points": 12,
+      "inspectedAllValidPointTop3": false
+    },
+    {
+      "input": {
+        "period": "year",
+        "anchorDate": "2026-10-21",
+        "categoryIds": [],
+        "snapshotRevision": null
+      },
+      "expected": "2001392904",
+      "count": 35,
+      "denominatorDays": 294,
+      "points": 12,
+      "inspectedAllValidPointTop3": true
+    },
+    {
+      "input": {
+        "period": "year",
+        "anchorDate": "2026-10-21",
+        "categoryIds": [
+          "cat_books"
+        ],
+        "snapshotRevision": null
+      },
+      "expected": "528382",
+      "count": 11,
+      "denominatorDays": 294,
+      "points": 12,
+      "inspectedAllValidPointTop3": false
+    },
+    {
+      "input": {
+        "period": "year",
+        "anchorDate": "2026-10-21",
+        "categoryIds": [
+          "cat_fruit",
+          "cat_digital"
+        ],
+        "snapshotRevision": null
+      },
+      "expected": "551253",
+      "count": 11,
+      "denominatorDays": 294,
+      "points": 12,
+      "inspectedAllValidPointTop3": false
+    },
+    {
+      "input": {
+        "period": "year",
+        "anchorDate": "2026-10-21",
+        "categoryIds": [
+          "cat_books",
+          "cat_books",
+          "cat_repair"
+        ],
+        "snapshotRevision": null
+      },
+      "expected": "2000834501",
+      "count": 19,
+      "denominatorDays": 294,
+      "points": 12,
+      "inspectedAllValidPointTop3": false
+    },
+    {
+      "input": {
+        "period": "week",
+        "anchorDate": "2026-09-08",
+        "categoryIds": [],
+        "snapshotRevision": null
+      },
+      "expected": "99330",
+      "count": 8,
+      "denominatorDays": 7,
+      "points": 7,
+      "inspectedAllValidPointTop3": true
+    },
+    {
+      "input": {
+        "period": "month",
+        "anchorDate": "2026-09-08",
+        "categoryIds": [],
+        "snapshotRevision": null
+      },
+      "expected": "99330",
+      "count": 8,
+      "denominatorDays": 30,
+      "points": 30,
+      "inspectedAllValidPointTop3": true
+    },
+    {
+      "input": {
+        "period": "year",
+        "anchorDate": "2026-09-08",
+        "categoryIds": [],
+        "snapshotRevision": null
+      },
+      "expected": "99330",
+      "count": 8,
+      "denominatorDays": 294,
+      "points": 12,
+      "inspectedAllValidPointTop3": true
+    }
+  ],
+  "today": "2026-10-21",
+  "filterScreenshot": "C:\\Users\\Administrator\\AppData\\Local\\Temp\\BookKeepAI S07 receipt 中文 SJn5mQ\\filtered-disabled-category.png",
+  "finalScreenshot": "C:\\Users\\Administrator\\AppData\\Local\\Temp\\BookKeepAI S07 receipt 中文 SJn5mQ\\restored-F03-day-top3.png",
+  "sql": {
+    "active": {
+      "count": 8,
+      "totalFen": "99330"
+    },
+    "quickCheck": [
+      {
+        "quick_check": "ok"
+      }
+    ],
+    "foreignKeys": []
+  }
+}

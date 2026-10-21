@@ -1,0 +1,43 @@
+{
+  "id": "75e4eb46-1128-4a71-a258-4e10ee51b4ca",
+  "kind": "real-api",
+  "startedAt": "2026-10-21T10:24:30.075Z",
+  "finishedAt": "2026-10-21T10:24:31.490Z",
+  "requestedModel": "deepseek-flash",
+  "actualModel": "deepseek-flash",
+  "promptVersion": "bk-prompt.v2-s09",
+  "schemaVersion": "bk-candidate.v1",
+  "fixtureId": "s09-receipt-v1",
+  "imageSha256": "0136644513a3a9ebebec66bf893d81c31694f01d95057856190d965b5133d2d8",
+  "imageBytes": 26450,
+  "imageSource": "BookKeepAI self-generated synthetic PNG, scripts/make-s09-fixture.ps1",
+  "endpoint": "https://api.deepseek.com/chat/completions",
+  "responseFormat": "json_object",
+  "imageAttached": true,
+  "requestCount": 1,
+  "durationMs": 1415,
+  "httpStatus": 200,
+  "usage": {
+    "promptTokens": 952,
+    "completionTokens": 229,
+    "totalTokens": 1181
+  },
+  "schemaValid": true,
+  "matches": {
+    "amount": true,
+    "date": true,
+    "name": true
+  },
+  "fields": {
+    "amountFen": 3742,
+    "occurredDate": "2026-08-19",
+    "name": "燕麦饼干"
+  },
+  "passed": true,
+  "errorCode": null,
+  "diagnostics": {
+    "stage": "validated",
+    "finishReason": "stop",
+    "issues": []
+  }
+}

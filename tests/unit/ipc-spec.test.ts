@@ -55,9 +55,9 @@ function mutation(payload: unknown, extra: Record<string, unknown> = {}): Record
 }
 
 describe('IPC 通道白名单', () => {
-  it('S07 开放 22 个通道（21 个业务 + 1 个骨架诊断），无 ipcRenderer 直通', () => {
-    expect(ALL_CHANNELS).toHaveLength(22);
-    expect(BUSINESS_CHANNELS).toHaveLength(21);
+  it('S09 开放 23 个通道（22 个业务 + 1 个骨架诊断），无 ipcRenderer 直通', () => {
+    expect(ALL_CHANNELS).toHaveLength(23);
+    expect(BUSINESS_CHANNELS).toHaveLength(22);
     expect(SKELETON_CHANNELS).toEqual([IPC.skeletonMockRecognition]);
     expect(BUSINESS_CHANNELS).not.toContain(IPC.skeletonMockRecognition);
     for (const channel of ALL_CHANNELS) {
@@ -128,7 +128,7 @@ describe('请求信封校验', () => {
       () =>
         validateIpcRequest(
           CHANNEL_SPECS.settingsSaveSecret,
-          buildRequest({ dataEpoch: EPOCH, mutationId: MUTATION_ID, payload: { action: 'remove' } }),
+          buildRequest({ dataEpoch: EPOCH, mutationId: MUTATION_ID, payload: { expectedVersion: 0, action: 'remove' } }),
           { expectedEpoch: '11111111-2222-4333-8444-555555555555' },
         ),
       'STALE_EPOCH',
@@ -152,14 +152,14 @@ describe('请求信封校验', () => {
 describe('settings.saveSecret 载荷', () => {
   it('变更操作必须带 dataEpoch 与 mutationId', () => {
     expectAppError(
-      () => validateIpcRequest(CHANNEL_SPECS.settingsSaveSecret, buildRequest({ payload: { action: 'remove' } })),
+      () => validateIpcRequest(CHANNEL_SPECS.settingsSaveSecret, buildRequest({ payload: { expectedVersion: 0, action: 'remove' } })),
       'PAYLOAD_INVALID',
     );
     const error = expectAppError(
       () =>
         validateIpcRequest(
           CHANNEL_SPECS.settingsSaveSecret,
-          buildRequest({ dataEpoch: EPOCH, payload: { action: 'remove' } }),
+          buildRequest({ dataEpoch: EPOCH, payload: { expectedVersion: 0, action: 'remove' } }),
         ),
       'PAYLOAD_INVALID',
     );
@@ -169,9 +169,9 @@ describe('settings.saveSecret 载荷', () => {
   it('接受合法的移除请求', () => {
     const request = validateIpcRequest(
       CHANNEL_SPECS.settingsSaveSecret,
-      buildRequest({ dataEpoch: EPOCH, mutationId: MUTATION_ID, payload: { action: 'remove' } }),
+      buildRequest({ dataEpoch: EPOCH, mutationId: MUTATION_ID, payload: { expectedVersion: 0, action: 'remove' } }),
     );
-    expect(request.payload).toEqual({ action: 'remove' });
+    expect(request.payload).toEqual({ expectedVersion: 0, action: 'remove' });
     expect(request.mutationId).toBe(MUTATION_ID);
   });
 
@@ -179,17 +179,17 @@ describe('settings.saveSecret 载荷', () => {
     const base = { dataEpoch: EPOCH, mutationId: MUTATION_ID };
     const accepted = validateIpcRequest(
       CHANNEL_SPECS.settingsSaveSecret,
-      buildRequest({ ...base, payload: { action: 'save', secret: 'sk-test', persistence: 'encrypted' } }),
+      buildRequest({ ...base, payload: { expectedVersion: 0, action: 'save', secret: 'sk-test', persistence: 'encrypted' } }),
     );
-    expect(accepted.payload).toEqual({ action: 'save', secret: 'sk-test', persistence: 'encrypted' });
+    expect(accepted.payload).toEqual({ expectedVersion: 0, action: 'save', secret: 'sk-test', persistence: 'encrypted' });
 
     for (const payload of [
-      { action: 'save', secret: '', persistence: 'encrypted' },
-      { action: 'save', secret: 'x'.repeat(513), persistence: 'encrypted' },
-      { action: 'save', secret: 'sk-\nkey', persistence: 'session' },
-      { action: 'save', secret: 'sk-\tkey', persistence: 'session' },
-      { action: 'save', secret: 'sk-key' },
-      { action: 'save', secret: 'sk-key', persistence: 'disk' },
+      { expectedVersion: 0, action: 'save', secret: '', persistence: 'encrypted' },
+      { expectedVersion: 0, action: 'save', secret: 'x'.repeat(513), persistence: 'encrypted' },
+      { expectedVersion: 0, action: 'save', secret: 'sk-\nkey', persistence: 'session' },
+      { expectedVersion: 0, action: 'save', secret: 'sk-\tkey', persistence: 'session' },
+      { expectedVersion: 0, action: 'save', secret: 'sk-key' },
+      { expectedVersion: 0, action: 'save', secret: 'sk-key', persistence: 'disk' },
     ]) {
       expectAppError(
         () => validateIpcRequest(CHANNEL_SPECS.settingsSaveSecret, buildRequest({ ...base, payload })),
@@ -206,7 +206,7 @@ describe('settings.saveSecret 载荷', () => {
           buildRequest({
             dataEpoch: EPOCH,
             mutationId: MUTATION_ID,
-            payload: { action: 'remove', secret: 'sk-key' },
+            payload: { expectedVersion: 0, action: 'remove', secret: 'sk-key' },
           }),
         ),
       'FIELD_INVALID',

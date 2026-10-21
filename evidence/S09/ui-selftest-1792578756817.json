@@ -1,0 +1,115 @@
+{
+  "ok": true,
+  "kind": "S09 implementation self-test; NOT real API, S08/S17/S19 acceptance",
+  "browser": "Browser plugin not available; existing Playwright Electron",
+  "localAppData": "C:\\Users\\Administrator\\AppData\\Local\\Temp\\BookKeep S09 中文 A2alag",
+  "checks": [
+    {
+      "id": "identity-not-blank-no-overlay",
+      "ok": true,
+      "detail": {
+        "url": "bookkeep://app/index.html",
+        "title": "BookKeepAI"
+      }
+    },
+    {
+      "id": "no-key-no-request-not-verified",
+      "ok": true,
+      "detail": {}
+    },
+    {
+      "id": "real-Windows-DPAPI-save-immediate-clear-before-response-and-no-key-in-status",
+      "ok": true,
+      "detail": {
+        "configured": true,
+        "mode": "encrypted",
+        "encryptionAvailable": true,
+        "version": 1,
+        "lastErrorCode": null
+      }
+    },
+    {
+      "id": "real-process-restart-decrypts-synthetic-with-same-Windows-user",
+      "ok": true,
+      "detail": {}
+    },
+    {
+      "id": "IPC-CAS-stale-rejected",
+      "ok": true,
+      "detail": {}
+    },
+    {
+      "id": "remove-clears-disk-and-status",
+      "ok": true,
+      "detail": {}
+    },
+    {
+      "id": "session-mode-does-not-write-plaintext-or-encrypted-key",
+      "ok": true,
+      "detail": {}
+    },
+    {
+      "id": "MOCK-HTTP-401-only-probe-button-real-pending-and-safe-error-result-NOT-G2",
+      "ok": true,
+      "detail": {}
+    },
+    {
+      "id": "session-key-gone-after-process-restart",
+      "ok": true,
+      "detail": {}
+    },
+    {
+      "id": "small-viewport-no-horizontal-overflow",
+      "ok": true,
+      "detail": {}
+    },
+    {
+      "id": "manual-ledger-still-available-without-key",
+      "ok": true,
+      "detail": {}
+    }
+  ],
+  "errors": [],
+  "notices": [
+    "The Content Security Policy directive 'frame-ancestors' is ignored when delivered via a <meta> element.",
+    "The Content Security Policy directive 'frame-ancestors' is ignored when delivered via a <meta> element.",
+    "The Content Security Policy directive 'frame-ancestors' is ignored when delivered via a <meta> element."
+  ],
+  "missingSecretReport": {
+    "id": "39947e4d-c435-4e7b-97db-8c84172aa71f",
+    "kind": "real-api",
+    "startedAt": "2026-10-21T10:32:19.352Z",
+    "finishedAt": "2026-10-21T10:32:19.353Z",
+    "requestedModel": "deepseek-flash",
+    "actualModel": null,
+    "promptVersion": "bk-prompt.v2-s09",
+    "schemaVersion": "bk-candidate.v1",
+    "fixtureId": "s09-receipt-v1",
+    "imageSha256": "0136644513a3a9ebebec66bf893d81c31694f01d95057856190d965b5133d2d8",
+    "imageBytes": 26450,
+    "imageSource": "BookKeepAI self-generated synthetic PNG, scripts/make-s09-fixture.ps1",
+    "endpoint": "https://api.deepseek.com/chat/completions",
+    "responseFormat": "json_object",
+    "imageAttached": false,
+    "requestCount": 0,
+    "durationMs": 1,
+    "httpStatus": null,
+    "usage": null,
+    "schemaValid": false,
+    "matches": {
+      "amount": false,
+      "date": false,
+      "name": false
+    },
+    "fields": {
+      "amountFen": null,
+      "occurredDate": null,
+      "name": null
+    },
+    "passed": false,
+    "errorCode": "SECRET_REQUIRED"
+  },
+  "encryptedScreenshot": "C:\\Users\\Administrator\\AppData\\Local\\Temp\\BookKeep S09 中文 A2alag\\s09-encrypted.png",
+  "finalScreenshot": "C:\\Users\\Administrator\\AppData\\Local\\Temp\\BookKeep S09 中文 A2alag\\s09-ready-for-user-key.png",
+  "smallScreenshot": "C:\\Users\\Administrator\\AppData\\Local\\Temp\\BookKeep S09 中文 A2alag\\s09-small.png"
+}
