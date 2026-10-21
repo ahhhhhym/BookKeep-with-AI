@@ -1,0 +1,23 @@
+PASS page-identity-not-blank-no-overlay
+PASS empty-current-month-31-points-next-disabled-offline
+PASS F02-month-summary-ranking-average-and-ledger-96530
+PASS hover-day-top3-total-first-and-pointer-can-enter-detail
+PASS click-pin-persists-outside-chart
+PASS click-same-point-unpins
+PASS keyboard-single-tab-arrows-home-enter-tab-close-escape
+PASS keyboard-end-space-toggle
+PASS point-to-ledger-date-range-and-return-preserves-statistics
+PASS monday-sunday-week-7-points-ledger-reconciliation
+PASS year-12-points-month-top3-categories-not-transactions
+PASS future-month-no-transactions-or-category-detail
+PASS previous-next-current-period-real-controls
+PASS leap-february-normal-february-cross-year-week
+PASS statistics-category-filter-independent-and-clear
+PASS edit-delete-restore-refresh-all-view-ledger-integer-totals
+PASS expandable-table-same-point-values
+page.waitForFunction: Timeout 12000ms exceeded.
+    at detailItems (D:\BookKeep with AI\scripts\smoke-s07.mjs:36:14)
+    at D:\BookKeep with AI\scripts\smoke-s07.mjs:140:75 {
+  log: [],
+  name: 'TimeoutError'
+}

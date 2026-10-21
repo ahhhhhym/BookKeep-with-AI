@@ -1,0 +1,212 @@
+{
+  "ok": false,
+  "kind": "S07 implementation self-test, not S08 acceptance",
+  "browser": "Browser plugin not available; existing Playwright Electron exercises actual IPC and native SQLite",
+  "localAppData": "C:\\Users\\Administrator\\AppData\\Local\\Temp\\BookKeepAI S07 中文 BXFdpE",
+  "checks": [
+    {
+      "id": "page-identity-not-blank-no-overlay",
+      "ok": true,
+      "detail": {
+        "url": "bookkeep://app/index.html",
+        "title": "BookKeepAI"
+      }
+    },
+    {
+      "id": "empty-current-month-31-points-next-disabled-offline",
+      "ok": true,
+      "detail": {}
+    },
+    {
+      "id": "F02-month-summary-ranking-average-and-ledger-96530",
+      "ok": true,
+      "detail": {}
+    },
+    {
+      "id": "hover-day-top3-total-first-and-pointer-can-enter-detail",
+      "ok": true,
+      "detail": {}
+    },
+    {
+      "id": "click-pin-persists-outside-chart",
+      "ok": true,
+      "detail": {}
+    },
+    {
+      "id": "click-same-point-unpins",
+      "ok": true,
+      "detail": {}
+    },
+    {
+      "id": "keyboard-single-tab-arrows-home-enter-tab-close-escape",
+      "ok": true,
+      "detail": {}
+    },
+    {
+      "id": "keyboard-end-space-toggle",
+      "ok": true,
+      "detail": {}
+    },
+    {
+      "id": "point-to-ledger-date-range-and-return-preserves-statistics",
+      "ok": true,
+      "detail": {}
+    },
+    {
+      "id": "monday-sunday-week-7-points-ledger-reconciliation",
+      "ok": true,
+      "detail": {}
+    },
+    {
+      "id": "year-12-points-month-top3-categories-not-transactions",
+      "ok": true,
+      "detail": {}
+    },
+    {
+      "id": "future-month-no-transactions-or-category-detail",
+      "ok": true,
+      "detail": {}
+    },
+    {
+      "id": "previous-next-current-period-real-controls",
+      "ok": true,
+      "detail": {}
+    },
+    {
+      "id": "leap-february-normal-february-cross-year-week",
+      "ok": true,
+      "detail": {}
+    },
+    {
+      "id": "statistics-category-filter-independent-and-clear",
+      "ok": true,
+      "detail": {}
+    },
+    {
+      "id": "edit-delete-restore-refresh-all-view-ledger-integer-totals",
+      "ok": true,
+      "detail": {}
+    },
+    {
+      "id": "expandable-table-same-point-values",
+      "ok": true,
+      "detail": {}
+    },
+    {
+      "id": "640x480-and-200-percent-normal-flow-no-horizontal-overflow",
+      "ok": true,
+      "detail": {
+        "width": 320,
+        "bodyWidth": 312,
+        "detailWidth": 243.1999969482422,
+        "position": "static",
+        "scrollable": true,
+        "labelSize": 14.000000208616257
+      }
+    },
+    {
+      "id": "real-process-restart-same-native-database",
+      "ok": true,
+      "detail": {}
+    }
+  ],
+  "errors": [
+    "The Content Security Policy directive 'frame-ancestors' is ignored when delivered via a <meta> element.",
+    "The Content Security Policy directive 'frame-ancestors' is ignored when delivered via a <meta> element."
+  ],
+  "consoleWarnings": [],
+  "monthReconciliation": {
+    "checks": [
+      "96530",
+      "96530",
+      "96530",
+      "96530",
+      "96530",
+      "96530"
+    ],
+    "count": 6,
+    "points": 30,
+    "scope": {
+      "period": "month",
+      "anchorDate": "2026-09-01",
+      "categoryIds": [],
+      "ledgerId": "2a1a68a0-84e1-4d8a-b994-0257b2a4c0d8",
+      "dataEpoch": "c56c68bb-0843-478c-8acc-394c69b33c4e",
+      "revision": 6,
+      "today": "2026-10-21",
+      "timezone": "Asia/Shanghai",
+      "start": "2026-09-01",
+      "end": "2026-10-01",
+      "effectiveEnd": "2026-10-01",
+      "scopeId": "85e36e26b6974b8682d969076b4148431c76104123e9ec1cf3874fffb77c674d"
+    }
+  },
+  "monthScreenshot": "C:\\Users\\Administrator\\AppData\\Local\\Temp\\BookKeepAI S07 中文 BXFdpE\\month-F02-day-top3.png",
+  "weekReconciliation": {
+    "checks": [
+      "96530",
+      "96530",
+      "96530",
+      "96530",
+      "96530",
+      "96530"
+    ],
+    "count": 6,
+    "points": 7,
+    "scope": {
+      "period": "week",
+      "anchorDate": "2026-09-07",
+      "categoryIds": [],
+      "ledgerId": "2a1a68a0-84e1-4d8a-b994-0257b2a4c0d8",
+      "dataEpoch": "c56c68bb-0843-478c-8acc-394c69b33c4e",
+      "revision": 6,
+      "today": "2026-10-21",
+      "timezone": "Asia/Shanghai",
+      "start": "2026-09-07",
+      "end": "2026-09-14",
+      "effectiveEnd": "2026-09-14",
+      "scopeId": "6900e87485dced5db9f51c77e6c1ebb66f27103ff3f4ea5b3aa9fdf2ec72c8fe"
+    }
+  },
+  "yearReconciliation": {
+    "checks": [
+      "96530",
+      "96530",
+      "96530",
+      "96530",
+      "96530",
+      "96530"
+    ],
+    "count": 6,
+    "points": 12,
+    "scope": {
+      "period": "year",
+      "anchorDate": "2026-01-01",
+      "categoryIds": [],
+      "ledgerId": "2a1a68a0-84e1-4d8a-b994-0257b2a4c0d8",
+      "dataEpoch": "c56c68bb-0843-478c-8acc-394c69b33c4e",
+      "revision": 6,
+      "today": "2026-10-21",
+      "timezone": "Asia/Shanghai",
+      "start": "2026-01-01",
+      "end": "2027-01-01",
+      "effectiveEnd": "2026-10-22",
+      "scopeId": "33e4f6468e39ccd4772bc812ce14cf2adc24932a0a9bc8bbada74ace0f5d3210"
+    }
+  },
+  "yearScreenshot": "C:\\Users\\Administrator\\AppData\\Local\\Temp\\BookKeepAI S07 中文 BXFdpE\\year-September-category-top3.png",
+  "zoomScreenshot": "C:\\Users\\Administrator\\AppData\\Local\\Temp\\BookKeepAI S07 中文 BXFdpE\\zoom-200-detail.png",
+  "finalDatabase": {
+    "active": {
+      "count": 6,
+      "totalFen": "97530"
+    },
+    "quickCheck": [
+      {
+        "quick_check": "ok"
+      }
+    ],
+    "foreignKeys": []
+  },
+  "error": "AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:\n\n2 !== 0\n\n    at file:///D:/BookKeep%20with%20AI/scripts/smoke-s07.mjs:149:10"
+}

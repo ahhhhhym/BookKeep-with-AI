@@ -1,0 +1,17 @@
+{
+  "npm": "11.17.0",
+  "edition": "Core",
+  "pwsh": "7.6.5",
+  "contract": "bookkeep.v1",
+  "os": {
+    "caption": "Microsoft Windows 10 专业版",
+    "arch": "64 位",
+    "version": "10.0.19045"
+  },
+  "inputHead": "9ca06035a1343a9efa89b6474c337dfae2dab364",
+  "dbSchemaVersion": 1,
+  "date": "2026-10-21",
+  "qaNodeModules": "C:\\Users\\Administrator\\.cache\\codex-runtimes\\codex-primary-runtime\\dependencies\\node\\node_modules",
+  "dependenciesChanged": false,
+  "node": "v24.19.0"
+}

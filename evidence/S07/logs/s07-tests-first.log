@@ -1,0 +1,19 @@
+
+ RUN  v5.0.5 D:/BookKeep with AI
+
+ ✓ tests/unit/db/s07-statistics.test.ts (23 tests) 6086ms
+   ✓ S07 固定账本和同源聚合 (20)
+     ✓ F02 week：96530分与每个点/全范围明细/排行一致 914ms
+     ✓ F02 month：96530分与每个点/全范围明细/排行一致 571ms
+     ✓ F02 year：96530分与每个点/全范围明细/排行一致 545ms
+     ✓ F02 日Top3交易和年9月Top3分类、历史/当前日均、精确占比 603ms
+     ✓ F03-A：第四笔计总额、多日同类先聚合、少于三项不补假行 568ms
+     ✓ F03-B：跨月周、年内多个月与各月分类不串额 758ms
+     ✓ F03-S：日Top3同额已知优先/时刻降序/id升序，与createdAt不同 1030ms
+     ✓ 编辑/软删除/恢复刷新三种视图，旧revision拒绝、备份恢复世代切换 310ms
+
+ Test Files  1 passed (1)
+      Tests  23 passed (23)
+   Start at  13:08:50
+   Duration  6.78s (tests 92%, transform 7%, import 1%)
+

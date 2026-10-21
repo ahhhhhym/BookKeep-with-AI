@@ -1,0 +1,5 @@
+
+> bookkeepai@0.1.0 test
+> vitest run --maxWorkers=2 --reporter=json --outputFile=evidence/S07/unit-results-final.json
+
+JSON report written to D:/BookKeep with AI/evidence/S07/unit-results-final.json

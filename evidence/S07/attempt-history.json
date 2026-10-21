@@ -1,0 +1,44 @@
+[
+  {
+    "error": "page.waitForFunction: Timeout 12000ms exceeded.\n    at detailItems (D:\\BookKeep with AI\\scripts\\smoke-s07.mjs:36:14)\n    at D:\\BookKeep with AI\\scripts\\smoke-s07.mjs:140:75",
+    "ok": false,
+    "file": "ui-workflow-previous-1792559614913.json",
+    "checks": 17
+  },
+  {
+    "error": "AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:\n\n2 !== 0\n\n    at file:///D:/BookKeep%20with%20AI/scripts/smoke-s07.mjs:149:10",
+    "ok": false,
+    "file": "ui-workflow-previous-1792559672917.json",
+    "checks": 19
+  },
+  {
+    "error": null,
+    "ok": true,
+    "file": "ui-workflow-previous-1792559718449.json",
+    "checks": 19
+  },
+  {
+    "error": "locator.waitFor: Timeout 12000ms exceeded.\nCall log:\n\u001b[2m  - waiting for getByRole('region', { name: '统计点详情', exact: true }).getByText('暂无支出', { exact: true }) to be visible\u001b[22m\n\n    at D:\\BookKeep with AI\\scripts\\smoke-s07.mjs:105:53",
+    "ok": false,
+    "file": "ui-workflow-previous-1792560980974.json",
+    "checks": 6
+  },
+  {
+    "error": null,
+    "ok": true,
+    "file": "ui-workflow-previous-1792561014942.json",
+    "checks": 19
+  },
+  {
+    "error": null,
+    "ok": true,
+    "file": "ui-workflow-previous-1792561229785.json",
+    "checks": 22
+  },
+  {
+    "error": null,
+    "ok": true,
+    "file": "ui-workflow.json",
+    "checks": 22
+  }
+]

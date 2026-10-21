@@ -1,0 +1,13 @@
+
+> bookkeepai@0.1.0 typecheck
+> tsc -p tsconfig.main.json --noEmit && tsc -p tsconfig.renderer.json --noEmit && tsc -p tsconfig.tests.json --noEmit
+
+src/renderer/pages/StatisticsPage.tsx(50,40): error TS2345: Argument of type '({ ok: false; error: AppErrorPayload; } & { dataEpoch?: string | null | undefined; dataRevision?: number | undefined; }) | ({ ok: true; data: TopTransactionsResult; } & { ...; }) | ({ ...; } & { ...; })' is not assignable to parameter of type 'ApiResult<TopTransactionsResult>'.
+  Type '{ ok: true; data: TopCategoriesResult; } & { dataEpoch?: string | null | undefined; dataRevision?: number | undefined; }' is not assignable to type 'ApiResult<TopTransactionsResult>'.
+    Type '{ ok: true; data: TopCategoriesResult; } & { dataEpoch?: string | null | undefined; dataRevision?: number | undefined; }' is not assignable to type '{ ok: true; data: TopTransactionsResult; } & { dataEpoch?: string | null | undefined; dataRevision?: number | undefined; }'.
+      Type '{ ok: true; data: TopCategoriesResult; } & { dataEpoch?: string | null | undefined; dataRevision?: number | undefined; }' is not assignable to type '{ ok: true; data: TopTransactionsResult; }'.
+        Types of property 'data' are incompatible.
+          Property 'pointTotalFen' is missing in type 'TopCategoriesResult' but required in type 'TopTransactionsResult'.
+src/renderer/pages/StatisticsPage.tsx(53,78): error TS2339: Property 'totalFen' does not exist on type 'never'.
+src/renderer/pages/StatisticsPage.tsx(55,218): error TS2339: Property 'items' does not exist on type 'never'.
+src/renderer/pages/StatisticsPage.tsx(55,229): error TS7006: Parameter 'item' implicitly has an 'any' type.
