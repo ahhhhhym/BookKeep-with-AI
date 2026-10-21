@@ -58,6 +58,7 @@ export class ReviewService {
     const warnings=JSON.parse(r.warnings_json) as Candidate['warnings'];
     const resolution=JSON.parse(r.resolution_json) as Resolution;
     const group=this.group(c,r,p);
+    const category=c.db.prepare('SELECT id,name,enabled,version FROM category WHERE id=? AND ledger_id=?').get(p.categoryId,c.ledgerId)??null;
     const contextDigest=hashPayload({p,group:group.map(g=>({id:g.id,version:g.version,state:g.review_state,p:JSON.parse(g.current_json)}))});
     const duplicates=this.duplicates(c,r,p), duplicateDigest=hashPayload(duplicates);
     const missing=(['amountFen','occurredDate','name','categoryId'] as const).filter(f=>p[f]===null || (typeof p[f]==='string' && !String(p[f]).trim()));
@@ -86,7 +87,7 @@ export class ReviewService {
       duplicateMatches:duplicates,reviewState:r.review_state,postedTransactionId:r.posted_transaction_id,excludedByDefault:p.transactionKind!=='expense',createdAt:r.created_at,
       blocking:blockingReasons.length>0,blockingReasons,resolvedWarnings,duplicateResolution,
       highRisk:proposal.transactionKind!=='expense' || proposal.amountFen===null || proposal.occurredDate===null || proposal.name===null || warnings.some(w=>highCodes.has(w.code)),
-      reviewDigest:hashPayload({id:r.id,version:r.version,p,blockingReasons,duplicates,resolution,contextDigest})};
+      reviewDigest:hashPayload({id:r.id,version:r.version,p,category,blockingReasons,duplicates,resolution,contextDigest})};
   }
   get(id:string):ReviewCandidate {return this.store.withImports(false,c=>this.view(c,this.row(c,id)));}
   list(query:CandidateQuery,recognition:RecognitionService) {

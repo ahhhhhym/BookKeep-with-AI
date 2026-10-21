@@ -56,6 +56,18 @@ describe('S11 true persistent human review',()=>{
   expect(()=>review.approve({mode:'single',...item},randomUUID())).toThrowError('VERSION_CONFLICT');expect(count('"transaction"')).toBe(0);
   const current=review.get(old.id);approve(review,old.id);expect(()=>update(review,current,{name:'不应覆盖'})).toThrowError('VERSION_CONFLICT');expect(count('"transaction"')).toBe(1);
  });
+ it('category rename invalidates single confirmation and batch preview; fresh review alone can post',async()=>{
+  const {review,candidates}=await source(store,[proposal()]);
+  const old=review.get(candidates[0]!.id),item=confirmed(old),preview=review.preview([item]);
+  const category=store.listCategories(true).categories.find(c=>c.id==='cat_food')!;
+  store.updateCategory({id:category.id,expectedVersion:category.version,patch:{name:'餐饮核对新版'}},randomUUID());
+  expect(review.get(old.id).version).toBe(old.version);
+  expect(review.get(old.id).reviewDigest).not.toBe(old.reviewDigest);
+  expect(()=>review.approve({mode:'single',...item},randomUUID())).toThrowError('REVIEW_STALE');
+  expect(()=>review.approve({mode:'commit',previewToken:preview.previewToken!},randomUUID())).toThrowError('REVIEW_STALE');
+  expect(count('"transaction"')).toBe(0);expect(count('review_event',"action='approve'")).toBe(0);
+  expect(approve(review,old.id).count).toBe(1);
+ });
  it('unknown product, date or category cannot be bypassed by high confidence or warning resolve; explicit supplement and warning reason required',async()=>{
   const {review,candidates}=await source(store,[proposal({name:null,categoryId:null,confidence:1,missingFields:['name','categoryId'],warnings:[{code:'NAME_UNKNOWN',message:'未知商品',field:'name'}]})]);let c=review.get(candidates[0]!.id);
   expect(()=>approve(review,c.id)).toThrowError('REVIEW_INCOMPLETE');expect(()=>review.update({id:c.id,expectedVersion:c.version,action:'resolve_warning',warningCode:'NAME_UNKNOWN',field:'name',reviewDigest:c.reviewDigest,reason:'不能忽略未知'},randomUUID())).toThrow();
