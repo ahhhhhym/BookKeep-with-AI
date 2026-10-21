@@ -1,5 +1,0 @@
-npm warn Unknown env config "side-effects-cache". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.
-
-> bookkeepai@0.1.0 typecheck
-> tsc -p tsconfig.main.json --noEmit && tsc -p tsconfig.renderer.json --noEmit && tsc -p tsconfig.tests.json --noEmit
-

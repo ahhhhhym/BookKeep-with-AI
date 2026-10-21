@@ -12,14 +12,32 @@ import { getProvider } from '../services/providers';
 import { readAiSettings, type SecretStore } from '../services/settings/ai-settings';
 import type { ProbeService } from '../services/providers/probe';
 import type { LedgerStore } from '../services/ledger-store';
+import type { ImageService } from '../services/image-service';
+import type { RecognitionService } from '../services/recognition-service';
 
 export interface HandlerDependencies {
   readonly store: LedgerStore;
   readonly secrets: SecretStore;
   readonly probe: ProbeService;
+  readonly images: ImageService;
+  readonly recognition: RecognitionService;
+  readonly selectImages: () => Promise<string[]>;
+  readonly onRestored: () => void;
 }
 
 export function registerIpcHandlers(router: IpcRouter, deps: HandlerDependencies): void {
+  router.handle(CHANNEL_SPECS.imageSelect, async () => deps.images.select(await deps.selectImages(), 'selection'));
+  router.handle(CHANNEL_SPECS.imageDrop, r => deps.images.select(r.payload.paths,'drop'));
+  router.handle(CHANNEL_SPECS.imageImport, r => deps.images.import(r.payload,r.mutationId!));
+  router.handle(CHANNEL_SPECS.imagePrepare, r => deps.images.prepare(r.payload,r.mutationId!));
+  router.handle(CHANNEL_SPECS.imageResource, r => deps.images.resource(r.payload));
+  router.handle(CHANNEL_SPECS.imageDelete, r => deps.images.delete(r.payload,r.mutationId!));
+  router.handle(CHANNEL_SPECS.recognitionStart, r => deps.recognition.start(r.payload,r.mutationId!));
+  router.handle(CHANNEL_SPECS.recognitionStatus, r => deps.recognition.status(r.payload));
+  router.handle(CHANNEL_SPECS.recognitionCancel, r => deps.recognition.cancel(r.payload,r.mutationId!));
+  router.handle(CHANNEL_SPECS.recognitionRetry, r => deps.recognition.retry(r.payload,r.mutationId!));
+  router.handle(CHANNEL_SPECS.recognitionResume, r => deps.recognition.retry(r.payload,r.mutationId!,true));
+  router.handle(CHANNEL_SPECS.candidateList, r => deps.recognition.candidates(r.payload));
   const secretLimiter = createRateLimiter(
     SECRET_SUBMIT_RATE_LIMIT.limit,
     SECRET_SUBMIT_RATE_LIMIT.windowMs,
@@ -101,7 +119,9 @@ export function registerIpcHandlers(router: IpcRouter, deps: HandlerDependencies
         fieldErrors: [{ path: 'request.mutationId', code: 'MUTATION_ID_REQUIRED' }],
       });
     }
-    return deps.store.restoreBackup(request.payload, request.mutationId);
+    const result=deps.store.restoreBackup(request.payload, request.mutationId);
+    if('newDataEpoch' in result)deps.onRestored();
+    return result;
   });
 
   router.handle(CHANNEL_SPECS.skeletonMockRecognition, async (request): Promise<MockRecognitionView> => {

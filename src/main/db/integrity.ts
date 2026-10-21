@@ -103,6 +103,18 @@ export function collectBusinessViolations(db: SqliteDb): string[] {
   if (badDate > 0) violations.push(`TRANSACTION_DATE:${badDate}`);
   if (badPrecision > 0) violations.push(`TRANSACTION_PRECISION:${badPrecision}`);
 
+  if (tableExists(db,'import_job') && tableExists(db,'candidate') && tableExists(db,'image_asset')) {
+    const mismatched = db.prepare<{n:number}>(`SELECT count(*) n FROM candidate c
+      JOIN import_job j ON j.id=c.job_id JOIN image_asset a ON a.id=c.image_asset_id
+      WHERE c.ledger_id<>j.ledger_id OR c.ledger_id<>a.ledger_id OR c.image_asset_id<>j.image_asset_id
+      OR c.prepared_hash<>j.prepared_hash OR c.prepared_hash<>a.prepared_hash OR j.status<>'completed'`).get()!.n;
+    if(mismatched)violations.push(`CANDIDATE_SOURCE:${mismatched}`);
+    const counts = db.prepare<{n:number}>(`SELECT count(*) n FROM import_job j WHERE
+      (j.status='completed' AND j.candidate_count<>(SELECT count(*) FROM candidate c WHERE c.job_id=j.id))
+      OR (j.status<>'completed' AND EXISTS(SELECT 1 FROM candidate c WHERE c.job_id=j.id))`).get()!.n;
+    if(counts)violations.push(`JOB_CANDIDATE_COUNT:${counts}`);
+  }
+
   violations.push(...collectIntegrityViolations(db));
   return violations;
 }

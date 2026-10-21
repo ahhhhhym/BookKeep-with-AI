@@ -10,6 +10,8 @@ import { pathToFileURL } from 'node:url';
 import { RESOURCES_LICENSES, ROOT, log } from './lib/paths.mjs';
 
 const PACKAGES = [
+  { name: 'sharp', license:'LICENSE',scope:'runtime',purpose:'本地图片内容校验与裁剪遮盖' },
+  { name: '@img/sharp-win32-x64', license:'LICENSE',scope:'runtime',purpose:'Sharp Windows x64 原生解码及 libvips' },
   { name: 'electron', license: 'LICENSE', scope: 'runtime', purpose: '桌面运行时' },
   { name: 'react', license: 'LICENSE', scope: 'runtime', purpose: '界面库（打包进渲染资源）' },
   { name: 'react-dom', license: 'LICENSE', scope: 'runtime', purpose: '界面渲染（打包进渲染资源）' },

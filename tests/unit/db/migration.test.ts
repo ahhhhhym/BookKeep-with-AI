@@ -72,7 +72,7 @@ describe('数据库迁移：版本、备份与失败恢复', () => {
     const layout = newLayout();
     const clock = fixedClock();
     for (let round = 0; round < 3; round += 1) {
-      const store = LedgerStore.open(storeOptions(layout, clock.clock));
+      const store = LedgerStore.open(storeOptions(layout, clock.clock, { migrations: [V1] }));
       try {
         expect(store.snapshot().categoryCount).toBe(34);
         expect(store.snapshot().ledgerCount).toBe(1);
@@ -81,7 +81,7 @@ describe('数据库迁移：版本、备份与失败恢复', () => {
         closeQuietly(store);
       }
     }
-    const store = LedgerStore.open(storeOptions(layout, clock.clock));
+    const store = LedgerStore.open(storeOptions(layout, clock.clock, { migrations: [V1] }));
     try {
       const rows = migrationRows(store);
       expect(rows.filter((row) => row.to_version === 1 && row.status === 'completed')).toHaveLength(1);
@@ -93,7 +93,7 @@ describe('数据库迁移：版本、备份与失败恢复', () => {
   it('升级前自动备份、升级后数据保留，且已应用版本不重复记录', () => {
     const layout = newLayout();
     const clock = fixedClock();
-    const first = LedgerStore.open(storeOptions(layout, clock.clock));
+    const first = LedgerStore.open(storeOptions(layout, clock.clock, { migrations: [V1] }));
     const { databasePath } = first.diagnostics();
     const created = first.createTransaction(transactionInput({ amountFen: 4426 }), mutationId());
     closeQuietly(first);
@@ -135,7 +135,7 @@ describe('数据库迁移：版本、备份与失败恢复', () => {
   it('迁移失败回滚并进入 recovery_required：旧数据可读、写入被拒绝、可恢复到迁移前备份', () => {
     const layout = newLayout();
     const clock = fixedClock();
-    const first = LedgerStore.open(storeOptions(layout, clock.clock));
+    const first = LedgerStore.open(storeOptions(layout, clock.clock, { migrations: [V1] }));
     const oldEpoch = first.snapshot().dataEpoch;
     const created = first.createTransaction(transactionInput({ amountFen: 3330 }), mutationId());
     closeQuietly(first);
@@ -213,7 +213,7 @@ describe('数据库迁移：版本、备份与失败恢复', () => {
   it('迁移事务中崩溃（state=migrating）在下次启动恢复为 clean 并继续迁移', () => {
     const layout = newLayout();
     const clock = fixedClock();
-    const first = LedgerStore.open(storeOptions(layout, clock.clock));
+    const first = LedgerStore.open(storeOptions(layout, clock.clock, { migrations: [V1] }));
     const { databasePath } = first.diagnostics();
     first.createTransaction(transactionInput({ amountFen: 1200 }), mutationId());
     closeQuietly(first);
@@ -239,7 +239,7 @@ describe('数据库迁移：版本、备份与失败恢复', () => {
   it('迁移前备份失败时不执行迁移、不覆盖旧库，并标记 recovery_required', () => {
     const layout = newLayout();
     const clock = fixedClock();
-    const first = LedgerStore.open(storeOptions(layout, clock.clock));
+    const first = LedgerStore.open(storeOptions(layout, clock.clock, { migrations: [V1] }));
     const { databasePath } = first.diagnostics();
     closeQuietly(first);
 
@@ -272,7 +272,7 @@ describe('数据库迁移：版本、备份与失败恢复', () => {
   it('已应用迁移的 checksum 被篡改时拒绝启动（INTEGRITY_ERROR），不静默继续', () => {
     const layout = newLayout();
     const clock = fixedClock();
-    const first = LedgerStore.open(storeOptions(layout, clock.clock));
+    const first = LedgerStore.open(storeOptions(layout, clock.clock, { migrations: [V1] }));
     const { databasePath } = first.diagnostics();
     closeQuietly(first);
 
@@ -284,6 +284,6 @@ describe('数据库迁移：版本、备份与失败恢复', () => {
       );
     });
 
-    expectAppError(() => LedgerStore.open(storeOptions(layout, clock.clock)), 'INTEGRITY_ERROR');
+    expectAppError(() => LedgerStore.open(storeOptions(layout, clock.clock, { migrations: [V1] })), 'INTEGRITY_ERROR');
   });
 });

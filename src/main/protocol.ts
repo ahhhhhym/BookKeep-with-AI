@@ -35,7 +35,7 @@ function notFound(): Response {
 }
 
 /** app ready 之后调用；rendererDir 必须是打包后的 dist/renderer 绝对路径。 */
-export function serveRendererAssets(rendererDir: string): void {
+export function serveRendererAssets(rendererDir: string, readImage?: (token:string)=>Promise<Buffer>): void {
   const rootDir = path.resolve(rendererDir);
 
   protocol.handle(APP_SCHEME, async (request) => {
@@ -46,6 +46,13 @@ export function serveRendererAssets(rendererDir: string): void {
       return notFound();
     }
     if (url.host !== APP_HOST) return notFound();
+    if (url.pathname.startsWith('/image/')) {
+      if(request.method !== 'GET' || !readImage) return notFound();
+      const token=url.pathname.slice('/image/'.length);
+      if(!/^[a-f0-9-]{36}$/.test(token))return notFound();
+      try { return new Response(new Uint8Array(await readImage(token)), {headers:{'content-type':'image/png','cache-control':'no-store','x-content-type-options':'nosniff'}}); }
+      catch {return notFound();}
+    }
 
     let decoded: string;
     try {

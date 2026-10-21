@@ -1,6 +1,0 @@
-
-> bookkeepai@0.1.0 verify:icons
-> node scripts/verify-icons.mjs
-
-[bookkeep] icon slugs verified: 42/42 (34 分类 + 导航), lucide-static 1.60.0
-EXIT_CODE=0

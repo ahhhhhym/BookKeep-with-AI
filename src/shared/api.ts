@@ -32,6 +32,7 @@ import type {
 import type { CategoryListInput, ProviderCapabilitiesInput, SaveSecretInput } from './ipc';
 import type { AppErrorPayload } from './errors';
 import type { ProbeInput, ProbeReport } from './probe';
+import type { Asset, Candidate, CandidateQuery, ImportInput, ImportResult, Job, JobList, JobQuery, ListResult, PrepareInput, Resource, ResourceInput, RetryInput, Selection, StartInput, VersionedJob } from './imports';
 import type { StatisticsInput, StatisticsSeries, StatisticsSummary, TopTransactionsInput, TopTransactionsResult, TopCategoriesInput, TopCategoriesResult } from './statistics';
 
 /** 桥接结果对象：错误以数据形式返回，不跨上下文抛自定义异常（避免丢字段）。 */
@@ -42,6 +43,23 @@ export type ApiResult<T> = ({ ok: true; data: T } | { ok: false; error: AppError
 };
 
 export interface BookKeepApi {
+  readonly image: {
+    select(): Promise<ApiResult<Selection>>;
+    /** Actual File objects only; strings and arbitrary paths are rejected in isolated preload. */
+    drop(files: readonly unknown[]): Promise<ApiResult<Selection>>;
+    import(input: ImportInput, options?: MutationOptions): Promise<ApiResult<ImportResult>>;
+    prepare(input: PrepareInput, options?: MutationOptions): Promise<ApiResult<Asset>>;
+    resource(input: ResourceInput): Promise<ApiResult<Resource>>;
+    delete(input: {imageAssetId:string;expectedVersion:number;confirmed:true}, options?:MutationOptions):Promise<ApiResult<{deleted:true;id:string}>>;
+  };
+  readonly recognition: {
+    start(input:StartInput,options?:MutationOptions):Promise<ApiResult<{jobs:Job[];createdIds:string[];reusedIds:string[]}>>;
+    status(input:JobQuery):Promise<ApiResult<Job|JobList>>;
+    cancel(input:VersionedJob,options?:MutationOptions):Promise<ApiResult<Job>>;
+    retry(input:RetryInput,options?:MutationOptions):Promise<ApiResult<Job>>;
+    resume(input:RetryInput,options?:MutationOptions):Promise<ApiResult<Job>>;
+  };
+  readonly candidate: {list(input:CandidateQuery):Promise<ApiResult<ListResult<Candidate>>>};
   readonly contractVersion: string;
   readonly skeletonStage: 'S05';
   readonly settings: {

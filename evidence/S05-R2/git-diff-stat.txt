@@ -1,8 +1,0 @@
- README.md                                |  11 +-
- src/main/services/backup-service.ts      |  37 +++-
- src/main/services/ledger-store.ts        |  16 +-
- src/main/storage/backup-catalog.ts       | 242 ++++++++++++++++++++-----
- src/renderer/pages/DataPage.tsx          |  14 +-
- tests/unit/db/backup.test.ts             |  12 ++
- tests/unit/db/rework2-regression.test.ts | 299 +++++++++++++++++++++++++++++++
- 7 files changed, 570 insertions(+), 61 deletions(-)

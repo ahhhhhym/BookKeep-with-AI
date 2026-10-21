@@ -1,6 +1,6 @@
 /** 受限 preload：唯一跨进程入口。不暴露 ipcRenderer、Node、SQL、shell 或任意 URL。 */
 
-import { contextBridge, ipcRenderer } from 'electron';
+import { contextBridge, ipcRenderer, webUtils } from 'electron';
 import type { ApiResult, BookKeepApi } from '../shared/api';
 import { CONTRACT_VERSION } from '../shared/constants';
 import type { AppErrorPayload } from '../shared/errors';
@@ -125,6 +125,29 @@ function mutationOptions(options?: MutationOptions): { readonly mutation: true; 
 }
 
 const api: BookKeepApi = {
+  image: {
+    select: () => invoke(IPC.imageSelect, {}, {mutation:false}),
+    drop: (files) => {
+      if(!Array.isArray(files)||!files.length||files.length>20)return Promise.resolve({ok:false,error:{...FALLBACK_ERROR,code:'BATCH_LIMIT',message:'BATCH_LIMIT'}});
+      try {
+        const paths=files.map(file=>webUtils.getPathForFile(file as Parameters<typeof webUtils.getPathForFile>[0]));
+        if(paths.some(p=>!p))throw new Error();
+        return invoke(IPC.imageDrop,{paths},{mutation:false});
+      }catch{return Promise.resolve({ok:false,error:{...FALLBACK_ERROR,code:'PAYLOAD_INVALID',message:'PAYLOAD_INVALID'}});}
+    },
+    import:(input,options)=>invoke(IPC.imageImport,input,mutationOptions(options)),
+    prepare:(input,options)=>invoke(IPC.imagePrepare,input,mutationOptions(options)),
+    resource:input=>invoke(IPC.imageResource,input,{mutation:false}),
+    delete:(input,options)=>invoke(IPC.imageDelete,input,mutationOptions(options)),
+  },
+  recognition: {
+    start:(input,options)=>invoke(IPC.recognitionStart,input,mutationOptions(options)),
+    status:input=>invoke(IPC.recognitionStatus,input,{mutation:false}),
+    cancel:(input,options)=>invoke(IPC.recognitionCancel,input,mutationOptions(options)),
+    retry:(input,options)=>invoke(IPC.recognitionRetry,input,mutationOptions(options)),
+    resume:(input,options)=>invoke(IPC.recognitionResume,input,mutationOptions(options)),
+  },
+  candidate:{list:input=>invoke(IPC.candidateList,input,{mutation:false})},
   contractVersion: CONTRACT_VERSION,
   skeletonStage: 'S05',
   settings: {

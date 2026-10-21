@@ -591,7 +591,13 @@ export class LedgerStore {
 
   createBackup(input: BackupCreateInput, mutationId: string | null): BackupCreateResult {
     this.assertOpen();
+    this.assertNoImportAttachments();
     return this.backupService.create(input, mutationId);
+  }
+
+  private assertNoImportAttachments(): void {
+    const table=this.db.prepare("SELECT name FROM sqlite_master WHERE type='table' AND name='image_asset'").get();
+    if(table && this.db.prepare('SELECT id FROM image_asset LIMIT 1').get()) throw new AppError('UNSUPPORTED',{details:{reason:'ATTACHMENT_BACKUP_REQUIRES_S15'}});
   }
 
   listBackups(): BackupListResult {
@@ -606,6 +612,7 @@ export class LedgerStore {
 
   restoreBackup(input: BackupRestoreInput, mutationId: string | null): BackupRestorePreviewResult | BackupRestoreResult {
     this.assertOpen();
+    this.assertNoImportAttachments();
     if (input.mode === 'preview') return this.backupService.preview(input.backupId);
     return this.backupService.restoreCommit({ restoreToken: input.restoreToken }, mutationId);
   }
@@ -794,6 +801,13 @@ export class LedgerStore {
         ? error
         : new AppError('RESTORE_FAILED', { details: { step: 'switch' } });
     }
+  }
+
+  /** Main-process-only synchronous callback; never exposed through preload. */
+  withImports<T>(write: boolean, fn: (ctx: import('./import-context').ImportContext) => T): T {
+    if (write) this.assertWritable(); else this.assertOpen();
+    return fn({ db: this.db, ledgerId: this.ledgerId, epoch: this.epoch, revision: this.currentRevision,
+      directory: path.join(path.dirname(this.databasePath), 'attachments') });
   }
 
   close(): void {

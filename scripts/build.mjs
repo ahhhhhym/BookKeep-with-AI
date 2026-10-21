@@ -9,7 +9,7 @@ import { DIST, ROOT, log } from './lib/paths.mjs';
 import { cleanLicenses, collectLicenses } from './collect-licenses.mjs';
 import { verifyIcons } from './verify-icons.mjs';
 
-const EXTERNAL_NODE = ['electron', 'better-sqlite3'];
+const EXTERNAL_NODE = ['electron', 'better-sqlite3', 'sharp'];
 
 export function mainBuildOptions() {
   return {

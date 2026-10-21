@@ -224,6 +224,8 @@ export function inspectBackupArchive(
     return { ok: false, code: 'BACKUP_INVALID', reason: 'NOT_SQLITE' };
   }
   try {
+    const images=db.prepare("SELECT name FROM sqlite_master WHERE type='table' AND name='image_asset'").get();
+    if(images && db.prepare('SELECT id FROM image_asset LIMIT 1').get())return {ok:false,code:'BACKUP_INVALID',reason:'DB_ONLY_ARCHIVE_HAS_ATTACHMENTS'};
     const integrity = collectIntegrityViolations(db);
     if (integrity.length > 0) return { ok: false, code: 'BACKUP_INVALID', reason: 'INTEGRITY' };
     const manifest = readManifest(db);
