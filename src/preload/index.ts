@@ -147,7 +147,12 @@ const api: BookKeepApi = {
     retry:(input,options)=>invoke(IPC.recognitionRetry,input,mutationOptions(options)),
     resume:(input,options)=>invoke(IPC.recognitionResume,input,mutationOptions(options)),
   },
-  candidate:{list:input=>invoke(IPC.candidateList,input,{mutation:false})},
+  candidate:{
+    list:input=>invoke(IPC.candidateList,input,{mutation:false}),
+    update:(input,options)=>invoke(IPC.candidateUpdate,input,mutationOptions(options)),
+    reject:(input,options)=>invoke(IPC.candidateReject,input,mutationOptions(options)),
+    approve:(input,options)=>invoke(IPC.candidateApprove,input,input.mode==='preview'?{mutation:false}:mutationOptions(options)),
+  },
   contractVersion: CONTRACT_VERSION,
   skeletonStage: 'S05',
   settings: {

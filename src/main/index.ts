@@ -172,6 +172,7 @@ async function bootstrap(): Promise<void> {
   recognition=new RecognitionService(store,images,secrets);
   registerIpcHandlers(router, {
     store,
+    reviewOwner:()=>mainWindow?.webContents.id??null,
     secrets, probe, images, get recognition(){return recognition!;},
     onRestored:()=>{recognition?.shutdown();recognition=new RecognitionService(store!,images,secrets!);},
     selectImages: async()=>{ const result=await dialog.showOpenDialog(mainWindow!,{title:"选择消费图片",properties:["openFile","multiSelections"],filters:[{name:"JPEG / PNG / WebP",extensions:["jpg","jpeg","png","webp"]}]}); return result.canceled?[]:result.filePaths; },

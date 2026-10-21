@@ -60,7 +60,6 @@ import { runInTransaction, type SqliteDb } from '../db/sqlite';
 import { queryTransactions } from '../db/transaction-query';
 import {
   countTransactions,
-  findTransactionByCandidateId,
   getTransactionById,
   insertTransaction,
   setTransactionDeletedAt,
@@ -893,72 +892,14 @@ export interface AiTransactionInput extends TransactionInput {
 }
 
 /**
- * S11 批准路径的内部入口：唯一 sourceCandidateId 是第二道幂等兜底。
- * 已存在关联（含软删）时返回原交易，绝不插入第二笔；尚未暴露给 IPC。
+ * S05 historical entry is closed in S11. All AI creation must use ReviewService's
+ * atomic candidate/transaction/event/receipt path, including internal callers.
  */
 export function createAiTransaction(
-  ctx: LedgerServiceContext,
-  input: AiTransactionInput,
+  _ctx: LedgerServiceContext,
+  _input: AiTransactionInput,
 ): { readonly transaction: TransactionView; readonly revision: number; readonly alreadyExisted: boolean } {
-  if (!isSafeIntegerInRange(input.amountFen, 1, 999_999_999)) {
-    throw new AppError('AMOUNT_INVALID', { fieldErrors: [{ path: 'payload.amountFen', code: 'AMOUNT_RANGE' }] });
-  }
-  if (typeof input.sourceCandidateId !== 'string' || !/^[A-Za-z0-9_-]{1,64}$/.test(input.sourceCandidateId)) {
-    throw new AppError('FIELD_INVALID', {
-      fieldErrors: [{ path: 'sourceCandidateId', code: 'EXPECTED_ID' }],
-    });
-  }
-  return runInTransaction(ctx.db, () => {
-    const existing = findTransactionByCandidateId(ctx.db, input.sourceCandidateId);
-    if (existing) {
-      return { transaction: mapTransaction(existing), revision: readDataRevision(ctx.db, ctx.ledgerId), alreadyExisted: true };
-    }
-    const fields = validateTransactionInput(ctx.db, ctx.ledgerId, input);
-    const now = nowIso(ctx);
-    const id = randomUUID();
-    try {
-      insertTransaction(ctx.db, {
-        id,
-        ledgerId: ctx.ledgerId,
-        ...fields,
-        source: 'ai',
-        sourceCandidateId: input.sourceCandidateId,
-        now,
-      });
-    } catch (error) {
-      const target = uniqueTarget(error);
-      if (target.includes('source_candidate_id') || target.includes('ux_transaction_candidate')) {
-        const raced = findTransactionByCandidateId(ctx.db, input.sourceCandidateId);
-        if (raced) {
-          return {
-            transaction: mapTransaction(raced),
-            revision: readDataRevision(ctx.db, ctx.ledgerId),
-            alreadyExisted: true,
-          };
-        }
-      }
-      throw error;
-    }
-    const row = getTransactionById(ctx.db, id);
-    if (!row) throw new AppError('INTEGRITY_ERROR', { details: { reason: 'TRANSACTION_MISSING_AFTER_INSERT' } });
-    insertAuditEvent(ctx.db, {
-      ledgerId: ctx.ledgerId,
-      entityType: 'transaction',
-      entityId: id,
-      action: 'transaction.aiApprove',
-      actor: 'system',
-      diff: [
-        { field: 'amountFen', before: null, after: row.amount_fen },
-        { field: 'occurredDate', before: null, after: row.occurred_date },
-        { field: 'source', before: null, after: row.source },
-        { field: 'sourceCandidateId', before: null, after: row.source_candidate_id },
-      ],
-      mutationId: null,
-      reason: null,
-      now,
-    });
-    return { transaction: mapTransaction(row), revision: bumpRevision(ctx.db, ctx.ledgerId, now), alreadyExisted: false };
-  });
+  throw new AppError('UNSUPPORTED', { details: { reason: 'USE_CANDIDATE_APPROVE' } });
 }
 
 /* ------------------------------------------------------------------ */

@@ -135,7 +135,7 @@ export function App(): JSX.Element {
         {navId === 'statistics' ? <StatisticsPage input={statisticsInput} onInput={setStatisticsInput} onDetails={(filter) => { setDetailFilter(filter); navigate('ledger'); }} /> : null}
         {navId === 'import' ? <ImportPage onError={setLastError} /> : null}
         {navId === 'queue' ? <QueuePage /> : null}
-        {navId === 'review' ? <ReviewPage /> : null}
+        {navId === 'review' ? <ReviewPage registerGuard={registerGuard} /> : null}
         {navId === 'categories' ? <CategoriesPage /> : null}
         {navId === 'data' ? <DataPage /> : null}
         {navId === 'settings' ? (
