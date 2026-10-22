@@ -23,7 +23,7 @@ export function httpError(status: number): ErrorCode {
 }
 export async function requestImageJson(options: {
   key: string; image: Buffer; prompt: string; metadata: TransportMetadata;
-  fetcher?: typeof fetch; timeoutMs?: number; signal?: AbortSignal; imageText?: string;
+  fetcher?: typeof fetch; timeoutMs?: number; signal?: AbortSignal; imageText?: string; onRequestSent?: () => void;
 }): Promise<CandidateOutput> {
   if (options.image.length === 0 || options.image.length > 10 * 1024 * 1024) throw new AppError('IMAGE_TOO_LARGE');
   const abort = new AbortController();
@@ -35,6 +35,7 @@ export async function requestImageJson(options: {
   const timer = setTimeout(() => abort.abort(), options.timeoutMs ?? 90000);
   try {
     if(abort.signal.aborted)throw new AppError('CANCELLED');
+    options.onRequestSent?.();
     options.metadata.requestSent=true;
     const response = await (options.fetcher ?? fetch)(ENDPOINT, {
       method: 'POST', redirect: 'error', signal: abort.signal,

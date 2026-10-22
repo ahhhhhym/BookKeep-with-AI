@@ -10,7 +10,8 @@ import { splitSamples, groupSamples } from './split';
 import { pairPool, score } from './metrics';
 import { duplicateHints, mapHints } from './duplicates';
 import { promptConfig } from './prompt';
-import { attemptsOnError, metadataOnError, normalizedPredictions, type EvaluationProvider } from './provider';
+import { normalizedPredictions, transportMetadataOnError, type EvaluationProvider } from './provider';
+import type { TransportMetadata } from '../providers/transport';
 type ExportRecord = {
     id: string;
     versionId: string;
@@ -111,6 +112,8 @@ export class DatasetService {
     private readonly root: string;
     private readonly stateFile: string;
     private readonly withdrawalFile: string;
+    private readonly contactFile: string;
+    private contactKeys = new Set<string>();
     private readonly clock: () => number;
     private closed = false;
     constructor(private readonly env: DatasetEnvironment) {
@@ -119,6 +122,7 @@ export class DatasetService {
         this.root = path.join(env.root, 'datasets', env.ledgerId());
         this.stateFile = path.join(this.root, 'state.json');
         this.withdrawalFile = path.join(this.root, 'withdrawals.json');
+        this.contactFile = path.join(this.root, 'test-contacts.json');
         this.clock = env.clock ?? Date.now;
         mkdirSync(this.root, { recursive: true });
         this.safe(this.root);
@@ -126,11 +130,21 @@ export class DatasetService {
         this.state = existsSync(this.stateFile) ? JSON.parse(readFileSync(this.stateFile, 'utf8')) : { schema: 'bk-dataset-store.v1', revision: 0, ledgerId: env.ledgerId(), epoch: env.epoch(), consents: [], samples: {}, versions: [], runs: [], exports: [], receipts: {}, locked: {}, lockHashes: {}, retiredTestHashes: [], lockRelations: {}, prepared: [] };
         if (this.state.schema !== 'bk-dataset-store.v1' || this.state.ledgerId !== env.ledgerId() || !Array.isArray(this.tombstones))
             error('RECOVERY_REQUIRED');
+        if (existsSync(this.contactFile)) {
+            const contacts = JSON.parse(readFileSync(this.contactFile, 'utf8'));
+            if (contacts.schema !== 'bk-test-contacts.v1' || !Array.isArray(contacts.keys) || contacts.keys.some((k: unknown) => typeof k !== 'string' || !/^[a-f0-9]{64}$/.test(k))) error('RECOVERY_REQUIRED');
+            this.contactKeys = new Set(contacts.keys);
+        }
+        else if (this.state.retiredTestHashes.length) {
+            // Legacy v1 could already have removed the original source snapshot. Retire its locked cohort conservatively.
+            for (const [hash, split] of Object.entries(this.state.lockHashes)) if (split === 'test') this.contactKeys.add(hashPayload(['test-hash', hash]));
+            for (const [key, split] of Object.entries(this.state.lockRelations)) if (split === 'test') this.contactKeys.add(key);
+        }
+        // Reconcile before withdrawals remove source snapshots. The independent registry survives an old state restore.
+        this.reconcileContacts();
         for (const run of this.state.runs)
             if (run.status === 'queued' || run.status === 'processing') {
-                run.status = 'failed';
-                run.invalidReason = 'INTERRUPTED';
-                run.finishedAt = this.now();
+                this.stopRun(run, 'INTERRUPTED', 'failed');
             }
         for (const t of this.tombstones)
             this.purge(t);
@@ -156,7 +170,34 @@ export class DatasetService {
         return absolute;
     }
     private file(...parts: string[]) { return this.safe(path.join(this.root, ...parts)); }
-    private persist() { atomic(this.stateFile, canonicalJson(this.state)); }
+    private identityKeys(s: Sample) { return [...new Set([s.preparedHash, s.originalHash].map(h => hashPayload(['test-hash', h])).concat(this.relationKeys(s)))]; }
+    private reconcileContacts() {
+        const before = [...this.contactKeys].sort().join();
+        for (const h of this.state.retiredTestHashes) this.contactKeys.add(hashPayload(['test-hash', h]));
+        for (const v of this.state.versions.filter(v => v.contaminated))
+            for (const s of v.samples.filter(s => v.splits[s.id] === 'test'))
+                for (const key of this.identityKeys(s)) this.contactKeys.add(key);
+        const all = [...Object.values(this.state.samples).flat(), ...this.state.versions.flatMap(v => v.samples)];
+        let changed = true;
+        while (changed) {
+            changed = false;
+            for (const s of all) {
+                const keys = this.identityKeys(s);
+                if (keys.some(k => this.contactKeys.has(k))) for (const k of keys) if (!this.contactKeys.has(k)) { this.contactKeys.add(k); changed = true; }
+            }
+        }
+        if (!existsSync(this.contactFile) || before !== [...this.contactKeys].sort().join())
+            atomic(this.contactFile, canonicalJson({schema:'bk-test-contacts.v1', keys:[...this.contactKeys].sort()}));
+        for (const v of this.state.versions)
+            if (v.samples.some(s => this.identityKeys(s).some(k => this.contactKeys.has(k)))) {
+                v.contaminated = true;
+                for (const r of this.state.runs.filter(r => r.datasetVersionId === v.id)) {
+                    if (r.status === 'queued' || r.status === 'processing') this.stopRun(r, 'TEST_CONTAMINATED');
+                    r.invalidReason = 'TEST_CONTAMINATED'; r.report = null;
+                }
+            }
+    }
+    private persist() { this.reconcileContacts(); atomic(this.stateFile, canonicalJson(this.state)); }
     private current() { if (this.closed)
         error('STATE_CONFLICT'); if (this.env.ledgerId() !== this.state.ledgerId)
         error('STALE_EPOCH'); if (this.state.epoch !== this.env.epoch()) {
@@ -203,9 +244,10 @@ export class DatasetService {
             return this.summary();
         if (input.kind === 'sample') {
             const s = this.latest(input.id!);
+            this.authorized(s);
             if (this.state.locked[s.id] === 'test')
                 error('DATASET_LOCKED');
-            return copy({ sample: s, history: this.state.samples[s.id] });
+            return copy({ sample: s, history: this.state.samples[s.id].filter(s => { try { this.authorized(s); return true; } catch { return false; } }) });
         }
         if (input.kind === 'version') {
             const v = this.version(input.id!);
@@ -220,10 +262,16 @@ export class DatasetService {
                 error('DATASET_LOCKED');
             return { runId: r.id, pairPool: r.pairPool.map(({ positive: _p, hardNegative: _h, ...pair }) => pair), results: r.results.map(result => ({ sampleId: result.sampleId, status: result.status, predictions: result.predictions.map((p, ordinal) => ({ ordinal, evidence: p.evidence.map(e => ({ region: e.region, field: e.field })) })) })), labels: v.samples.filter(s => v.splits[s.id] === r.split).map(s => ({ sampleId: s.id, labels: s.labels!.map(l => ({ labelId: l.labelId, ordinal: l.ordinal, regions: l.value.evidence.map(e => e.region) })) })) };
         }
-        return copy(r.split === 'test' ? { ...r, results: r.results.map(({ predictions: _p, ...safe }) => safe), pairPool: r.pairPool.map(({ positive: _p, hardNegative: _h, ...safe }) => safe), duplicatePredictions: [], alignment: null } : r);
+        const permitted = this.readableRun(r);
+        return copy(r.split === 'test' ? { ...permitted, results: permitted.results.map(({ predictions: _p, ...safe }) => safe), pairPool: permitted.pairPool.map(({ positive: _p, hardNegative: _h, ...safe }) => safe), duplicateOutput: [], duplicatePredictions: [], alignment: null } : permitted);
+    }
+    private readableRun(r: Run): Run {
+        try { this.version(r.datasetVersionId); return r; }
+        catch (e) { return {...r, report:null, results:r.results.map(result => ({...result,predictions:[]})), pairPool:[], duplicateOutput:[], duplicatePredictions:[], alignment:null, alignmentHash:null, alignmentReviewer:null, invalidReason:r.invalidReason ?? (e instanceof AppError ? e.code : 'DATASET_INVALID')}; }
     }
     summary(): DatasetSummary {
-        return copy({ samples: Object.values(this.state.samples).map(h => { const s = h.at(-1)!; return { id: s.id, version: s.version, kind: s.kind, primaryScene: s.primaryScene, reviewStatus: s.reviewStatus, preparedHash: s.preparedHash, consentId: s.consentId }; }), versions: this.state.versions.map(v => ({ id: v.id, tag: v.tag, manifestHash: v.manifestHash, status: v.status, exploratory: v.exploratory, contaminated: v.contaminated })), runs: this.state.runs.map(r => ({ id: r.id, status: r.status, scope: r.scope, provider: r.provider, report: r.report })), consents: this.state.consents, withdrawals: this.tombstones.map(t => ({ ...t, preparedHash: undefined })), exports: this.state.exports.map(e => ({ id: e.id, versionId: e.versionId, status: e.status, recipient: e.recipient, manifestHash: e.manifestHash })), revision: this.state.revision, trainingSubmitSupported: false, trained: false });
+        this.current(); this.sweep();
+        return copy({ samples: Object.values(this.state.samples).map(h => { const s = h.at(-1)!; return { id: s.id, version: s.version, kind: s.kind, primaryScene: s.primaryScene, reviewStatus: s.reviewStatus, preparedHash: s.preparedHash, consentId: s.consentId }; }), versions: this.state.versions.map(v => ({ id: v.id, tag: v.tag, manifestHash: v.manifestHash, status: v.status, exploratory: v.exploratory, contaminated: v.contaminated })), runs: this.state.runs.map(r => ({ id: r.id, status: r.status, scope: r.scope, provider: r.provider, report: this.readableRun(r).report })), consents: this.state.consents.map(c => ({...c, rights:c.epoch === this.env.epoch() && this.head(c.imageAssetId,c.purpose)?.id === c.id && c.rights && this.rightsValid(c.rights) ? c.rights : null})), withdrawals: this.tombstones.map(t => ({ ...t, preparedHash: undefined })), exports: this.state.exports.map(e => ({ id: e.id, versionId: e.versionId, status: e.status, recipient: e.recipient, manifestHash: e.manifestHash })), revision: this.state.revision, trainingSubmitSupported: false, trained: false });
     }
     command(input: DatasetCommand, mutationId: string): unknown {
         this.current();
@@ -236,6 +284,12 @@ export class DatasetService {
         if (old) {
             if (old.hash !== digest)
                 error('IDEMPOTENCY_CONFLICT');
+            if (input.op === 'align') {
+                const run = this.state.runs.find(r => r.id === input.runId);
+                if (!run) error('NOT_FOUND');
+                this.version(run.datasetVersionId);
+                if (run.invalidReason) error('STATE_CONFLICT');
+            }
             if (input.op === 'export' || input.op === 'prepare') {
                 const result = old.result as {
                     artifactId: string;
@@ -317,10 +371,8 @@ export class DatasetService {
                         if (v.samples.some(s => s.id === c.id)) {
                             v.status = 'invalid';
                             for (const r of this.state.runs.filter(r => r.datasetVersionId === v.id)) {
-                                this.controllers.get(r.id)?.abort();
                                 if (r.status === 'queued' || r.status === 'processing') {
-                                    r.status = 'cancelled';
-                                    r.finishedAt = this.now();
+                                    this.stopRun(r, 'TEST_LABEL_CORRECTED');
                                 }
                                 r.invalidReason = 'TEST_LABEL_CORRECTED';
                                 r.report = null;
@@ -359,10 +411,8 @@ export class DatasetService {
                     for (const v of this.state.versions) {
                         v.status = 'invalid';
                         for (const r of this.state.runs.filter(r => r.datasetVersionId === v.id)) {
-                            this.controllers.get(r.id)?.abort();
                             if (r.status === 'queued' || r.status === 'processing') {
-                                r.status = 'cancelled';
-                                r.finishedAt = this.now();
+                                this.stopRun(r, 'SPLIT_LEAKAGE');
                             }
                             r.invalidReason = 'SPLIT_LEAKAGE';
                             r.report = null;
@@ -399,7 +449,7 @@ export class DatasetService {
                     error('SPLIT_LEAKAGE');
                 }
                 const categorySnapshot = copy(this.env.categories());
-                const v: DatasetVersion = { id: randomUUID(), tag: c.tag, manifestHash: '', ...allocated, seed: c.seed, algorithm: 'group-sse.v1', samples, categorySnapshot, categorySnapshotHash: hashPayload(categorySnapshot), synonyms: copy(c.synonyms), synonymVersion: c.synonymVersion, testLocked: true, contaminated: samples.some(s => this.state.retiredTestHashes.includes(s.preparedHash)), status: 'active', epoch: this.env.epoch(), specVersions: { dataset: 'dataset-spec.v1', evaluation: 'evaluation-spec.v1', schema: DATASET_SCHEMA, label: 'label-policy.v1' }, createdAt: this.now() };
+                const v: DatasetVersion = { id: randomUUID(), tag: c.tag, manifestHash: '', ...allocated, seed: c.seed, algorithm: 'group-sse.v1', samples, categorySnapshot, categorySnapshotHash: hashPayload(categorySnapshot), synonyms: copy(c.synonyms), synonymVersion: c.synonymVersion, testLocked: true, contaminated: samples.some(s => this.identityKeys(s).some(k => this.contactKeys.has(k))), status: 'active', epoch: this.env.epoch(), specVersions: { dataset: 'dataset-spec.v1', evaluation: 'evaluation-spec.v1', schema: DATASET_SCHEMA, label: 'label-policy.v1' }, createdAt: this.now() };
                 v.manifestHash = hashPayload(this.manifest(v));
                 for (const s of samples) {
                     this.state.locked[s.id] = v.splits[s.id];
@@ -502,11 +552,7 @@ export class DatasetService {
                     error('NOT_FOUND');
                 if (r.status !== 'queued' && r.status !== 'processing')
                     error('STATE_CONFLICT');
-                this.controllers.get(r.id)?.abort();
-                r.status = 'cancelled';
-                r.invalidReason = 'CANCELLED';
-                r.finishedAt = this.now();
-                r.report = null;
+                this.stopRun(r, 'CANCELLED');
                 return { runId: r.id, status: r.status };
             }
             case 'contaminate': {
@@ -517,10 +563,8 @@ export class DatasetService {
                 for (const r of this.state.runs.filter(r => r.datasetVersionId === v.id)) {
                     r.invalidReason = 'TEST_CONTAMINATED';
                     r.report = null;
-                    this.controllers.get(r.id)?.abort();
                     if (r.status === 'queued' || r.status === 'processing') {
-                        r.status = 'cancelled';
-                        r.finishedAt = this.now();
+                        this.stopRun(r, 'TEST_CONTAMINATED');
                     }
                 }
                 return { versionId: v.id, contaminated: true };
@@ -662,10 +706,8 @@ export class DatasetService {
         const abort = new AbortController();
         this.controllers.set(run.id, abort);
         setImmediate(() => { void this.execute(run.id, provider, abort).catch(() => { const r = this.state.runs.find(r => r.id === run.id); if (r) {
-            r.status = 'failed';
-            r.invalidReason = 'INTERNAL_ERROR';
-            r.finishedAt = this.now();
-            this.persist();
+            this.stopRun(r, 'INTERNAL_ERROR', 'failed');
+            if (!this.closed) this.persist();
         } }); });
         return { runId: run.id, status: 'queued', modelTrained: false };
     }
@@ -687,14 +729,22 @@ export class DatasetService {
                 break;
             const s = v.samples.find(s => s.id === planned.sampleId)!;
             const result = copy(planned);
-            result.attempts = 0;
+            const sent = () => {
+                const active = lookup(), row = active.results.find(x => x.sampleId === s.id);
+                if (this.closed || abort.signal.aborted || active.status !== 'processing' || !row) error('CANCELLED');
+                row.status = 'processing'; row.attempts = 1; row.requestStartedAt = this.now(); row.durationMs = this.elapsed(active);
+                Object.assign(result, copy(row));
+                this.persist();
+            };
             try {
                 this.authorized(s, 'evaluation');
                 if (provider.id === 'deepseek')
                     this.uploadAllowed(s, v.manifestHash);
                 const image = this.image(s);
-                result.attempts = 1;
-                const response = await provider.recognize({ sampleId: s.id, image, prompt: prompt.text, signal: abort.signal, categories: v.categorySnapshot });
+                if (provider.id === 'mock') sent();
+                const response = await provider.recognize({ sampleId: s.id, image, prompt: prompt.text, signal: abort.signal, categories: v.categorySnapshot, onRequestSent: sent });
+                this.recordMetadata(id, s.id, provider.id === 'mock' ? undefined : response.metadata);
+                if (this.closed) break;
                 this.current();
                 r = lookup();
                 this.authorized(s, 'evaluation');
@@ -702,21 +752,19 @@ export class DatasetService {
                     this.uploadAllowed(s, v.manifestHash);
                 if (abort.signal.aborted || r.status !== 'processing')
                     break;
+                Object.assign(result, copy(r.results.find(x => x.sampleId === s.id)!));
                 result.predictions = normalizedPredictions(response.output, v.categorySnapshot);
-                result.actualModel = provider.id === 'mock' ? null : response.metadata.actualModel;
-                result.usage = provider.id === 'mock' ? null : response.metadata.usage;
                 result.status = 'completed';
             }
             catch (e) {
+                this.recordMetadata(id, s.id, transportMetadataOnError(e));
                 if (abort.signal.aborted || lookup().status !== 'processing')
                     break;
+                Object.assign(result, copy(lookup().results.find(x => x.sampleId === s.id)!));
                 result.status = 'failed';
                 result.errorCode = e instanceof AppError ? e.code : 'OUTPUT_SCHEMA_INVALID';
-                result.usage = metadataOnError(e);
-                if (provider.id === 'deepseek')
-                    result.attempts = attemptsOnError(e);
             }
-            result.durationMs = Math.max(0, Math.round(performance.now() - (this.acceptedTicks.get(id) ?? performance.now())));
+            result.durationMs = this.elapsed(lookup());
             r = lookup();
             r.results[r.results.findIndex(p => p.sampleId === result.sampleId)] = result;
             this.persist();
@@ -729,16 +777,29 @@ export class DatasetService {
         }
         this.controllers.delete(id);
         this.acceptedTicks.delete(id);
+        if (!this.closed) this.persist();
+    }
+    private elapsed(r: Run) {
+        const tick = this.acceptedTicks.get(r.id);
+        const ms = tick === undefined ? this.clock() - Date.parse(r.acceptedAt ?? r.startedAt ?? this.now()) : performance.now() - tick;
+        return Math.max(0, Math.round(Number.isFinite(ms) ? ms : 0));
+    }
+    private recordMetadata(id: string, sampleId: string, metadata: TransportMetadata | undefined) {
+        if (this.closed || !metadata) return;
+        const r = this.state.runs.find(r => r.id === id), row = r?.results.find(row => row.sampleId === sampleId);
+        if (!r || !row || r.invalidReason === 'DATASET_WITHDRAWN') return;
+        if (metadata.requestSent) row.attempts = 1;
+        row.usage = metadata.usage; row.actualModel = metadata.actualModel;
         this.persist();
     }
-    private shutdownRuns(reason: string) { for (const r of this.state.runs)
-        if (r.status === 'queued' || r.status === 'processing') {
-            this.controllers.get(r.id)?.abort();
-            r.status = 'cancelled';
-            r.invalidReason = reason;
-            r.finishedAt = this.now();
-            r.report = null;
-        } }
+    private stopRun(r: Run, reason: string, status: 'failed' | 'cancelled' = 'cancelled') {
+        r.status = status; r.invalidReason = reason; r.finishedAt = this.now(); r.report = null;
+        for (const row of r.results) if (row.status === 'processing' || row.status === 'unprocessed' && row.attempts > 0) {
+            row.status = status; row.errorCode = reason; row.durationMs = this.elapsed(r); row.predictions = [];
+        }
+        this.controllers.get(r.id)?.abort();
+    }
+    private shutdownRuns(reason: string) { for (const r of this.state.runs) if (r.status === 'queued' || r.status === 'processing') this.stopRun(r, reason); }
     private withdraw(id: string, _reason: string) {
         const existing = this.tombstones.find(t => t.sampleId === id);
         if (existing) {

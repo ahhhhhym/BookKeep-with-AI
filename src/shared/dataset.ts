@@ -141,7 +141,7 @@ export interface Metric {
 }
 export interface EvaluationResult {
     sampleId: string;
-    status: 'completed' | 'failed' | 'cancelled' | 'unprocessed';
+    status: 'processing' | 'completed' | 'failed' | 'cancelled' | 'unprocessed';
     predictions: Proposal[];
     errorCode: string | null;
     durationMs: number;
@@ -152,6 +152,7 @@ export interface EvaluationResult {
         totalTokens: number | null;
     } | null;
     attempts: number;
+    requestStartedAt?: string;
 }
 export interface Run {
     id: string;
