@@ -26,7 +26,8 @@
     "package:zip": "node scripts/package-zip.mjs",
     "smoke:packaged": "node scripts/smoke-packaged.mjs",
     "verify:zip": "node scripts/verify-zip.mjs",
-    "clean": "node scripts/clean.mjs"
+    "clean": "node scripts/clean.mjs",
+    "test:regression": "node scripts/regression.mjs"
   },
   "dependencies": {
     "better-sqlite3": "13.0.3",

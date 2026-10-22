@@ -72,6 +72,12 @@ test接触记录独立保存在匿名`test-contacts.json`中，旧state回拷、
 
 `assets/app/icon.png` 是原创应用图标，由 `npm run icon:generate` 生成；界面图标通过锁定版本的 Lucide 依赖提供，许可位于 `resources/licenses/`。`node_modules/`、`dist/`、`build/`、本地数据库、日志和备份均不上传。
 
+## 自动化回归
+
+`npm run test:regression -- ".tmp/S16 新回归"` 顺序运行类型检查、维护测试、图标检查、构建、首启/重启、真实 Electron/IPC/SQLite 流程和进程中断，以及隔离临时目录的打包冒烟。每次使用新输出目录，命令、退出码、日志和失败截图保留在该目录；已配置 lint 时才运行 lint。运行前设置 `BOOKKEEP_QA_NODE_MODULES`，指向一个已安装 `playwright` 的 `node_modules` 目录；该包只供开发回归，不是应用运行依赖。
+
+回归使用独立临时账本、合成图片及模拟 HTTP，不读取真实密钥或调用收费识图。临时 `electron-builder --dir` 产物实际启动并验证随包的原生 SQLite、资源及重启，只作构建冒烟，不生成正式交付 ZIP，也不代替 S17/S19 或双系统验收。真实 DeepSeek smoke 仍需另行具备样本、密钥及费用授权。
+
 ## 备份、恢复与CSV
 
 数据管理可创建、另存和通过原生文件对话框选择`.bkdb`备份。备份包含SQLite账本、候选、任务、审核审计和未删除图片引用的原图/预处理图；不包含密钥、日志、临时文件或独立数据集。完整附件备份上限512MiB/10000文件，单图仍10MiB；整个容器上限768MiB。档案对每个附件核验大小/SHA256，并以明确标记的逻辑数据库摘要核验表结构和数据；外部文件还有整体SHA256。旧无附件DB-only档案带兼容警告，含附件的旧档案拒绝恢复。
