@@ -25,6 +25,15 @@ export function ReviewPage({registerGuard}:{registerGuard?:(g:LeaveGuard)=>void}
   const [selected,setSelected]=useState<Record<string,ApprovalItem>>({});
   const [preview,setPreview]=useState<ApprovalPreview|null>(null),[single,setSingle]=useState<{item:ApprovalItem;candidate:ReviewCandidate;categoryName:string}|null>(null);
   const [leave,setLeave]=useState<(()=>void)|null>(null);
+  const [effort,setEffort]=useState<Record<string,unknown>|null>(null);
+  const focusedJob=useRef<string|null>(null);
+  useEffect(()=>{
+    const send=(event:'focus'|'interaction'|'blur')=>{const jobId=focusedJob.current;if(jobId)void call(a=>a.maintenance.activity({jobId,event})).catch(()=>undefined);};
+    const interact=(e:Event)=>{if(e.isTrusted && document.hasFocus() && !document.hidden){const element=e.target instanceof Element?e.target.closest('[data-review-job]'):null;const jobId=element?.getAttribute('data-review-job');if(jobId){const previous=focusedJob.current;if(previous&&previous!==jobId)void call(a=>a.maintenance.activity({jobId:previous,event:'blur'})).catch(()=>undefined);focusedJob.current=jobId;void call(a=>a.maintenance.activity({jobId,event:'interaction'})).catch(()=>undefined);}}};
+    const blur=()=>send('blur'),focus=()=>send(document.hidden?'blur':'focus');
+    document.addEventListener('pointerdown',interact);document.addEventListener('keydown',interact);document.addEventListener('input',interact);window.addEventListener('blur',blur);window.addEventListener('focus',focus);document.addEventListener('visibilitychange',focus);
+    return ()=>{send('blur');document.removeEventListener('pointerdown',interact);document.removeEventListener('keydown',interact);document.removeEventListener('input',interact);window.removeEventListener('blur',blur);window.removeEventListener('focus',focus);document.removeEventListener('visibilitychange',focus);};
+  },[]);
   const dirty=useRef(new Set<string>()),inFlight=useRef(false),approvalInFlight=useRef(false),intent=useRef<{payload:string;id:string}|null>(null);
   const load=useCallback(async(cursor:string|null=null)=>{
     if(inFlight.current)return;inFlight.current=true;setLoading(true);
@@ -41,12 +50,15 @@ export function ReviewPage({registerGuard}:{registerGuard?:(g:LeaveGuard)=>void}
   const approve=async(input:ApprovalInput)=>{
     if(approvalInFlight.current)return;approvalInFlight.current=true;setBusy(true);setError(null);
     try {
+      const finishing=input.mode==='single'?data?.items.filter(c=>c.id===input.id)??[]:input.mode==='commit'?preview?.eligible??[]:[];
+      await Promise.all([...new Set(finishing.map(c=>c.jobId))].map(jobId=>call(a=>a.maintenance.activity({jobId,event:'interaction'})).catch(()=>undefined)));
       const payload=JSON.stringify(input);if(intent.current?.payload!==payload)intent.current={payload,id:crypto.randomUUID()};
       const result=await call(a=>a.candidate.approve(input,{mutationId:intent.current!.id}));
       if('eligible' in result)setPreview(result);
       else {setMessage(result.alreadyApproved?'这笔候选已入账，未新增记录。':`已入账${result.count}笔，合计${formatAmountFen(Number(result.totalFen))}。`);setPreview(null);setSingle(null);intent.current=null;await load();window.dispatchEvent(new Event('bookkeep:committed'));}
     }catch(e){setError(describeError(e));setPreview(null);setSingle(null);setSelected({});}finally{approvalInFlight.current=false;setBusy(false);}
   };
+  const cancelReview=(jobs:string[])=>{for(const jobId of new Set(jobs))void call(a=>a.maintenance.activity({jobId,event:'cancel'})).catch(()=>undefined);};
   const openSingle=(item:ApprovalItem)=>{
     if(approvalInFlight.current||busy||loading||single||preview||leave||document.querySelector('dialog[open]'))return;
     const candidate=data?.items.find(c=>c.id===item.id);
@@ -58,6 +70,9 @@ export function ReviewPage({registerGuard}:{registerGuard?:(g:LeaveGuard)=>void}
     if(e.ctrlKey&&e.key==='Enter'&&document.querySelector('dialog[open]')){e.preventDefault();e.stopPropagation();}
   }}><PageHeader title="候选审核" subtitle="对照图片逐项核实，确认后才进入正式账本" actions={<button className="button" disabled={busy||loading} onClick={refresh}>重新读取</button>}/>
     <Notice title="每笔均需人工确认">未知商品请填写实际购买物或服务；模型置信度仅供参考。待审核、拒绝和识别失败都不影响正式统计。</Notice>
+    <Panel title="本地人审活动记录" actions={<button className="button" onClick={()=>void call(a=>a.maintenance.reviewMetrics({jobId:null})).then(setEffort).catch(e=>setError(describeError(e)))}>读取人审记录</button>}>
+      {effort?<p data-review-effort>完成{String(effort.completedSessions)}个图片会话，未完成{String(effort.incompleteSessions)}个；活动耗时{effort.activeMs===null?'未采集':`${Math.round(Number(effort.activeMs)/1000)}秒`}，未完成会话已耗{effort.incompleteActiveMs===null?'未采集':`${Math.round(Number(effort.incompleteActiveMs)/1000)}秒`}。实际/估算费用未采集。</p>:<p className="tiny">按图片记录实质保存修改与补填，全部候选处理后才完成。连续60秒空闲暂停、失焦暂停；不把推理耗时计作人审耗时。</p>}
+    </Panel>
     <div className="segmented review-status" role="group" aria-label="候选状态筛选">{(['all','pending_review','approved','rejected'] as const).map(state=><button key={state} aria-pressed={filter===state} disabled={busy||loading} onClick={()=>{const go=()=>{dirty.current.clear();setFilter(state);};if(dirty.current.size)setLeave(()=>go);else go();}}>{state==='all'?'全部':statusNames[state]}（{state==='all'?Object.values(data?.counts??{}).reduce((s,n)=>s+n,0):data?.counts[state]??0}）</button>)}</div>
     {data?.items.length?<details className="review-source-nav"><summary>按来源图片定位（当前已加载{data.items.length}笔）</summary>{[...new Set(data.items.map(c=>c.jobId))].map(job=><p key={job}>来源任务 {job.slice(0,8)}：{data.items.filter(c=>c.jobId===job).map(c=><button className="button" key={c.id} onClick={()=>document.getElementById(`candidate-${c.id}`)?.scrollIntoView({block:'start'})}>{c.current.name??'未知商品'} · {statusNames[c.reviewState]}</button>)}</p>)}</details>:null}
     {error?<p role="alert">{error} 请重新读取并核对；不会自动重试批准。</p>:null}{message?<p role="status">{message}</p>:null}
@@ -65,9 +80,9 @@ export function ReviewPage({registerGuard}:{registerGuard?:(g:LeaveGuard)=>void}
     <Panel title={`候选记录（${data?.totalCount??0}）`}>{loading&&!data?<p role="status">正在读取候选和证据…</p>:!data?.items.length?<p>暂无待审核记录。</p>:data.items.map(c=><ReviewCard key={`${c.id}:${c.version}:${c.reviewDigest}`} candidate={c} categories={categories} onChange={changed} onDirty={changeDirty} onSelect={select} selected={!!selected[c.id]} onApprove={openSingle} disabled={busy||loading}/>)}
       {data?.nextCursor?<button className="button" disabled={loading||busy||dirty.current.size>0} onClick={()=>void load(data.nextCursor)}>加载更多候选</button>:null}
     </Panel>
-    {single?<Modal title="确认本笔入账" busy={busy} onClose={()=>setSingle(null)}><p>将入账1笔，合计{formatAmountFen(single.candidate.current.amountFen)}。</p><dl><dt>购买物或服务名称</dt><dd>{single.candidate.current.name}</dd><dt>实际日期及时间精度</dt><dd>{single.candidate.current.occurredDate} · {single.candidate.current.timePrecision==='minute'?`${single.candidate.current.occurredTime}（精确到分钟）`:'仅日期，精确时间未知'}</dd><dt>分类</dt><dd>{single.categoryName}</dd></dl><p>请确认已对照图片核实金额、日期、名称和分类。</p><div className="form-actions"><button className="button" disabled={busy} onClick={()=>setSingle(null)}>取消</button><button className="button primary" disabled={busy} onClick={()=>void approve({mode:'single',...single.item})}>{busy?'正在原子入账…':'确认本笔入账'}</button></div></Modal>:null}
-    {preview?<Modal title="批量批准预览" busy={busy} onClose={()=>setPreview(null)}><p className="point-total">将入账{preview.count}笔，合计{formatAmountFen(Number(preview.totalFen))}</p><ul>{preview.eligible.map(c=><li key={c.id}>{c.current.name} · {formatAmountFen(c.current.amountFen!)} · {c.current.occurredDate} · {categories.find(cat=>cat.id===c.current.categoryId)?.name} <small>{c.id}</small></li>)}</ul>
-      {preview.excluded.length?<><h3>已排除（不入账）</h3><ul>{preview.excluded.map(e=><li key={e.id}>{e.id}：{e.reasons.map(humanReason).join('；')}</li>)}</ul></>:null}<p>确认有效期60秒；候选或账本变化后需重新预览。</p><div className="form-actions"><button className="button" disabled={busy} onClick={()=>setPreview(null)}>取消</button><button className="button primary" disabled={busy||!preview.previewToken} onClick={()=>void approve({mode:'commit',previewToken:preview.previewToken!})}>{busy?'正在原子入账…':`确认入账${preview.count}笔`}</button></div></Modal>:null}
+    {single?<Modal title="确认本笔入账" busy={busy} onClose={()=>{cancelReview([single.candidate.jobId]);setSingle(null);}}><p>将入账1笔，合计{formatAmountFen(single.candidate.current.amountFen)}。</p><dl><dt>购买物或服务名称</dt><dd>{single.candidate.current.name}</dd><dt>实际日期及时间精度</dt><dd>{single.candidate.current.occurredDate} · {single.candidate.current.timePrecision==='minute'?`${single.candidate.current.occurredTime}（精确到分钟）`:'仅日期，精确时间未知'}</dd><dt>分类</dt><dd>{single.categoryName}</dd></dl><p>请确认已对照图片核实金额、日期、名称和分类。</p><div className="form-actions"><button className="button" disabled={busy} onClick={()=>{cancelReview([single.candidate.jobId]);setSingle(null);}}>取消</button><button className="button primary" disabled={busy} onClick={()=>void approve({mode:'single',...single.item})}>{busy?'正在原子入账…':'确认本笔入账'}</button></div></Modal>:null}
+    {preview?<Modal title="批量批准预览" busy={busy} onClose={()=>{cancelReview(preview.eligible.map(c=>c.jobId));setPreview(null);}}><p className="point-total">将入账{preview.count}笔，合计{formatAmountFen(Number(preview.totalFen))}</p><ul>{preview.eligible.map(c=><li key={c.id}>{c.current.name} · {formatAmountFen(c.current.amountFen!)} · {c.current.occurredDate} · {categories.find(cat=>cat.id===c.current.categoryId)?.name} <small>{c.id}</small></li>)}</ul>
+      {preview.excluded.length?<><h3>已排除（不入账）</h3><ul>{preview.excluded.map(e=><li key={e.id}>{e.id}：{e.reasons.map(humanReason).join('；')}</li>)}</ul></>:null}<p>确认有效期60秒；候选或账本变化后需重新预览。</p><div className="form-actions"><button className="button" disabled={busy} onClick={()=>{cancelReview(preview.eligible.map(c=>c.jobId));setPreview(null);}}>取消</button><button className="button primary" disabled={busy||!preview.previewToken} onClick={()=>void approve({mode:'commit',previewToken:preview.previewToken!})}>{busy?'正在原子入账…':`确认入账${preview.count}笔`}</button></div></Modal>:null}
     {leave?<Modal title="还有未保存的补填" onClose={()=>setLeave(null)}><p>请返回各候选保存补填，或明确放弃本次未保存修改。已经保存的草稿会保留。</p><button className="button" onClick={()=>setLeave(null)}>继续补填</button><button className="button" onClick={()=>{const next=leave;setLeave(null);dirty.current.clear();next();}}>放弃未保存修改并离开</button></Modal>:null}
   </div>;
 }
@@ -95,7 +110,7 @@ function ReviewCard({candidate:c,categories,onChange,onDirty,onSelect,selected,o
   };
   const locate=(field:string)=>{setEvidence(c.proposal.evidence.find(e=>e.field===field)??{field,text:'此字段没有图像证据，请依据实际事实补填并说明原因。',region:null,source:'image'});document.getElementById(`image-${c.id}`)?.scrollIntoView({block:'center'});};
   const adjacent=(delta:number)=>{const nodes=Array.from(document.querySelectorAll<HTMLElement>('[data-candidate-id]')),index=nodes.findIndex(n=>n.dataset.candidateId===c.id);nodes[index+delta]?.scrollIntoView({block:'start'});};
-  return <article className="candidate-card" id={`candidate-${c.id}`} data-candidate-id={c.id} data-state={c.reviewState}
+  return <article className="candidate-card" data-review-job={c.jobId} id={`candidate-${c.id}`} data-candidate-id={c.id} data-state={c.reviewState}
     onCompositionStart={()=>{composing.current=true;}} onCompositionEnd={()=>{composing.current=false;}}
     onKeyDown={e=>{
       if(!e.ctrlKey||e.key!=='Enter')return;

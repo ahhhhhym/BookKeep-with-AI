@@ -2,6 +2,7 @@ import sharp from 'sharp';
 import { createHash, randomUUID } from 'node:crypto';
 import { closeSync, existsSync, fstatSync, fsyncSync, lstatSync, mkdirSync, openSync, readSync, readFileSync, readdirSync, realpathSync, renameSync, unlinkSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
+import { readBoundedFile, regularPath } from '../storage/safe-file';
 import { AppError, type ErrorCode } from '../../shared/errors';
 import { IMAGE_LIMIT, type Asset, type ImportInput, type ImportResult, type PrepareInput, type Rect, type Resource, type ResourceInput } from '../../shared/imports';
 import { isUuidV4 } from '../../shared/validation';
@@ -31,13 +32,8 @@ export function atomicFile(file: string, bytes: Buffer): void {
     const tmp = file + '.' + randomUUID() + '.tmp';
     const fd = openSync(tmp, 'wx');
     try {
-        writeFileSync(fd, bytes);
-        fsyncSync(fd);
-    }
-    finally {
-        closeSync(fd);
-    }
-    try {
+        try { writeFileSync(fd, bytes); fsyncSync(fd); }
+        finally { closeSync(fd); }
         renameSync(tmp, file);
     }
     catch {
@@ -137,7 +133,7 @@ export class ImageService {
     private safe(ref: string): string {
         if (!/^[a-f0-9-]{36}-(original\.bin|prepared\.png|stage\.bin|stage\.json)$/.test(ref))
             throw new AppError('PERMISSION_DENIED');
-        const file = path.join(this.root(), ref);
+        const file = regularPath(path.join(this.root(), ref),this.store.diagnostics().root,false);
         if (existsSync(file) && lstatSync(file).isSymbolicLink())
             throw new AppError('PERMISSION_DENIED');
         return file;
@@ -173,7 +169,7 @@ export class ImageService {
             let bytes: Buffer | null = null;
             let errorCode: ErrorCode | null = null;
             try {
-                if (!path.isAbsolute(file) || lstatSync(file).isSymbolicLink())
+                if (!path.isAbsolute(file) || (regularPath(file,path.parse(file).root), lstatSync(file).isSymbolicLink()))
                     throw new AppError('IMAGE_FORMAT');
                 const fd = openSync(file, 'r');
                 try {
@@ -315,7 +311,7 @@ export class ImageService {
             const ref = r.prepared_ref ?? r.original_ref;
             if (!ref)
                 throw new AppError('ARTIFACT_MISSING');
-            const bytes = readFileSync(this.safe(ref));
+            const bytes = readBoundedFile(this.safe(ref),IMAGE_LIMIT);
             if (sha256(bytes) !== (r.prepared_hash ?? r.original_hash))
                 throw new AppError('HASH_MISMATCH');
             const info = await inspectImage(bytes);
@@ -379,16 +375,18 @@ export class ImageService {
         const ref = v.variant === 'original' ? r.original_ref : r.prepared_ref;
         if (!ref)
             throw new AppError('ARTIFACT_MISSING');
-        const bytes = readFileSync(this.safe(ref));
+        const bytes = readBoundedFile(this.safe(ref),IMAGE_LIMIT);
         if (sha256(bytes) !== (v.variant === 'original' ? r.original_hash : r.prepared_hash))
             throw new AppError('HASH_MISMATCH');
-        return v.variant === 'original' ? (await inspectImage(bytes)).png : bytes;
+        const result=v.variant === 'original' ? (await inspectImage(bytes)).png : bytes;
+        if(v.owner!==this.owner()||v.epoch!==this.store.currentEpoch||v.x<this.clock())throw new AppError('TOKEN_EXPIRED');
+        return result;
     }
     readPrepared(id: string, hash: string): Buffer {
         const r = this.asset(id);
         if (!r.prepared_ref || r.prepared_hash !== hash)
             throw new AppError('IMAGE_NOT_PREPARED');
-        const bytes = readFileSync(this.safe(r.prepared_ref));
+        const bytes = readBoundedFile(this.safe(r.prepared_ref),IMAGE_LIMIT);
         if (bytes.length > IMAGE_LIMIT || sha256(bytes) !== hash)
             throw new AppError('HASH_MISMATCH');
         return bytes;

@@ -31,6 +31,7 @@ import type {
   TransactionMutationResult,
 } from '../../shared/entities';
 import { AppError } from '../../shared/errors';
+import type { RestoreStatus } from '../../shared/maintenance';
 import type { StorageLayout } from '../paths';
 import { insertAuditEvent } from '../db/audit-repo';
 import { countCategories } from '../db/category-repo';
@@ -68,12 +69,13 @@ import {
   storagePaths,
   type StoragePaths,
 } from '../storage/layout';
-import { appendRestoreLog } from '../storage/restore-log';
+import { readRestoreLog, appendRestoreLog } from '../storage/restore-log';
 import {
   BackupService,
   copyBackupRecordToNewDatabase,
   createPreMigrationBackup,
   listBackupRows,
+  getBackupRow, backupRecordView,
   type BackupEnvironment,
   type StagedRestorePlan,
 } from './backup-service';
@@ -105,6 +107,7 @@ export interface LedgerStoreOptions {
   readonly migrations?: readonly Migration[];
   /** 仅测试注入；生产使用进程随机 secret，token 5 分钟有效。 */
   readonly tokenSecret?: Buffer;
+  readonly fault?: (step: string) => void;
 }
 
 export interface LedgerStoreSnapshot {
@@ -161,6 +164,7 @@ export class LedgerStore {
   private migrationState: MigrationState;
   private recoveryReason: string | null;
   private closed = false;
+  private fault: ((step: string) => void) | undefined;
 
   private constructor(init: {
     db: SqliteDb;
@@ -376,9 +380,10 @@ export class LedgerStore {
       mergeCatalogIntoDatabase(db, ledger.id, readBackupCatalog(paths), nowIso(clock));
     } catch (error) {
       console.warn(
-        `[bookkeep] backup catalog reconciliation skipped: ${error instanceof Error ? error.message : 'unknown'}`,
+        '[bookkeep] backup catalog reconciliation skipped',
       );
     }
+    store.fault = options.fault;
     if (createdFresh) {
       store.appendStartupAudit();
     }
@@ -591,20 +596,26 @@ export class LedgerStore {
 
   createBackup(input: BackupCreateInput, mutationId: string | null): BackupCreateResult {
     this.assertOpen();
-    this.assertNoImportAttachments();
     return this.backupService.create(input, mutationId);
   }
 
-  private assertNoImportAttachments(): void {
-    const table=this.db.prepare("SELECT name FROM sqlite_master WHERE type='table' AND name='image_asset'").get();
-    if(table && this.db.prepare('SELECT id FROM image_asset LIMIT 1').get()) throw new AppError('UNSUPPORTED',{details:{reason:'ATTACHMENT_BACKUP_REQUIRES_S15'}});
-  }
-
-  listBackups(): BackupListResult {
+  listBackups(page?: {limit:number;cursor:string|null}): BackupListResult {
     this.assertOpen();
-    return this.backupService.list();
+    return this.backupService.list(page);
   }
 
+  backupRecord(id:string) {const row=getBackupRow(this.db,id);return row?backupRecordView(this.paths,row):null;}
+  refreshBackupCatalog():void {
+    reconcileBackupCatalog(this.paths,nowIso(this.clock));
+    mergeCatalogIntoDatabase(this.db,this.ledgerId,readBackupCatalog(this.paths),nowIso(this.clock));
+  }
+  backupStatus(restoreId:string):RestoreStatus {
+    const receipt=this.db.prepare<{result_snapshot_json:string}>("SELECT result_snapshot_json FROM mutation_receipt WHERE operation='backup.restore' AND mutation_id=?").get(restoreId);
+    const pointer=readActivePointer(this.paths);
+    if(receipt && pointer.ok && pointer.pointer.restoreId===restoreId)return {status:'committed',result:JSON.parse(receipt.result_snapshot_json)};
+    const entry=readRestoreLog(this.paths).filter(e=>e.restoreId===restoreId).at(-1);
+    return {status:entry?.status==='committed'?'previously_committed':entry?.status==='failed'?'failed':entry?'interrupted':'unknown',result:null};
+  }
   previewRestore(backupId: string): BackupRestorePreviewResult {
     this.assertOpen();
     return this.backupService.preview(backupId);
@@ -612,7 +623,7 @@ export class LedgerStore {
 
   restoreBackup(input: BackupRestoreInput, mutationId: string | null): BackupRestorePreviewResult | BackupRestoreResult {
     this.assertOpen();
-    this.assertNoImportAttachments();
+
     if (input.mode === 'preview') return this.backupService.preview(input.backupId);
     return this.backupService.restoreCommit({ restoreToken: input.restoreToken }, mutationId);
   }
@@ -667,8 +678,9 @@ export class LedgerStore {
         toGeneration: plan.generationId,
         status: 'switching',
       });
-      writeActivePointer(this.paths, {
-        manifestVersion: ACTIVE_POINTER_VERSION,
+      this.fault?.('before-stage-open');
+      const committedPointer = {
+        manifestVersion: ACTIVE_POINTER_VERSION as typeof ACTIVE_POINTER_VERSION,
         generationId: plan.generationId,
         dbSchemaVersion: stagingMeta.dbSchemaVersion,
         ledgerId: stagingLedger.id,
@@ -676,7 +688,7 @@ export class LedgerStore {
         activatedAt: now,
         previousGenerationId: old.generationId,
         restoreId: plan.restoreId,
-      });
+      };
       this.db.close();
       oldClosed = true;
       const openedDb = openSqlite(plan.stagingDatabasePath);
@@ -741,6 +753,9 @@ export class LedgerStore {
         });
         updateAppMeta(openedDb, { activeGeneration: plan.generationId }, now);
       });
+      this.fault?.('before-publish');
+      // The new generation is fully prepared before the single atomic commit point.
+      writeActivePointer(this.paths, committedPointer);
       this.db = openedDb;
       this.generationId = plan.generationId;
       this.databasePath = plan.stagingDatabasePath;
@@ -750,7 +765,7 @@ export class LedgerStore {
       this.schemaVersion = newMeta.dbSchemaVersion;
       this.migrationState = 'clean';
       this.recoveryReason = null;
-      appendRestoreLog(this.paths, {
+      try { this.fault?.('after-publish'); appendRestoreLog(this.paths, {
         at: nowIso(this.clock),
         restoreId: plan.restoreId,
         backupId: plan.backupId,
@@ -758,7 +773,7 @@ export class LedgerStore {
         fromGeneration: old.generationId,
         toGeneration: plan.generationId,
         status: 'committed',
-      });
+      }); } catch { /* active pointer + durable receipt are authoritative after commit */ }
       return result;
     } catch (error) {
       try {
@@ -766,11 +781,7 @@ export class LedgerStore {
       } catch {
         // ignore
       }
-      try {
-        writeActivePointer(this.paths, oldPointer.pointer);
-      } catch {
-        // 指针回滚失败时保留切换日志，交由人工恢复。
-      }
+      // Failures before publication never changed active.json.
       if (oldClosed) {
         try {
           this.db = openSqlite(old.databasePath);
@@ -787,7 +798,7 @@ export class LedgerStore {
           this.migrationState = 'recovery_required';
         }
       }
-      appendRestoreLog(this.paths, {
+      try { appendRestoreLog(this.paths, {
         at: nowIso(this.clock),
         restoreId: plan.restoreId,
         backupId: plan.backupId,
@@ -796,7 +807,7 @@ export class LedgerStore {
         toGeneration: plan.generationId,
         status: 'failed',
         errorCode: error instanceof AppError ? error.code : 'RESTORE_FAILED',
-      });
+      }); } catch { /* old generation retained; no raw exception logging */ }
       throw error instanceof AppError
         ? error
         : new AppError('RESTORE_FAILED', { details: { step: 'switch' } });

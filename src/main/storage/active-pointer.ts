@@ -4,7 +4,7 @@
  * RECOVERY_REQUIRED，绝不静默创建空库覆盖。
  */
 
-import { existsSync, readFileSync, renameSync, unlinkSync, writeFileSync } from 'node:fs';
+import { closeSync, existsSync, fsyncSync, openSync, readFileSync, renameSync, unlinkSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 import { isUuidV4 } from '../../shared/validation';
 import { generationDatabasePath, type StoragePaths } from './layout';
@@ -74,8 +74,10 @@ export function readActivePointer(paths: StoragePaths): ActivePointerRead {
 
 export function writeActivePointer(paths: StoragePaths, pointer: ActivePointer): void {
   const temporary = path.join(path.dirname(paths.activePointer), `active.${process.pid}.${Date.now()}.tmp`);
-  writeFileSync(temporary, `${JSON.stringify(pointer, null, 2)}\n`, 'utf8');
   try {
+    const fd = openSync(temporary, 'wx');
+    try { writeFileSync(fd, `${JSON.stringify(pointer, null, 2)}\n`, 'utf8'); fsyncSync(fd); }
+    finally { closeSync(fd); }
     renameSync(temporary, paths.activePointer);
   } catch (error) {
     try {

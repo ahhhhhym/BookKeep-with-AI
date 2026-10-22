@@ -7,6 +7,7 @@
  *  - 变更通道必须携带 mutationId，读取通道不要求；dataEpoch 仅启动读取类允许 null。
  */
 
+import { MAINTENANCE_CHANNELS, MAINTENANCE_SPECS } from './maintenance';
 import { IMPORT_CHANNELS } from './imports';
 import { IMPORT_SPECS } from './import-specs';
 import { REVIEW_CHANNELS, REVIEW_SPECS } from './review-specs';
@@ -33,6 +34,7 @@ import { SECRET_MAX_LENGTH, SECRET_MIN_LENGTH } from './constants.js';
 import { isPlainRecord, isSafeIntegerInRange, isUuidV4 } from './validation.js';
 
 export const IPC = {
+  ...MAINTENANCE_CHANNELS,
   ...DATASET_CHANNELS,
   ...REVIEW_CHANNELS,
   ...IMPORT_CHANNELS,
@@ -90,7 +92,7 @@ export interface CategoryListInput {
 }
 
 export interface BackupListInput {
-  readonly none?: never;
+  readonly page?: {limit:number;cursor:string|null};
 }
 
 interface Issue {
@@ -478,7 +480,8 @@ export const CHANNEL_SPECS: {
   readonly backupCreate: ChannelSpec<BackupCreateInput>;
   readonly backupList: ChannelSpec<BackupListInput>;
   readonly backupRestore: ChannelSpec<BackupRestoreInput>;
-} & typeof IMPORT_SPECS & typeof REVIEW_SPECS & typeof DATASET_SPECS = {
+} & typeof IMPORT_SPECS & typeof REVIEW_SPECS & typeof DATASET_SPECS & typeof MAINTENANCE_SPECS = {
+  ...MAINTENANCE_SPECS,
   ...DATASET_SPECS,
   ...REVIEW_SPECS,
   ...IMPORT_SPECS,
@@ -686,7 +689,7 @@ export const CHANNEL_SPECS: {
     channel: IPC.backupList,
     permission: 'R',
     skeletonOnly: false,
-    request: READ_EPOCH_SPEC,
+    request: {...READ_EPOCH_SPEC,optional:['page'],validatePayload:v=>{const issues:Issue[]=[];if('page' in v)checkPage(v.page,issues);return issues;},cast:v=>{const p=v.page as {limit?:number;cursor?:string|null}|undefined;return p?{page:{limit:p.limit??50,cursor:p.cursor??null}}:{};}},
   },
   backupRestore: {
     channel: IPC.backupRestore,
@@ -706,6 +709,7 @@ export const CHANNEL_SPECS: {
 
 /** 业务契约通道（可出现在 CONTRACTS 中）；skeleton.* 不计入。 */
 export const BUSINESS_CHANNELS: readonly IpcChannel[] = [
+  ...Object.values(MAINTENANCE_CHANNELS),
   ...Object.values(DATASET_CHANNELS),
   ...Object.values(REVIEW_CHANNELS),
   ...Object.values(IMPORT_CHANNELS),

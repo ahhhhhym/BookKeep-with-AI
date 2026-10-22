@@ -189,7 +189,7 @@ export class AppError extends Error {
     return {
       code: this.code,
       message: this.code,
-      fieldErrors: this.fieldErrors.map((issue) => ({ path: issue.path, code: issue.code })),
+      fieldErrors: this.fieldErrors.map((issue) => ({ path: ['UNKNOWN_KEY','PROTOTYPE_KEY'].includes(issue.code) ? 'payload' : issue.path, code: issue.code })),
       details: this.details,
       retryable: this.retryable,
       retryAfterMs: this.retryAfterMs,

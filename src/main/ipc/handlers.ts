@@ -18,6 +18,8 @@ import { ReviewService } from '../services/review-service';
 import type { DatasetService } from '../services/dataset/store';
 
 export interface HandlerDependencies {
+  readonly maintenance: import('../services/maintenance-service').MaintenanceService;
+  readonly activity: import('../services/review-activity').ReviewActivityService;
   readonly store: LedgerStore;
   readonly secrets: SecretStore;
   readonly probe: ProbeService;
@@ -31,6 +33,14 @@ export interface HandlerDependencies {
 }
 
 export function registerIpcHandlers(router: IpcRouter, deps: HandlerDependencies): void {
+  router.handle(CHANNEL_SPECS.maintenanceCsv,r=>deps.maintenance.csv(r.payload as unknown as import('../../shared/maintenance').CsvInput,r.mutationId!));
+  router.handle(CHANNEL_SPECS.maintenanceBackupArtifact,r=>deps.maintenance.backup(String(r.payload.backupId)));
+  router.handle(CHANNEL_SPECS.maintenanceSave,r=>deps.maintenance.save(String(r.payload.artifactId),r.mutationId!));
+  router.handle(CHANNEL_SPECS.maintenanceSelect,()=>deps.maintenance.select());
+  router.handle(CHANNEL_SPECS.maintenanceImport,r=>deps.maintenance.import(String(r.payload.selectionToken),r.mutationId!));
+  router.handle(CHANNEL_SPECS.maintenanceStatus,r=>deps.store.backupStatus(String(r.payload.restoreId)));
+  router.handle(CHANNEL_SPECS.maintenanceActivity,r=>deps.activity.record(r.payload as unknown as import('../../shared/maintenance').ActivityInput));
+  router.handle(CHANNEL_SPECS.maintenanceMetrics,r=>deps.activity.metrics(r.payload.jobId as string|null));
   const review=new ReviewService(deps.store,deps.images,deps.reviewOwner);
   const dataset=()=>{if(!deps.dataset)throw new AppError('RECOVERY_REQUIRED');return deps.dataset;};
   router.handle(CHANNEL_SPECS.datasetRead,r=>dataset().read(r.payload));
@@ -124,7 +134,7 @@ export function registerIpcHandlers(router: IpcRouter, deps: HandlerDependencies
     deps.store.createBackup(request.payload, request.mutationId),
   );
 
-  router.handle(CHANNEL_SPECS.backupList, () => deps.store.listBackups());
+  router.handle(CHANNEL_SPECS.backupList, r => deps.store.listBackups(r.payload.page));
 
   router.handle(CHANNEL_SPECS.backupRestore, (request) => {
     if (request.payload.mode === 'commit' && request.mutationId === null) {
@@ -133,7 +143,7 @@ export function registerIpcHandlers(router: IpcRouter, deps: HandlerDependencies
       });
     }
     const result=deps.store.restoreBackup(request.payload, request.mutationId);
-    if('newDataEpoch' in result)deps.onRestored();
+    if('newDataEpoch' in result&&!result.replayed)deps.onRestored();
     return result;
   });
 

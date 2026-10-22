@@ -8,6 +8,8 @@ import path from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { APP_HOST, APP_SCHEME } from '../shared/constants';
 import { isInsideDirectory } from './paths';
+import { buildContentSecurityPolicy } from '../shared/csp';
+import { regularPath } from './storage/safe-file';
 
 export interface AppSchemePrivilege {
   scheme: string;
@@ -45,6 +47,7 @@ export function serveRendererAssets(rendererDir: string, readImage?: (token:stri
     } catch {
       return notFound();
     }
+    if (request.method !== 'GET' || url.username || url.password || url.port || url.search || url.hash) return notFound();
     if (url.host !== APP_HOST) return notFound();
     if (url.pathname.startsWith('/image/')) {
       if(request.method !== 'GET' || !readImage) return notFound();
@@ -69,7 +72,13 @@ export function serveRendererAssets(rendererDir: string, readImage?: (token:stri
     }
 
     try {
-      return await net.fetch(pathToFileURL(target).toString());
+      regularPath(target, rootDir);
+      const response=await net.fetch(pathToFileURL(target).toString());
+      const headers=new Headers(response.headers);
+      headers.set('content-security-policy',buildContentSecurityPolicy('production'));
+      headers.set('x-content-type-options','nosniff');
+      headers.set('cache-control','no-store');
+      return new Response(response.body,{status:response.status,headers});
     } catch {
       return notFound();
     }

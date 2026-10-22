@@ -15,7 +15,7 @@ export function loadBetterSqlite3(): NativeLoadResult {
     // 外部化依赖：esbuild 保留 require，由 Electron 解析 node_modules（打包后为 asar.unpacked）。
     const loaded = require('better-sqlite3') as BetterSqlite3Constructor;
     return { ok: true, ctor: loaded, error: null };
-  } catch (error) {
-    return { ok: false, ctor: null, error: error instanceof Error ? error.message : String(error) };
+  } catch {
+    return { ok: false, ctor: null, error: 'SQLITE_MODULE_UNAVAILABLE' };
   }
 }

@@ -43,6 +43,8 @@ import {
 } from '../storage/backup-catalog';
 import { backupArchivePath, backupArchiveRef, generationDatabasePath, type StoragePaths } from '../storage/layout';
 import { findLastCommittedRestore, readRestoreLog } from '../storage/restore-log';
+import { regularPath } from '../storage/safe-file';
+import { readActivePointer } from '../storage/active-pointer';
 import { hashPayload } from './canonical';
 import type { TokenCodec } from './signed-token';
 
@@ -257,6 +259,13 @@ export interface BackupServiceDeps {
 export class BackupService {
   constructor(private readonly deps: BackupServiceDeps) {}
 
+  private recordFailure(code:string):void {
+    const env=this.deps.env(),meta=readAppMeta(env.db),now=nowIso(env.clock);
+    if(!meta)return;
+    try{env.db.prepare(`INSERT INTO backup_record(id,ledger_id,kind,status,manifest_version,db_schema_version,app_version,archive_hash,archive_ref,error_code,finished_at,version,created_at,updated_at)
+      VALUES (?,?,'manual','failed','bk-backup.v1',?,?,NULL,NULL,?,?,1,?,?)`).run(randomUUID(),this.deps.ledgerId(),meta.dbSchemaVersion,env.appVersion,code,now,now,now);}catch{/* Preserve the original failure if the medium cannot persist a failure record. */}
+  }
+
   create(input: { kind: 'manual' }, mutationId: string | null): BackupCreateResult {
     if (mutationId === null) throw new AppError('INTERNAL_ERROR', { details: { reason: 'MUTATION_ID_REQUIRED' } });
     const env = this.deps.env();
@@ -268,7 +277,8 @@ export class BackupService {
       }
       return { ...(JSON.parse(existing.result_snapshot_json) as BackupCreateResult), replayed: true };
     }
-    const created = createBackupFiles(env, 'manual');
+    let created:CreatedBackup;
+    try{created=createBackupFiles(env,'manual');}catch(error){this.recordFailure(error instanceof AppError?error.code:'BACKUP_FAILED');throw error;}
     const result: BackupCreateResult = {
       record: backupRecordView(env.paths, created.row),
       artifact: created.artifact,
@@ -289,21 +299,29 @@ export class BackupService {
         });
       });
     } catch {
-      // 收据失败：档案与记录已写入，返回成功会破坏幂等语义，故按失败上报并保留档案供人工核对。
+      env.db.prepare('DELETE FROM backup_record WHERE id=?').run(created.row.id);
+      removeBackupCatalogEntry(env.paths,created.row.id,nowIso(env.clock));
+      removeArchive(env.paths,created.row.id);
+      this.recordFailure('BACKUP_FAILED');
       throw new AppError('BACKUP_FAILED', { details: { step: 'receipt' } });
     }
     return result;
   }
 
-  list(): BackupListResult {
+  list(page={limit:50,cursor:null as string|null}): BackupListResult {
+    if(!Number.isInteger(page.limit)||page.limit<1||page.limit>100)throw new AppError('PAYLOAD_INVALID');
     const env = this.deps.env();
     const conflicts = new Set(
       readBackupCatalog(env.paths)
         .filter((entry) => entry.integrity === 'conflict')
         .map((entry) => entry.id),
     );
+    const rows=listBackupRows(env.db),scope=hashPayload(rows),epoch=currentBackupFacts(env.db,this.deps.ledgerId()).epoch;
+    let offset=0;
+    if(page.cursor){const t=this.deps.tokenCodec.verify(page.cursor);if(!t.ok)throw new AppError('TOKEN_EXPIRED');if(t.payload.k!=='backup-list'||t.payload.scope!==scope||t.payload.epoch!==epoch)throw new AppError('SNAPSHOT_STALE');offset=Number(t.payload.offset);if(!Number.isSafeInteger(offset)||offset<0)throw new AppError('PAYLOAD_INVALID');}
     return {
-      records: listBackupRows(env.db).map((row) => {
+      totalCount:rows.length,nextCursor:offset+page.limit<rows.length?this.deps.tokenCodec.sign({v:1,k:'backup-list',scope,epoch,offset:offset+page.limit,x:env.clock()+300000}):null,
+      records: rows.slice(offset,offset+page.limit).map((row) => {
         const view = backupRecordView(env.paths, row);
         // 目录/DB hash 冲突：不可恢复；不伪造 artifact 可用。
         return conflicts.has(row.id) ? { ...view, artifact: null } : view;
@@ -375,7 +393,8 @@ export class BackupService {
       createdAt: inspection.archive.manifest.createdAt,
       fileCount: inspection.archive.manifest.files.length,
       warnings: [
-        'RESTORE_REPLACES_CURRENT_DATA',
+        'RESTORE_REPLACES_CURRENT_DATA', 'DATASETS_EXCLUDED_OLD_GRANTS_INVALIDATED',
+        ...(inspection.archive.manifest.contentVersion ? [] : ['LEGACY_DB_ONLY']),
         ...(compatibility === 'needs_migration' ? ['STAGING_MIGRATION_REQUIRED'] : []),
       ],
       restoreToken,
@@ -409,6 +428,14 @@ export class BackupService {
     if (payload.k !== 'restore' || typeof payload.b !== 'string' || typeof payload.h !== 'string') {
       throw new AppError('TOKEN_EXPIRED', { details: { reason: 'RESTORE_TOKEN_KIND' } });
     }
+    const previous=findReceipt(env.db,this.deps.ledgerId(),'backup.restore',mutationId);
+    if(previous){
+      const expected=hashPayload({operation:'backup.restore',payload:{backupId:payload.b,archiveHash:payload.h}});
+      if(previous.payload_hash!==expected)throw new AppError('IDEMPOTENCY_CONFLICT');
+      return {...JSON.parse(previous.result_snapshot_json) as BackupRestoreResult,replayed:true};
+    }
+    const pointer=readActivePointer(env.paths);
+    if((pointer.ok&&pointer.pointer.restoreId===mutationId)||readRestoreLog(env.paths).some(e=>e.restoreId===mutationId&&e.status==='committed'))throw new AppError('STATE_CONFLICT',{details:{reason:'RESTORE_ALREADY_APPLIED'}});
     const commitFacts = currentBackupFacts(env.db, this.deps.ledgerId());
     if (payload.e !== commitFacts.epoch || payload.r !== commitFacts.revision) {
       throw new AppError('TOKEN_EXPIRED', { details: { reason: 'RESTORE_CONTEXT_STALE' } });
@@ -509,6 +536,7 @@ export class BackupService {
   private removeStaging(paths: StoragePaths, generationId: string): void {
     try {
       const directory = path.dirname(generationDatabasePath(paths, generationId));
+      regularPath(directory,paths.generations,false);
       rmSync(directory, { recursive: true, force: true });
     } catch {
       // 保留 staging 供人工检查，不掩盖主错误。

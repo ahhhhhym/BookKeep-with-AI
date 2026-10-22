@@ -1,6 +1,7 @@
 /** 主进程入口：单实例、硬化、受限 IPC、账本存储启动、窗口与自检。 */
 
 import { app, BrowserWindow, dialog, safeStorage, session } from 'electron';
+import { DEV_SERVER_ORIGIN } from '../shared/csp';
 import { APP_DISPLAY_NAME, APP_ORIGIN } from '../shared/constants';
 import { AppError } from '../shared/errors';
 import { capturePages } from './capture';
@@ -14,6 +15,8 @@ import { RecognitionService } from './services/recognition-service';
 import { LedgerStore } from './services/ledger-store';
 import { SecretStore } from './services/settings/ai-settings';
 import { ProbeService } from './services/providers/probe';
+import { MaintenanceService } from './services/maintenance-service';
+import { ReviewActivityService } from './services/review-activity';
 import { createDatasetService } from './services/dataset/integration';
 import type { DatasetService } from './services/dataset/store';
 import { mkdirSync, writeFileSync } from 'node:fs';
@@ -40,7 +43,7 @@ if (captureDir) {
   // 截图模式禁用硬件加速，避免无显示环境下 GPU 进程异常影响退出码。
   app.disableHardwareAcceleration();
 }
-const devServerUrl = process.env.BOOKKEEP_DEV_SERVER_URL?.trim() || null;
+const devServerUrl = process.env.BOOKKEEP_DEV_SERVER_URL?.trim() === DEV_SERVER_ORIGIN ? DEV_SERVER_ORIGIN : null;
 const allowedOrigins = devServerUrl ? [new URL(devServerUrl).origin] : [APP_ORIGIN];
 const storage = resolveStorageLayout(process.env);
 
@@ -75,8 +78,8 @@ function waitForRenderer(window: BrowserWindow, timeoutMs = 30_000): Promise<boo
     };
     const timer = setTimeout(() => finish(false), timeoutMs);
     window.webContents.once('did-finish-load', () => finish(true));
-    window.webContents.once('did-fail-load', (_event, code, description) => {
-      console.error(`[bookkeep] renderer load failed: ${code} ${description}`);
+    window.webContents.once('did-fail-load', (_event, code, _description) => {
+      console.error(`[bookkeep] renderer load failed: ${code}`);
       finish(false);
     });
   });
@@ -167,15 +170,21 @@ async function bootstrap(): Promise<void> {
     onRejectedSender: (reason) => {
       console.warn(`[bookkeep] rejected IPC sender: ${reason}`);
     },
-    onInternalError: (error) => {
-      console.error('[bookkeep] unexpected IPC failure', error instanceof Error ? error.message : 'unknown');
+    onInternalError: (_error) => {
+      console.error('[bookkeep] unexpected IPC failure');
     },
   });
   secrets = new SecretStore(storage.layout.secrets, safeStorage);
   const probe = new ProbeService(secrets, path.join(__dirname, 'probe/s09-receipt-v1.png'), storage.layout.logs);
   recognition=new RecognitionService(store,images,secrets);
   try {dataset=createDatasetService(store,images,secrets);}catch{console.warn('[bookkeep] dataset recovery required');}
+  const maintenance=new MaintenanceService(store,{
+    save:async name=>{const r=await dialog.showSaveDialog(mainWindow!,{title:'选择保存位置',defaultPath:name});return r.canceled?null:r.filePath??null;},
+    open:async()=>{const r=await dialog.showOpenDialog(mainWindow!,{title:'选择BookKeepAI备份（不含数据集）',properties:['openFile'],filters:[{name:'BookKeepAI备份',extensions:['bkdb']}]});return r.canceled?null:r.filePaths[0]??null;},
+  },()=>mainWindow?.webContents.id??null);
+  const activity=new ReviewActivityService(store);
   registerIpcHandlers(router, {
+    maintenance,activity,
     dataset:dataset??undefined,
     saveDataset:async artifactId=>{
       if(!dataset)throw new AppError('RECOVERY_REQUIRED');
@@ -192,7 +201,7 @@ async function bootstrap(): Promise<void> {
     store,
     reviewOwner:()=>mainWindow?.webContents.id??null,
     secrets, probe, images, get recognition(){return recognition!;},
-    onRestored:()=>{recognition?.shutdown();dataset?.resetEpoch();recognition=new RecognitionService(store!,images,secrets!);},
+    onRestored:()=>{recognition?.shutdown();try{dataset?.resetEpoch();}catch{console.warn('[bookkeep] dataset epoch reset requires recovery');}recognition=new RecognitionService(store!,images,secrets!);},
     selectImages: async()=>{ const result=await dialog.showOpenDialog(mainWindow!,{title:"选择消费图片",properties:["openFile","multiSelections"],filters:[{name:"JPEG / PNG / WebP",extensions:["jpg","jpeg","png","webp"]}]}); return result.canceled?[]:result.filePaths; },
   });
 
@@ -287,8 +296,8 @@ if (!singleInstanceLocked) {
   app
     .whenReady()
     .then(bootstrap)
-    .catch((error: unknown) => {
-      console.error('[bookkeep] bootstrap failed', error instanceof Error ? error.message : 'unknown');
+    .catch((_error: unknown) => {
+      console.error('[bookkeep] bootstrap failed');
       app.exit(1);
     });
 }

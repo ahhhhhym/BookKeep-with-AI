@@ -63,6 +63,7 @@ function senderFacts(event: IpcMainInvokeEvent, context: RouterContext) {
   }
   return {
     frameUrl,
+    isMainFrame: !!event.senderFrame && event.senderFrame.processId===event.sender.mainFrame.processId && event.senderFrame.routingId===event.sender.mainFrame.routingId,
     parentFrameUrl,
     senderId: event.sender.id,
     expectedSenderId: context.getSenderWebContentsId() ?? -1,

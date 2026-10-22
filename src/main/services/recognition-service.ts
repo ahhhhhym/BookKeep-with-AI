@@ -7,6 +7,7 @@ import type { LedgerStore } from './ledger-store';
 import type { ImageService } from './image-service';
 import { change, type ImportContext } from './import-context';
 import { createTokenCodec, type TokenCodec } from './signed-token';
+import { insertAuditEvent } from '../db/audit-repo';
 import { hashPayload } from './canonical';
 import { recognizeReceipt, type ReceiptRequest } from './providers/receipt';
 import type { SecretStore } from './settings/ai-settings';
@@ -267,7 +268,14 @@ export class RecognitionService {
                 return null;
             });
             r = this.row(id);
-            const request: ReceiptRequest = { image, categories: JSON.parse(r.categories_json), provider: r.provider, signal: abort.signal, metadata };
+            const recordUsage=(phase:string)=>{
+              if(this.stopped||this.store.currentEpoch!==this.epoch)return;
+              this.store.withImports(true,c=>insertAuditEvent(c.db,{ledgerId:c.ledgerId,entityType:'job',entityId:id,action:'recognition.attempt',actor:'system',mutationId:null,reason:null,now:this.now(),diff:[
+                {field:'requestId',before:null,after:requestId},{field:'generation',before:null,after:generation},{field:'phase',before:null,after:phase},
+                {field:'requestSent',before:null,after:metadata.requestSent??false},{field:'usage',before:null,after:metadata.usage},{field:'httpStatus',before:null,after:metadata.httpStatus},
+              ]}));
+            };
+            const request: ReceiptRequest = { image, categories: JSON.parse(r.categories_json), provider: r.provider, signal: abort.signal, metadata,onRequestSent:()=>recordUsage('dispatch') };
             let timeout = false;
             const interrupted = new Promise<never>((_, reject) => {
                 abort.signal.addEventListener('abort', () => reject(new AppError(timeout ? 'REQUEST_TIMEOUT' : 'CANCELLED')), { once: true });
@@ -279,7 +287,8 @@ export class RecognitionService {
                 const response = await mockProvider.recognize({ requestId, model: MOCK_MODEL, promptVersion: PROMPT_VERSION, schemaVersion: CANDIDATE_SCHEMA_VERSION, image: null, categories: req.categories, mockScenario: 'two-expenses' });
                 return response.output;
             });
-            const output = parseCandidateOutput(await Promise.race([execute(request), interrupted]));
+            const transport=execute(request).then(output=>{recordUsage('settled');return output;},error=>{recordUsage('settled');throw error;});
+            const output = parseCandidateOutput(await Promise.race([transport, interrupted]));
             if (timer)
                 clearTimeout(timer);
             if (this.stopped || this.store.currentEpoch !== this.epoch)

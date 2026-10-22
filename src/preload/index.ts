@@ -115,6 +115,10 @@ async function invoke<T>(
   }
 
   if (envelope && typeof envelope.dataEpoch === 'string' && (currentEpoch === null || currentEpoch === request.dataEpoch)) currentEpoch = envelope.dataEpoch;
+  // 缓存已进入新世代时，迟到旧信封也不能把旧成功数据交给页面。
+  if (typeof envelope?.dataEpoch === 'string' && envelope.dataEpoch !== currentEpoch) {
+    return { ok: false, error: { ...FALLBACK_ERROR, code: 'STALE_EPOCH', message: 'STALE_EPOCH' }, dataEpoch: currentEpoch };
+  }
   const metadata = { dataEpoch: envelope?.dataEpoch ?? null, dataRevision: envelope?.dataRevision };
   if (envelope && envelope.ok === true) return { ok: true, data: envelope.data as T, ...metadata };
   return { ok: false, error: envelope?.error ?? FALLBACK_ERROR, ...metadata };
@@ -125,6 +129,16 @@ function mutationOptions(options?: MutationOptions): { readonly mutation: true; 
 }
 
 const api: BookKeepApi = {
+  maintenance: {
+    exportCsv:input=>invoke(IPC.maintenanceCsv,input,mutationOptions()),
+    backupArtifact:input=>invoke(IPC.maintenanceBackupArtifact,input,{mutation:false}),
+    save:input=>invoke(IPC.maintenanceSave,input,mutationOptions()),
+    selectBackup:()=>invoke(IPC.maintenanceSelect,{}, {mutation:false}),
+    importBackup:input=>invoke(IPC.maintenanceImport,input,mutationOptions()),
+    restoreStatus:input=>invoke(IPC.maintenanceStatus,input,{mutation:false}),
+    activity:input=>invoke(IPC.maintenanceActivity,input,{mutation:false}),
+    reviewMetrics:input=>invoke(IPC.maintenanceMetrics,input,{mutation:false}),
+  },
   dataset:{
     read:input=>invoke(IPC.datasetRead,input,{mutation:false}),
     command:(command,options)=>invoke(IPC.datasetCommand,{command},mutationOptions(options)),
@@ -219,7 +233,7 @@ const api: BookKeepApi = {
   backup: {
     create: (input: BackupCreateInput, options?: MutationOptions): Promise<ApiResult<BackupCreateResult>> =>
       invoke(IPC.backupCreate, input, mutationOptions(options)),
-    list: (): Promise<ApiResult<BackupListResult>> => invoke(IPC.backupList, {}, { mutation: false }),
+    list: (input={}): Promise<ApiResult<BackupListResult>> => invoke(IPC.backupList, input, { mutation: false }),
     restore: (
       input: BackupRestoreInput,
       options?: MutationOptions,

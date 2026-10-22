@@ -1,6 +1,7 @@
-import { useCallback, useEffect, useState, type JSX } from 'react';
-import { EmptyState, ErrorLine, Notice, PageHeader, Panel, SkeletonNotice } from '../components/ui';
-import { call } from '../lib/bridge';
+import { useCallback, useEffect, useRef, useState, type JSX } from 'react';
+import { EmptyState, ErrorLine, Notice, PageHeader, Panel } from '../components/ui';
+import { BridgeError, call, getBridge } from '../lib/bridge';
+import { reconcileRestore, RESTORE_STATUS_TEXT } from '../lib/restore-status';
 import { describeError } from '../lib/messages';
 import { DatasetPanel } from '../components/DatasetPanel';
 import type {
@@ -29,30 +30,101 @@ function formatSize(bytes: number): string {
  * P08 数据管理：正式交易 CSV（S15）与本地完整备份/恢复（S05 基础）。
  * 备份/恢复的真实文件操作全部在主进程；渲染层只拿到受限 Artifact/token。
  */
-export function DataPage(): JSX.Element {
+export function DataPage({ onDataRestored }: { onDataRestored?: () => void }): JSX.Element {
+  const backupIntent=useRef<string|null>(null),restoreIntent=useRef<string|null>(null);
+  const restoreBusy = useRef(false);
+  const loadSequence = useRef(0);
+  const [verifyId, setVerifyId] = useState<string | null>(null);
+  const [verifying, setVerifying] = useState(false);
+  const [datasetGeneration, setDatasetGeneration] = useState(0);
   const [records, setRecords] = useState<BackupRecordView[] | null>(null);
   const [preview, setPreview] = useState<BackupRestorePreviewResult | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
   const [pending, setPending] = useState(false);
 
-  const load = useCallback(async (): Promise<void> => {
-    try {
-      const result = await call((api) => api.backup.list());
-      setRecords(result.records);
-    } catch (loadError) {
-      setError(describeError(loadError));
+  const load = useCallback(async (preserveError = false): Promise<string | null> => {
+    const sequence = ++loadSequence.current;
+    for (let attempt = 0; attempt < 2; attempt++) {
+      try {
+        const api = getBridge();
+        if (!api) throw new BridgeError('BRIDGE_UNAVAILABLE', null);
+        const all:BackupRecordView[]=[];let cursor:string|null=null, epoch:string|null=null;
+        do {
+          const reply = await api.backup.list({ page: { limit: 50, cursor } });
+          if (!reply.ok) throw new BridgeError(reply.error.code, reply.error);
+          if (!reply.dataEpoch || (epoch && epoch !== reply.dataEpoch)) throw new BridgeError('STALE_EPOCH', null);
+          epoch = reply.dataEpoch;
+          all.push(...reply.data.records); cursor = reply.data.nextCursor;
+        } while (cursor);
+        if (sequence === loadSequence.current) setRecords(all);
+        return sequence === loadSequence.current ? epoch : null;
+      } catch (loadError) {
+        if (sequence !== loadSequence.current) return null;
+        if (attempt === 0 && loadError instanceof BridgeError && ['STALE_EPOCH', 'SNAPSHOT_STALE'].includes(loadError.code)) continue;
+        setRecords([]);
+        if (!preserveError) setError(describeError(loadError));
+        else setError(previous => [previous, `备份列表读取失败：${describeError(loadError)}`].filter(Boolean).join(' '));
+        return null;
+      }
     }
+    return null;
   }, []);
 
   useEffect(() => {
     void load();
+    return () => { ++loadSequence.current; };
   }, [load]);
+
+  const refreshAfterRestore = async (): Promise<string | null> => {
+    ++loadSequence.current;
+    setRecords(null);
+    setDatasetGeneration(value => value + 1);
+    onDataRestored?.();
+    return load(true);
+  };
+
+  const verifyRestore = async (restoreId: string): Promise<void> => {
+    setVerifyId(restoreId);
+    setVerifying(true);
+    try {
+      const api = getBridge();
+      if (!api) throw new BridgeError('BRIDGE_UNAVAILABLE', null);
+      const status = await reconcileRestore(api, restoreId);
+      const displayedEpoch = await refreshAfterRestore();
+      if (status.status === 'committed' && displayedEpoch === null) {
+        setNotice('本次恢复已提交；当前列表读取失败，暂无法核对当前数据世代，请再次只读核实。');
+        return;
+      }
+      if (status.status === 'committed' || status.status === 'previously_committed') {
+        // 状态生成后仍可能发生另一笔恢复；以真实刷新结果再核对，不能把旧提交当成当前数据。
+        const currentStatus = status.status === 'committed' && displayedEpoch !== status.result.newDataEpoch ? 'previously_committed' : status.status;
+        setNotice(RESTORE_STATUS_TEXT[currentStatus]);
+        setVerifyId(null);
+        if (restoreIntent.current === restoreId) restoreIntent.current = null;
+      } else {
+        setError(RESTORE_STATUS_TEXT[status.status]);
+      }
+    } catch (statusError) {
+      setError(`恢复结果尚未核实：${describeError(statusError)} 可按原恢复编号再次只读核实，请先勿重复覆盖。`);
+      await refreshAfterRestore();
+    } finally {
+      setVerifying(false);
+    }
+  };
+
+  const recheckRestore = async (): Promise<void> => {
+    if (!verifyId || restoreBusy.current) return;
+    restoreBusy.current = true;
+    setPending(true); setError(null); setNotice(null);
+    try { await verifyRestore(verifyId); }
+    finally { restoreBusy.current = false; setPending(false); }
+  };
 
   const createBackup = async (): Promise<void> => {
     if (
       !window.confirm(
-        '本地备份会包含账本数据库（可能含私人消费内容），请妥善保管；备份不含密钥与日志。是否继续？',
+        '备份包含账本、候选、审核记录及引用图片，可能含私人内容。不包含密钥、日志和独立数据集（含撤回/test记录）。请妥善保管，是否继续？',
       )
     ) {
       return;
@@ -61,9 +133,11 @@ export function DataPage(): JSX.Element {
     setError(null);
     setNotice(null);
     try {
+      backupIntent.current??=crypto.randomUUID();
       const result = await call((api) =>
-        api.backup.create({ kind: 'manual', containsPrivateDataAcknowledged: true }),
+        api.backup.create({ kind: 'manual', containsPrivateDataAcknowledged: true },{mutationId:backupIntent.current!}),
       );
+      backupIntent.current=null;
       setNotice(`已创建备份（${formatSize(result.artifact.byteSize)}）。`);
       await load();
     } catch (createError) {
@@ -80,6 +154,8 @@ export function DataPage(): JSX.Element {
     try {
       const result = await call((api) => api.backup.restore({ mode: 'preview', backupId: record.id }));
       const previewResult = result as BackupRestorePreviewResult;
+      restoreIntent.current=crypto.randomUUID();
+      setVerifyId(null);
       setPreview(previewResult);
     } catch (previewError) {
       setNotice(null);
@@ -90,7 +166,7 @@ export function DataPage(): JSX.Element {
   };
 
   const commitRestore = async (): Promise<void> => {
-    if (!preview) return;
+    if (!preview || restoreBusy.current) return;
     if (
       !window.confirm(
         '恢复会用所选备份替换当前账本数据（当前数据会先自动备份为“恢复前备份”）。是否继续？',
@@ -98,6 +174,8 @@ export function DataPage(): JSX.Element {
     ) {
       return;
     }
+    restoreBusy.current = true;
+    const restoreId = restoreIntent.current ?? (restoreIntent.current = crypto.randomUUID());
     setPending(true);
     setError(null);
     setNotice(null);
@@ -107,22 +185,31 @@ export function DataPage(): JSX.Element {
           mode: 'commit',
           restoreToken: preview.restoreToken,
           currentDataWillBeReplaced: true,
-        }),
+        },{mutationId:restoreId}),
       )) as BackupRestoreResult;
       setPreview(null);
-      setNotice(
-        `恢复完成：已切换数据世代，当前修订号 ${result.revision}；恢复前备份 ${result.preRestoreBackupId.slice(0, 8)}…`,
-      );
-      await load();
+      if (result.replayed) {
+        await verifyRestore(restoreId);
+        return;
+      }
+      restoreIntent.current=null;
+      setVerifyId(null);
+      const displayedEpoch = await refreshAfterRestore();
+      if (displayedEpoch === result.newDataEpoch) setNotice(`恢复完成：已切换数据世代，当前修订号 ${result.revision}；恢复前备份 ${result.preRestoreBackupId.slice(0, 8)}…`);
+      else if (displayedEpoch) setNotice(RESTORE_STATUS_TEXT.previously_committed);
+      else { setVerifyId(restoreId); setNotice('本次恢复已提交；当前列表读取失败，暂无法核对当前数据世代，请再次只读核实。'); }
     } catch (commitError) {
       setPreview(null);
-      setError(describeError(commitError));
-      await load();
+      await verifyRestore(restoreId);
     } finally {
+      restoreBusy.current = false;
       setPending(false);
     }
   };
 
+  const exportCsv=async()=>{setPending(true);setError(null);try{const a=await call(api=>api.maintenance.exportCsv({filter:{dateStart:null,dateEnd:null,nameQuery:null,categoryIds:[],deleted:'active'},snapshotRevision:null}));const saved=await call(api=>api.maintenance.save({artifactId:a.artifactId}));setNotice(saved.saved?`已导出${a.recordCount}笔正式交易。`:'已取消保存。');}catch(e){setError(describeError(e));}finally{setPending(false);}};
+  const saveBackup=async(id:string)=>{setPending(true);try{const a=await call(api=>api.maintenance.backupArtifact({backupId:id}));const saved=await call(api=>api.maintenance.save({artifactId:a.artifactId}));setNotice(saved.saved?'备份已保存到所选位置。':'已取消保存。');}catch(e){setError(describeError(e));}finally{setPending(false);}};
+  const importBackup=async()=>{setPending(true);setError(null);try{const r=await call(api=>api.maintenance.selectBackup());if(!r.selectionToken)return;if(!window.confirm('将校验并登记所选备份，不立即替换账本。备份可能含私人内容，是否继续？'))return;await call(api=>api.maintenance.importBackup({selectionToken:r.selectionToken!,containsPrivateDataAcknowledged:true}));await load();setNotice('备份已校验并登记；请预览后单独确认恢复。');}catch(e){setError(describeError(e));}finally{setPending(false);}};
   return (
     <div className="page">
       <PageHeader
@@ -132,24 +219,26 @@ export function DataPage(): JSX.Element {
 
       {error ? <ErrorLine message={error} /> : null}
       {notice ? <Notice title="操作完成">{notice}</Notice> : null}
-      <DatasetPanel />
+      {verifying ? <p role="status">正在只读核实恢复结果…</p> : null}
+      {verifyId ? <div className="form-actions"><span className="tiny">恢复编号：{verifyId}</span><button className="button" disabled={pending} onClick={() => void recheckRestore()}>重新核实本次恢复状态</button></div> : null}
+      <DatasetPanel key={datasetGeneration} />
 
       <div className="grid-2">
         <Panel title="正式交易 CSV">
           <p className="muted">导出全部正式未删除记录或当前筛选结果，UTF-8 带 BOM、CRLF、公式前缀转义。</p>
           <div className="form-actions">
-            <button type="button" className="button" disabled title="S15 实现">
+            <button type="button" className="button" disabled={pending} onClick={()=>void exportCsv()}>
               选择保存位置并导出
             </button>
           </div>
-          <p className="tiny">导出接口按契约预留；S05 不伪造成功结果。</p>
+          <p className="tiny">仅导出正式未删除交易；候选、失败任务和已删除记录不在范围内。</p>
         </Panel>
 
-        <Panel title="本地数据库备份" actions={<span className="tiny">不含密钥/日志</span>}>
+        <Panel title="账本与附件备份" actions={<span className="tiny">不含密钥/日志/独立数据集</span>}>
           <p className="muted">
             一致数据库快照，保存到 <code>%LOCALAPPDATA%\BookKeepAI\backups</code>；档案记录 schema、账本与修订号，
             恢复前会再次校验 hash 与完整性。
-            当前仅支持无图片附件的账本；已有图片时会拒绝数据库单独备份或恢复。包含附件的完整备份将在S15接入。
+            包含候选与引用的原图/预处理图。独立数据集state/images/artifacts、撤回墓碑与test接触记录不在备份中，恢复时保持本地独立记录并使旧授权失效。
           </p>
           <div className="form-actions">
             <button
@@ -160,6 +249,7 @@ export function DataPage(): JSX.Element {
             >
               创建备份
             </button>
+            <button className="button" disabled={pending} onClick={()=>void importBackup()}>选择外部备份</button>
           </div>
         </Panel>
       </div>
@@ -168,7 +258,7 @@ export function DataPage(): JSX.Element {
         {records === null ? (
           <EmptyState title="正在读取备份…" />
         ) : records.length === 0 ? (
-          <EmptyState title="暂无备份">创建备份后可在此预览校验并恢复。</EmptyState>
+          <EmptyState title={error ? '备份列表暂不可用' : '暂无备份'}>{error ? '请重新打开数据管理读取备份列表。' : '创建备份后可在此预览校验并恢复。'}</EmptyState>
         ) : (
           <table className="result-table">
             <thead>
@@ -209,6 +299,7 @@ export function DataPage(): JSX.Element {
                     >
                       校验并恢复
                     </button>
+                    <button className="button button-small" disabled={pending||!record.artifact} onClick={()=>void saveBackup(record.id)}>另存备份</button>
                   </td>
                 </tr>
               ))}
@@ -261,15 +352,6 @@ export function DataPage(): JSX.Element {
         </Panel>
       ) : null}
 
-      <SkeletonNotice
-        step="S15（CSV 与恢复加固）"
-        items={[
-          'CSV 全量快照导出与中文/公式安全检查',
-          '恢复中断/断电故障注入与旧 generation 清理',
-        ]}
-      >
-        CSV 导出与恢复的故障加固将在后续步骤实现；S05 已提供备份创建、校验预览与恢复切换基础。
-      </SkeletonNotice>
     </div>
   );
 }
