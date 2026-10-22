@@ -1,6 +1,6 @@
 /** S16 maintained regression entry. No real provider smoke, ZIP, merge or release. */
 import { spawn, spawnSync } from 'node:child_process';
-import { existsSync, mkdirSync, mkdtempSync, openSync, closeSync, readFileSync, writeFileSync } from 'node:fs';
+import { copyFileSync, existsSync, mkdirSync, mkdtempSync, openSync, closeSync, readFileSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 import { ROOT, electronSafeEnv } from './lib/paths.mjs';
 
@@ -30,6 +30,7 @@ for (const [name, args] of commands) {
     });
   } finally { closeSync(fd); }
   report.commands.push({ name, executable: process.execPath, args, cwd: ROOT, startedAt: new Date(start).toISOString(), endedAt: new Date().toISOString(), log, ...result }); save();
+  if (name === 'startup') for (const file of ['selftest-dev.json', 'selftest-dev-restart.json']) if (existsSync(path.join(ROOT, '.tmp', file))) copyFileSync(path.join(ROOT, '.tmp', file), path.join(dir, file));
   console.log(name + ': ' + result.code);
   if (result.code !== 0) { console.error(readFileSync(log, 'utf8').slice(-5000)); break; }
 }
