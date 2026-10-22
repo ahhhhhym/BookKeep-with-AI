@@ -95,6 +95,13 @@ describe('S15 consistent backup and recovery',()=>{
 });
 
 describe('S15 safe export and secret boundaries',()=>{
+  it.skipIf(process.platform!=='win32')('native save cannot overwrite internal data using different Windows path case',async()=>{
+    const target=path.join(layout.root.toUpperCase(),'forbidden-export.csv');
+    const service=new MaintenanceService(store,{save:async()=>target,open:async()=>null},()=>1);
+    const artifact=await service.csv({filter:{dateStart:null,dateEnd:null,categoryIds:[],nameQuery:null,deleted:'active'},snapshotRevision:null},randomUUID());
+    await expect(service.save(artifact.artifactId,randomUUID())).rejects.toMatchObject({code:'PERMISSION_DENIED'});
+    expect(existsSync(target)).toBe(false);
+  });
   it.each(['encrypt','decrypt'])('actual %s failure falls back to session and cannot revive old persistent key',failure=>{
     const encryption={isEncryptionAvailable:()=>true,encryptString:(v:string)=>Buffer.from('cipher:'+v),decryptString:(v:Buffer)=>v.toString().slice(7)};
     const secret=new SecretStore(layout.secrets,encryption);
