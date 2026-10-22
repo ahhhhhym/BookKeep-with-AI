@@ -60,11 +60,13 @@ describe('S09 secret store (mock encryption, no real provider key)', () => {
     const { store } = setup(); expect(() => store.save({ ...save(), secret: value }, 'a')).toThrow('SECRET_INVALID');
     expect(store.status().version).toBe(0);
   });
-  it('encryption failure preserves prior file, mode and version', () => {
-    const { store, file, encryption } = setup(); store.save(save(), 'a'); const before = readFileSync(file);
+  it('S15 actual encryption failure revokes prior persistent blob and keeps only this session', () => {
+    const { store, file, dir, encryption } = setup(); store.save(save(), 'a');
     encryption.encryptString = () => { throw new Error('untrusted message'); };
-    expect(() => store.save(save(1), 'b')).toThrow('STORAGE_UNAVAILABLE');
-    expect(readFileSync(file)).toEqual(before); expect(store.status().version).toBe(1);
+    expect(store.save(save(1), 'b')).toMatchObject({mode:'session',version:2});
+    expect(JSON.parse(readFileSync(file,'utf8'))).toMatchObject({mode:'absent',blob:null});
+    expect(store.readForProvider()).toBe(syntheticSecret);
+    expect(new SecretStore(dir,encryption).status()).toMatchObject({configured:false,version:2});
   });
   it('corrupt encrypted store is reported unreadable, explicit removal permits recovery', () => {
     const { dir, file, encryption } = setup(); writeFileSync(file, '{broken'); const store = new SecretStore(dir, encryption);
