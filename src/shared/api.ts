@@ -31,6 +31,7 @@ import type {
 } from './entities';
 import type { CategoryListInput, ProviderCapabilitiesInput, SaveSecretInput } from './ipc';
 import type { AppErrorPayload } from './errors';
+import type { DatasetCommand, DatasetRead } from './dataset';
 import type { ProbeInput, ProbeReport } from './probe';
 import type { ApprovalInput, ApprovalPreview, ApprovalResult, ReviewList, ReviewUpdate, ReviewCandidate } from './review';
 import type { Asset, CandidateQuery, ImportInput, ImportResult, Job, JobList, JobQuery, PrepareInput, Resource, ResourceInput, RetryInput, Selection, StartInput, VersionedJob } from './imports';
@@ -44,6 +45,11 @@ export type ApiResult<T> = ({ ok: true; data: T } | { ok: false; error: AppError
 };
 
 export interface BookKeepApi {
+  readonly dataset: {
+    read(input:DatasetRead):Promise<ApiResult<unknown>>;
+    command(command:DatasetCommand,options?:MutationOptions):Promise<ApiResult<unknown>>;
+    save(input:{artifactId:string},options?:MutationOptions):Promise<ApiResult<{saved:boolean}>>;
+  };
   readonly image: {
     select(): Promise<ApiResult<Selection>>;
     /** Actual File objects only; strings and arbitrary paths are rejected in isolated preload. */

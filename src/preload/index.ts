@@ -125,6 +125,11 @@ function mutationOptions(options?: MutationOptions): { readonly mutation: true; 
 }
 
 const api: BookKeepApi = {
+  dataset:{
+    read:input=>invoke(IPC.datasetRead,input,{mutation:false}),
+    command:(command,options)=>invoke(IPC.datasetCommand,{command},mutationOptions(options)),
+    save:(input,options)=>invoke(IPC.datasetSave,input,mutationOptions(options)),
+  },
   image: {
     select: () => invoke(IPC.imageSelect, {}, {mutation:false}),
     drop: (files) => {

@@ -4,7 +4,8 @@ import type { Candidate, CandidateQuery } from '../../shared/imports';
 import type { Proposal } from '../../shared/candidate';
 import type { ApprovalInput, ApprovalItem, ApprovalPreview, ApprovalResult, ReviewCandidate, ReviewUpdate } from '../../shared/review';
 import type { TransactionInput } from '../../shared/entities';
-import { checkRequiredText, normalizeNameKey } from '../../shared/text';
+import { checkRequiredText } from '../../shared/text';
+import { isPossibleDuplicate } from '../../shared/duplicate';
 import { isTransactionDate, isPrecisionConsistent } from '../../shared/date';
 import type { LedgerStore } from './ledger-store';
 import type { ImageService } from './image-service';
@@ -43,8 +44,7 @@ export class ReviewService {
     for(const j of c.db.prepare<{id:string;version:number;status:string}>(`SELECT j.id,j.version,j.status FROM import_job j JOIN image_asset a ON a.id=j.image_asset_id
       WHERE j.ledger_id=? AND j.id<>? AND (j.prepared_hash=? OR a.original_hash=(SELECT original_hash FROM image_asset WHERE id=?)) ORDER BY j.id`).all(c.ledgerId,r.job_id,r.prepared_hash,r.image_asset_id))
       matches.push({targetType:'job',targetId:j.id,targetVersion:j.version,basis:'exact_hash'});
-    const same=(q:{amountFen:number|null;occurredDate:string|null;name:string|null;merchant:string|null})=> p.amountFen!==null && p.occurredDate!==null && p.amountFen===q.amountFen && p.occurredDate===q.occurredDate &&
-      ((p.name && q.name && normalizeNameKey(p.name)===normalizeNameKey(q.name)) || (p.merchant && q.merchant && normalizeNameKey(p.merchant)===normalizeNameKey(q.merchant)));
+    const same=(q:{amountFen:number|null;occurredDate:string|null;name:string|null;merchant:string|null})=>isPossibleDuplicate(p,q);
     for(const t of c.db.prepare<{id:string;version:number;amount_fen:number;occurred_date:string;name:string;merchant:string|null;source_candidate_id:string|null}>('SELECT id,version,amount_fen,occurred_date,name,merchant,source_candidate_id FROM "transaction" WHERE ledger_id=? ORDER BY id').all(c.ledgerId)) {
       if(t.source_candidate_id===r.id)continue;
       if(same({amountFen:t.amount_fen,occurredDate:t.occurred_date,name:t.name,merchant:t.merchant})) matches.push({targetType:'transaction',targetId:t.id,targetVersion:t.version,basis:'amount_date_name_or_merchant'});

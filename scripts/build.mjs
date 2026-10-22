@@ -8,6 +8,7 @@ import { build as viteBuild } from 'vite';
 import { DIST, ROOT, log } from './lib/paths.mjs';
 import { cleanLicenses, collectLicenses } from './collect-licenses.mjs';
 import { verifyIcons } from './verify-icons.mjs';
+import { datasetBuildIdentity } from './lib/dataset-build.mjs';
 
 const EXTERNAL_NODE = ['electron', 'better-sqlite3', 'sharp'];
 
@@ -23,6 +24,7 @@ export function mainBuildOptions() {
     sourcemap: false,
     logLevel: 'warning',
     legalComments: 'none',
+    define: { __BOOKKEEP_DATASET_BUILD__: JSON.stringify(datasetBuildIdentity()) },
   };
 }
 

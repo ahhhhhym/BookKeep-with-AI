@@ -14,6 +14,9 @@ import { RecognitionService } from './services/recognition-service';
 import { LedgerStore } from './services/ledger-store';
 import { SecretStore } from './services/settings/ai-settings';
 import { ProbeService } from './services/providers/probe';
+import { createDatasetService } from './services/dataset/integration';
+import type { DatasetService } from './services/dataset/store';
+import { mkdirSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 import { isAllowedNavigation } from './security/window-options';
 import {
@@ -44,6 +47,7 @@ const storage = resolveStorageLayout(process.env);
 let mainWindow: BrowserWindow | null = null;
 let store: LedgerStore | null = null;
 let secrets: SecretStore | null = null;
+let dataset: DatasetService | null = null;
 
 app.setAppUserModelId('ai.bookkeep.desktop');
 if (storage.ok) {
@@ -170,11 +174,25 @@ async function bootstrap(): Promise<void> {
   secrets = new SecretStore(storage.layout.secrets, safeStorage);
   const probe = new ProbeService(secrets, path.join(__dirname, 'probe/s09-receipt-v1.png'), storage.layout.logs);
   recognition=new RecognitionService(store,images,secrets);
+  try {dataset=createDatasetService(store,images,secrets);}catch{console.warn('[bookkeep] dataset recovery required');}
   registerIpcHandlers(router, {
+    dataset:dataset??undefined,
+    saveDataset:async artifactId=>{
+      if(!dataset)throw new AppError('RECOVERY_REQUIRED');
+      const files=dataset.artifactFiles(artifactId);
+      const result=await dialog.showOpenDialog(mainWindow!,{title:'选择数据集保存目录（将在其中建立独立导出文件夹）',properties:['openDirectory','createDirectory']});
+      if(result.canceled||!result.filePaths[0])return {saved:false};
+      // A fresh directory avoids overwriting any existing user file. Recheck authorization after the native dialog.
+      const current=dataset.artifactFiles(artifactId);
+      if(current.length!==files.length)throw new AppError('DATASET_INVALID');
+      const target=path.join(result.filePaths[0],'BookKeepAI-dataset-'+artifactId);mkdirSync(target);
+      for(const file of current){const out=path.join(target,file.relative);mkdirSync(path.dirname(out),{recursive:true});writeFileSync(out,file.bytes,{flag:'wx'});}
+      return {saved:true};
+    },
     store,
     reviewOwner:()=>mainWindow?.webContents.id??null,
     secrets, probe, images, get recognition(){return recognition!;},
-    onRestored:()=>{recognition?.shutdown();recognition=new RecognitionService(store!,images,secrets!);},
+    onRestored:()=>{recognition?.shutdown();dataset?.resetEpoch();recognition=new RecognitionService(store!,images,secrets!);},
     selectImages: async()=>{ const result=await dialog.showOpenDialog(mainWindow!,{title:"选择消费图片",properties:["openFile","multiSelections"],filters:[{name:"JPEG / PNG / WebP",extensions:["jpg","jpeg","png","webp"]}]}); return result.canceled?[]:result.filePaths; },
   });
 
@@ -250,6 +268,7 @@ app.on('second-instance', () => {
 });
 
 app.on('will-quit', () => {
+  dataset?.shutdown();
   recognition?.shutdown();
   secrets?.clearSession();
   store?.close();

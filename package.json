@@ -16,6 +16,7 @@
     "typecheck": "tsc -p tsconfig.main.json --noEmit && tsc -p tsconfig.renderer.json --noEmit && tsc -p tsconfig.tests.json --noEmit",
     "test": "vitest run",
     "test:watch": "vitest",
+    "dataset:demo": "node scripts/dataset-demo.mjs",
     "verify:icons": "node scripts/verify-icons.mjs",
     "db:report": "node scripts/db-report.mjs",
     "licenses": "node scripts/collect-licenses.mjs",

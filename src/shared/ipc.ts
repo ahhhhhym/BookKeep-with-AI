@@ -10,6 +10,7 @@
 import { IMPORT_CHANNELS } from './imports';
 import { IMPORT_SPECS } from './import-specs';
 import { REVIEW_CHANNELS, REVIEW_SPECS } from './review-specs';
+import { DATASET_CHANNELS, DATASET_SPECS } from './dataset-specs';
 import type { RequestSpec } from './envelope.js';
 import type { ProbeInput } from './probe';
 import type {
@@ -32,6 +33,7 @@ import { SECRET_MAX_LENGTH, SECRET_MIN_LENGTH } from './constants.js';
 import { isPlainRecord, isSafeIntegerInRange, isUuidV4 } from './validation.js';
 
 export const IPC = {
+  ...DATASET_CHANNELS,
   ...REVIEW_CHANNELS,
   ...IMPORT_CHANNELS,
   settingsReadAi: 'settings.ai',
@@ -476,7 +478,8 @@ export const CHANNEL_SPECS: {
   readonly backupCreate: ChannelSpec<BackupCreateInput>;
   readonly backupList: ChannelSpec<BackupListInput>;
   readonly backupRestore: ChannelSpec<BackupRestoreInput>;
-} & typeof IMPORT_SPECS & typeof REVIEW_SPECS = {
+} & typeof IMPORT_SPECS & typeof REVIEW_SPECS & typeof DATASET_SPECS = {
+  ...DATASET_SPECS,
   ...REVIEW_SPECS,
   ...IMPORT_SPECS,
   providerProbe: { channel: IPC.providerProbe, permission: 'U', skeletonOnly: false, request: {
@@ -703,6 +706,7 @@ export const CHANNEL_SPECS: {
 
 /** 业务契约通道（可出现在 CONTRACTS 中）；skeleton.* 不计入。 */
 export const BUSINESS_CHANNELS: readonly IpcChannel[] = [
+  ...Object.values(DATASET_CHANNELS),
   ...Object.values(REVIEW_CHANNELS),
   ...Object.values(IMPORT_CHANNELS),
   IPC.settingsReadAi,

@@ -51,6 +51,7 @@ interface RendererIsolationFacts {
   bridgeType: string;
   bridgeKeys: string[];
   statisticsKeys: string[];
+  datasetKeys: string[];
   ipcRendererType: string;
   electronType: string;
 }
@@ -155,6 +156,7 @@ export async function runSelfTest(deps: SelfTestDependencies): Promise<SelfTestR
     bridgeType: typeof window.bookkeep,
     bridgeKeys: window.bookkeep ? Object.keys(window.bookkeep).sort() : [],
     statisticsKeys: window.bookkeep?.statistics ? Object.keys(window.bookkeep.statistics).sort() : [],
+    datasetKeys: window.bookkeep?.dataset ? Object.keys(window.bookkeep.dataset).sort() : [],
     ipcRendererType: typeof window.ipcRenderer,
     electronType: typeof window.electron,
   }))()`);
@@ -177,8 +179,9 @@ export async function runSelfTest(deps: SelfTestDependencies): Promise<SelfTestR
       'preload.bridgeSurface',
       isolation.bridgeType === 'object' &&
         isolation.bridgeKeys.join(',') ===
-          'backup,candidate,category,contractVersion,image,ledger,provider,recognition,settings,skeleton,skeletonStage,statistics,transaction' &&
-        isolation.statisticsKeys.join(',') === 'series,summary,topCategories,topTransactions',
+          'backup,candidate,category,contractVersion,dataset,image,ledger,provider,recognition,settings,skeleton,skeletonStage,statistics,transaction' &&
+        isolation.statisticsKeys.join(',') === 'series,summary,topCategories,topTransactions' &&
+        isolation.datasetKeys.join(',') === 'command,read,save',
       { bridgeType: isolation.bridgeType, bridgeKeys: isolation.bridgeKeys, statisticsKeys: isolation.statisticsKeys },
     ),
   );

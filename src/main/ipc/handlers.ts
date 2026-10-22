@@ -15,6 +15,7 @@ import type { LedgerStore } from '../services/ledger-store';
 import type { ImageService } from '../services/image-service';
 import type { RecognitionService } from '../services/recognition-service';
 import { ReviewService } from '../services/review-service';
+import type { DatasetService } from '../services/dataset/store';
 
 export interface HandlerDependencies {
   readonly store: LedgerStore;
@@ -25,10 +26,16 @@ export interface HandlerDependencies {
   readonly selectImages: () => Promise<string[]>;
   readonly onRestored: () => void;
   readonly reviewOwner?: () => number|null;
+  readonly dataset?: DatasetService;
+  readonly saveDataset?: (artifactId:string)=>Promise<{saved:boolean}>;
 }
 
 export function registerIpcHandlers(router: IpcRouter, deps: HandlerDependencies): void {
   const review=new ReviewService(deps.store,deps.images,deps.reviewOwner);
+  const dataset=()=>{if(!deps.dataset)throw new AppError('RECOVERY_REQUIRED');return deps.dataset;};
+  router.handle(CHANNEL_SPECS.datasetRead,r=>dataset().read(r.payload));
+  router.handle(CHANNEL_SPECS.datasetCommand,r=>dataset().command(r.payload.command,r.mutationId!));
+  router.handle(CHANNEL_SPECS.datasetSave,r=>{dataset();if(!deps.saveDataset)throw new AppError('NOT_IMPLEMENTED');return deps.saveDataset(r.payload.artifactId);});
   router.handle(CHANNEL_SPECS.imageSelect, async () => deps.images.select(await deps.selectImages(), 'selection'));
   router.handle(CHANNEL_SPECS.imageDrop, r => deps.images.select(r.payload.paths,'drop'));
   router.handle(CHANNEL_SPECS.imageImport, r => deps.images.import(r.payload,r.mutationId!));
