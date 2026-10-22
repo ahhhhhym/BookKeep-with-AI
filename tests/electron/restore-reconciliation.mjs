@@ -71,7 +71,7 @@ async function installFaults(mode, secondBackupId) {
       if (mode === 'query-timeout' && r.ok && globalThis.qa.mode === 'query-timeout') {
         await new Promise(resolve => { globalThis.qa.release = resolve; });
       }
-      if (mode === 'interleaved-late' && r.ok && globalThis.qa.statusCount === 2) {
+      if (['interleaved-late', 'unobserved-late'].includes(mode) && r.ok && globalThis.qa.statusCount === 2) {
         await second(r.dataEpoch);
         await new Promise(resolve => { globalThis.qa.release = resolve; });
       }
@@ -83,7 +83,7 @@ async function installFaults(mode, secondBackupId) {
 }
 
 try {
-  for (const mode of ['lost-success', 'query-failure', 'query-timeout', 'unknown', 'precommit-failed', 'interrupted', 'history', 'interleaved-late']) {
+  for (const mode of ['lost-success', 'query-failure', 'query-timeout', 'unknown', 'precommit-failed', 'interrupted', 'history', 'interleaved-late', 'unobserved-late']) {
     localAppData = mkdtempSync(path.join(tmpdir(), 'BookKeep S15 返工 '));
     const result = { mode, localAppData, ok: false, expected: mode === 'lost-success' ? 'automatic read-only confirmation; 1 commit + 2 status reads' : 'bounded truthful status; never implicit repeat commit' };
     report.cases.push(result); await launch();
@@ -103,7 +103,7 @@ try {
     });
     const backup = await invoke('backup.create', { kind: 'manual', containsPrivateDataAcknowledged: true });
     await invoke('transaction.create', { ...input, name: '恢复前新增', amountFen: 9900 });
-    const secondBackup = ['history', 'interleaved-late'].includes(mode) ? await invoke('backup.create', { kind: 'manual', containsPrivateDataAcknowledged: true }) : null;
+    const secondBackup = ['history', 'interleaved-late', 'unobserved-late'].includes(mode) ? await invoke('backup.create', { kind: 'manual', containsPrivateDataAcknowledged: true }) : null;
     result.before = await snapshot();
     await nav('data');
     const row = page.locator('tr').filter({ has: page.locator(`td[title="${backup.record.archiveHash}"]`) });
@@ -111,10 +111,10 @@ try {
     await page.getByRole('button', { name: '确认覆盖当前数据并恢复', exact: true }).waitFor();
     await installFaults(mode, secondBackup?.record.id);
     await page.getByRole('button', { name: '确认覆盖当前数据并恢复', exact: true }).click();
-    if (mode === 'interleaved-late') {
+    if (['interleaved-late', 'unobserved-late'].includes(mode)) {
       await until(() => app.evaluate(() => Boolean(globalThis.qa.release)));
       // A separate current read synchronizes B while A's successful status envelope is held in transport.
-      await raw('settings.readAi'); await raw('settings.readAi');
+      if (mode === 'interleaved-late') { await raw('settings.readAi'); await raw('settings.readAi'); }
       await app.evaluate(() => globalThis.qa.release());
     }
     await page.getByRole('button', { name: '创建备份', exact: true }).waitFor({ state: 'visible' });
@@ -152,9 +152,10 @@ try {
       assert.equal(result.explicitReplay.replayed, true);
       const kept = await snapshot(); assert.equal(kept.transactions.length, 2); assert.equal(kept.pointer.dataEpoch, result.after.pointer.dataEpoch);
       await nav('ledger'); await until(async () => await page.locator('[data-ledger-total]').getAttribute('data-ledger-total') === '2300');
-    } else if (mode === 'history') {
+    } else if (['history', 'unobserved-late'].includes(mode)) {
       assert.equal(result.ui.success, false); assert(result.ui.text.includes('本次恢复曾提交，但当前已切换到另一恢复世代'));
-      assert.equal(result.statusCalls.at(-1).status, 'previously_committed'); assert.equal(result.after.transactions.length, 2);
+      if (mode === 'history') assert.equal(result.statusCalls.at(-1).status, 'previously_committed');
+      assert.equal(result.after.transactions.length, 2);
       assert.notEqual(result.after.pointer.restoreId, result.restoreId);
     } else {
       assert.equal(result.ui.success, false); assert(result.ui.alerts.length > 0);

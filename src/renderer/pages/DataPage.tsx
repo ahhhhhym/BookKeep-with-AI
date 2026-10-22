@@ -43,23 +43,32 @@ export function DataPage({ onDataRestored }: { onDataRestored?: () => void }): J
   const [notice, setNotice] = useState<string | null>(null);
   const [pending, setPending] = useState(false);
 
-  const load = useCallback(async (preserveError = false): Promise<void> => {
+  const load = useCallback(async (preserveError = false): Promise<string | null> => {
     const sequence = ++loadSequence.current;
     for (let attempt = 0; attempt < 2; attempt++) {
       try {
-        const all:BackupRecordView[]=[];let cursor:string|null=null;
-        do{const result=await call(api=>api.backup.list({page:{limit:50,cursor}}));all.push(...result.records);cursor=result.nextCursor;}while(cursor);
+        const api = getBridge();
+        if (!api) throw new BridgeError('BRIDGE_UNAVAILABLE', null);
+        const all:BackupRecordView[]=[];let cursor:string|null=null, epoch:string|null=null;
+        do {
+          const reply = await api.backup.list({ page: { limit: 50, cursor } });
+          if (!reply.ok) throw new BridgeError(reply.error.code, reply.error);
+          if (!reply.dataEpoch || (epoch && epoch !== reply.dataEpoch)) throw new BridgeError('STALE_EPOCH', null);
+          epoch = reply.dataEpoch;
+          all.push(...reply.data.records); cursor = reply.data.nextCursor;
+        } while (cursor);
         if (sequence === loadSequence.current) setRecords(all);
-        return;
+        return sequence === loadSequence.current ? epoch : null;
       } catch (loadError) {
-        if (sequence !== loadSequence.current) return;
+        if (sequence !== loadSequence.current) return null;
         if (attempt === 0 && loadError instanceof BridgeError && ['STALE_EPOCH', 'SNAPSHOT_STALE'].includes(loadError.code)) continue;
         setRecords([]);
         if (!preserveError) setError(describeError(loadError));
         else setError(previous => [previous, `备份列表读取失败：${describeError(loadError)}`].filter(Boolean).join(' '));
-        return;
+        return null;
       }
     }
+    return null;
   }, []);
 
   useEffect(() => {
@@ -67,12 +76,12 @@ export function DataPage({ onDataRestored }: { onDataRestored?: () => void }): J
     return () => { ++loadSequence.current; };
   }, [load]);
 
-  const refreshAfterRestore = async (): Promise<void> => {
+  const refreshAfterRestore = async (): Promise<string | null> => {
     ++loadSequence.current;
     setRecords(null);
     setDatasetGeneration(value => value + 1);
     onDataRestored?.();
-    await load(true);
+    return load(true);
   };
 
   const verifyRestore = async (restoreId: string): Promise<void> => {
@@ -82,8 +91,15 @@ export function DataPage({ onDataRestored }: { onDataRestored?: () => void }): J
       const api = getBridge();
       if (!api) throw new BridgeError('BRIDGE_UNAVAILABLE', null);
       const status = await reconcileRestore(api, restoreId);
+      const displayedEpoch = await refreshAfterRestore();
+      if (status.status === 'committed' && displayedEpoch === null) {
+        setNotice('本次恢复已提交；当前列表读取失败，暂无法核对当前数据世代，请再次只读核实。');
+        return;
+      }
       if (status.status === 'committed' || status.status === 'previously_committed') {
-        setNotice(RESTORE_STATUS_TEXT[status.status]);
+        // 状态生成后仍可能发生另一笔恢复；以真实刷新结果再核对，不能把旧提交当成当前数据。
+        const currentStatus = status.status === 'committed' && displayedEpoch !== status.result.newDataEpoch ? 'previously_committed' : status.status;
+        setNotice(RESTORE_STATUS_TEXT[currentStatus]);
         setVerifyId(null);
         if (restoreIntent.current === restoreId) restoreIntent.current = null;
       } else {
@@ -91,9 +107,9 @@ export function DataPage({ onDataRestored }: { onDataRestored?: () => void }): J
       }
     } catch (statusError) {
       setError(`恢复结果尚未核实：${describeError(statusError)} 可按原恢复编号再次只读核实，请先勿重复覆盖。`);
+      await refreshAfterRestore();
     } finally {
       setVerifying(false);
-      await refreshAfterRestore();
     }
   };
 
@@ -178,10 +194,10 @@ export function DataPage({ onDataRestored }: { onDataRestored?: () => void }): J
       }
       restoreIntent.current=null;
       setVerifyId(null);
-      setNotice(
-        `恢复完成：已切换数据世代，当前修订号 ${result.revision}；恢复前备份 ${result.preRestoreBackupId.slice(0, 8)}…`,
-      );
-      await refreshAfterRestore();
+      const displayedEpoch = await refreshAfterRestore();
+      if (displayedEpoch === result.newDataEpoch) setNotice(`恢复完成：已切换数据世代，当前修订号 ${result.revision}；恢复前备份 ${result.preRestoreBackupId.slice(0, 8)}…`);
+      else if (displayedEpoch) setNotice(RESTORE_STATUS_TEXT.previously_committed);
+      else { setVerifyId(restoreId); setNotice('本次恢复已提交；当前列表读取失败，暂无法核对当前数据世代，请再次只读核实。'); }
     } catch (commitError) {
       setPreview(null);
       await verifyRestore(restoreId);
