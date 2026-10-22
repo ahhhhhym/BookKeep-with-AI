@@ -4,6 +4,11 @@ import { hashPayload } from '../canonical';
 const possible = (p: Proposal) => p.transactionKind === 'expense' || p.transactionKind === null;
 const name = (s: string) => s.normalize('NFC').trim().replace(/\s+/gu, ' ');
 export function metric(key: string, k: number, n: number, kind: string, scene: string, split: string, ratio = true): Metric {
+    // Reject invalid inputs before division/Wilson; JSON would hide NaN as null.
+    // Non-binomial summaries (F1/means) have no binomial upper bound or Wilson CI.
+    if (!Number.isFinite(k) || k < 0 || !Number.isSafeInteger(n) || n < 0 ||
+        (ratio && (!Number.isSafeInteger(k) || k > n)))
+        throw new Error('METRIC_COUNTS_INVALID');
     const p = n ? k / n : null, z = 1.96;
     const interval: [
         number,
@@ -50,7 +55,12 @@ export function score(v: DatasetVersion, run: Run): Record<string, unknown> {
                 number,
                 number
             ]> = {};
-            const add = (key: string, k: number, n: number) => { const old = c[key] ?? [0, 0]; c[key] = [old[0] + k, old[1] + n]; };
+            const add = (key: string, k: number, n: number) => {
+                const old = c[key] ?? [0, 0], next: [number, number] = [old[0] + k, old[1] + n];
+                if (![k, n, ...next].every(x => Number.isSafeInteger(x) && x >= 0))
+                    throw new Error('METRIC_COUNTS_INVALID');
+                c[key] = next;
+            };
             let tp = 0, fp = 0, fn = 0, nonexpense = 0, unknownStatus = 0;
             for (const s of ss) {
                 const r = rs.find(r => r.sampleId === s.id), labels = s.labels ?? [], ps = r?.status === 'completed' ? r.predictions : [];
@@ -67,7 +77,7 @@ export function score(v: DatasetVersion, run: Run): Record<string, unknown> {
                                 add(`missing_precision_${f}`, Number(!!map && expense.some(l => l.labelId === map.labelId && l.facts[f].status === 'unknown') && ps[i][f] === null), 1);
                     }
                 for (const l of expense) {
-                    const p = matched(alignment, s, r, l), detected = p && possible(p);
+                    const p = matched(alignment, s, r, l), detected = p !== undefined && possible(p);
                     if (!detected)
                         fn++;
                     for (const f of FIELDS) {
@@ -104,7 +114,7 @@ export function score(v: DatasetVersion, run: Run): Record<string, unknown> {
                     const hit = p?.transactionKind === l.value.transactionKind && p.warnings.some(w => w.code === 'NON_EXPENSE');
                     add('non_expense_recall', Number(hit), 1);
                     add(`non_expense_recall_${l.value.transactionKind}`, Number(hit), 1);
-                    add('non_expense_as_expense_rate', Number(p && possible(p)), 1);
+                    add('non_expense_as_expense_rate', Number(p !== undefined && possible(p)), 1);
                 }
                 if (labels.length === 0) {
                     add('empty_image_fp_rate', Number(ps.some(possible)), 1);
