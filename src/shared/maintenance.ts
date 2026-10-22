@@ -3,13 +3,16 @@ import type { TransactionFilter, BackupArtifactView } from './entities';
 import { isPlainRecord, isUuidV4 } from './validation';
 export interface CsvInput { filter: TransactionFilter; snapshotRevision: number | null }
 export type ActivityInput = { jobId:string; event:'focus'|'interaction'|'blur'|'cancel' };
+export type RestoreStatus =
+  | { status: 'committed'; result: import('./entities').BackupRestoreResult }
+  | { status: 'previously_committed' | 'failed' | 'interrupted' | 'unknown'; result: null };
 export interface MaintenanceApi {
   exportCsv(input:CsvInput):Promise<import('./api').ApiResult<BackupArtifactView>>;
   backupArtifact(input:{backupId:string}):Promise<import('./api').ApiResult<BackupArtifactView>>;
   save(input:{artifactId:string}):Promise<import('./api').ApiResult<{saved:boolean}>>;
   selectBackup():Promise<import('./api').ApiResult<{selectionToken:string|null}>>;
   importBackup(input:{selectionToken:string;containsPrivateDataAcknowledged:true}):Promise<import('./api').ApiResult<{backupId:string}>>;
-  restoreStatus(input:{restoreId:string}):Promise<import('./api').ApiResult<{status:string;result:unknown}>>;
+  restoreStatus(input:{restoreId:string}):Promise<import('./api').ApiResult<RestoreStatus>>;
   activity(input:ActivityInput):Promise<import('./api').ApiResult<{recorded:true}>>;
   reviewMetrics(input:{jobId:string|null}):Promise<import('./api').ApiResult<Record<string,unknown>>>;
 }

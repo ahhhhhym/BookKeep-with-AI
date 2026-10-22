@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState, type JSX } from 'react';
 import { EmptyState, ErrorLine, Notice, PageHeader, Panel } from '../components/ui';
-import { call } from '../lib/bridge';
+import { BridgeError, call, getBridge } from '../lib/bridge';
+import { reconcileRestore, RESTORE_STATUS_TEXT } from '../lib/restore-status';
 import { describeError } from '../lib/messages';
 import { DatasetPanel } from '../components/DatasetPanel';
 import type {
@@ -29,27 +30,80 @@ function formatSize(bytes: number): string {
  * P08 数据管理：正式交易 CSV（S15）与本地完整备份/恢复（S05 基础）。
  * 备份/恢复的真实文件操作全部在主进程；渲染层只拿到受限 Artifact/token。
  */
-export function DataPage(): JSX.Element {
+export function DataPage({ onDataRestored }: { onDataRestored?: () => void }): JSX.Element {
   const backupIntent=useRef<string|null>(null),restoreIntent=useRef<string|null>(null);
+  const restoreBusy = useRef(false);
+  const loadSequence = useRef(0);
+  const [verifyId, setVerifyId] = useState<string | null>(null);
+  const [verifying, setVerifying] = useState(false);
+  const [datasetGeneration, setDatasetGeneration] = useState(0);
   const [records, setRecords] = useState<BackupRecordView[] | null>(null);
   const [preview, setPreview] = useState<BackupRestorePreviewResult | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
   const [pending, setPending] = useState(false);
 
-  const load = useCallback(async (): Promise<void> => {
-    try {
-      const all:BackupRecordView[]=[];let cursor:string|null=null;
-      do{const result=await call(api=>api.backup.list({page:{limit:50,cursor}}));all.push(...result.records);cursor=result.nextCursor;}while(cursor);
-      setRecords(all);
-    } catch (loadError) {
-      setError(describeError(loadError));
+  const load = useCallback(async (preserveError = false): Promise<void> => {
+    const sequence = ++loadSequence.current;
+    for (let attempt = 0; attempt < 2; attempt++) {
+      try {
+        const all:BackupRecordView[]=[];let cursor:string|null=null;
+        do{const result=await call(api=>api.backup.list({page:{limit:50,cursor}}));all.push(...result.records);cursor=result.nextCursor;}while(cursor);
+        if (sequence === loadSequence.current) setRecords(all);
+        return;
+      } catch (loadError) {
+        if (sequence !== loadSequence.current) return;
+        if (attempt === 0 && loadError instanceof BridgeError && ['STALE_EPOCH', 'SNAPSHOT_STALE'].includes(loadError.code)) continue;
+        setRecords([]);
+        if (!preserveError) setError(describeError(loadError));
+        else setError(previous => [previous, `备份列表读取失败：${describeError(loadError)}`].filter(Boolean).join(' '));
+        return;
+      }
     }
   }, []);
 
   useEffect(() => {
     void load();
+    return () => { ++loadSequence.current; };
   }, [load]);
+
+  const refreshAfterRestore = async (): Promise<void> => {
+    ++loadSequence.current;
+    setRecords(null);
+    setDatasetGeneration(value => value + 1);
+    onDataRestored?.();
+    await load(true);
+  };
+
+  const verifyRestore = async (restoreId: string): Promise<void> => {
+    setVerifyId(restoreId);
+    setVerifying(true);
+    try {
+      const api = getBridge();
+      if (!api) throw new BridgeError('BRIDGE_UNAVAILABLE', null);
+      const status = await reconcileRestore(api, restoreId);
+      if (status.status === 'committed' || status.status === 'previously_committed') {
+        setNotice(RESTORE_STATUS_TEXT[status.status]);
+        setVerifyId(null);
+        if (restoreIntent.current === restoreId) restoreIntent.current = null;
+      } else {
+        setError(RESTORE_STATUS_TEXT[status.status]);
+      }
+    } catch (statusError) {
+      setError(`恢复结果尚未核实：${describeError(statusError)} 可按原恢复编号再次只读核实，请先勿重复覆盖。`);
+    } finally {
+      setVerifying(false);
+      await refreshAfterRestore();
+    }
+  };
+
+  const recheckRestore = async (): Promise<void> => {
+    if (!verifyId || restoreBusy.current) return;
+    restoreBusy.current = true;
+    setPending(true); setError(null); setNotice(null);
+    try { await verifyRestore(verifyId); }
+    finally { restoreBusy.current = false; setPending(false); }
+  };
 
   const createBackup = async (): Promise<void> => {
     if (
@@ -85,6 +139,7 @@ export function DataPage(): JSX.Element {
       const result = await call((api) => api.backup.restore({ mode: 'preview', backupId: record.id }));
       const previewResult = result as BackupRestorePreviewResult;
       restoreIntent.current=crypto.randomUUID();
+      setVerifyId(null);
       setPreview(previewResult);
     } catch (previewError) {
       setNotice(null);
@@ -95,7 +150,7 @@ export function DataPage(): JSX.Element {
   };
 
   const commitRestore = async (): Promise<void> => {
-    if (!preview) return;
+    if (!preview || restoreBusy.current) return;
     if (
       !window.confirm(
         '恢复会用所选备份替换当前账本数据（当前数据会先自动备份为“恢复前备份”）。是否继续？',
@@ -103,6 +158,8 @@ export function DataPage(): JSX.Element {
     ) {
       return;
     }
+    restoreBusy.current = true;
+    const restoreId = restoreIntent.current ?? (restoreIntent.current = crypto.randomUUID());
     setPending(true);
     setError(null);
     setNotice(null);
@@ -112,21 +169,24 @@ export function DataPage(): JSX.Element {
           mode: 'commit',
           restoreToken: preview.restoreToken,
           currentDataWillBeReplaced: true,
-        },{mutationId:restoreIntent.current??(restoreIntent.current=crypto.randomUUID())}),
+        },{mutationId:restoreId}),
       )) as BackupRestoreResult;
       setPreview(null);
+      if (result.replayed) {
+        await verifyRestore(restoreId);
+        return;
+      }
       restoreIntent.current=null;
+      setVerifyId(null);
       setNotice(
         `恢复完成：已切换数据世代，当前修订号 ${result.revision}；恢复前备份 ${result.preRestoreBackupId.slice(0, 8)}…`,
       );
-      await load();
+      await refreshAfterRestore();
     } catch (commitError) {
       setPreview(null);
-      const status=restoreIntent.current?await call(api=>api.maintenance.restoreStatus({restoreId:restoreIntent.current!})).catch(()=>null):null;
-      if(status?.status==='committed'){setNotice('已核实恢复提交成功，请重新打开列表核对。');restoreIntent.current=null;}
-      else setError(describeError(commitError));
-      await load();
+      await verifyRestore(restoreId);
     } finally {
+      restoreBusy.current = false;
       setPending(false);
     }
   };
@@ -143,7 +203,9 @@ export function DataPage(): JSX.Element {
 
       {error ? <ErrorLine message={error} /> : null}
       {notice ? <Notice title="操作完成">{notice}</Notice> : null}
-      <DatasetPanel />
+      {verifying ? <p role="status">正在只读核实恢复结果…</p> : null}
+      {verifyId ? <div className="form-actions"><span className="tiny">恢复编号：{verifyId}</span><button className="button" disabled={pending} onClick={() => void recheckRestore()}>重新核实本次恢复状态</button></div> : null}
+      <DatasetPanel key={datasetGeneration} />
 
       <div className="grid-2">
         <Panel title="正式交易 CSV">
@@ -180,7 +242,7 @@ export function DataPage(): JSX.Element {
         {records === null ? (
           <EmptyState title="正在读取备份…" />
         ) : records.length === 0 ? (
-          <EmptyState title="暂无备份">创建备份后可在此预览校验并恢复。</EmptyState>
+          <EmptyState title={error ? '备份列表暂不可用' : '暂无备份'}>{error ? '请重新打开数据管理读取备份列表。' : '创建备份后可在此预览校验并恢复。'}</EmptyState>
         ) : (
           <table className="result-table">
             <thead>

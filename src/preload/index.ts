@@ -115,6 +115,10 @@ async function invoke<T>(
   }
 
   if (envelope && typeof envelope.dataEpoch === 'string' && (currentEpoch === null || currentEpoch === request.dataEpoch)) currentEpoch = envelope.dataEpoch;
+  // 缓存已进入新世代时，迟到旧信封也不能把旧成功数据交给页面。
+  if (typeof envelope?.dataEpoch === 'string' && envelope.dataEpoch !== currentEpoch) {
+    return { ok: false, error: { ...FALLBACK_ERROR, code: 'STALE_EPOCH', message: 'STALE_EPOCH' }, dataEpoch: currentEpoch };
+  }
   const metadata = { dataEpoch: envelope?.dataEpoch ?? null, dataRevision: envelope?.dataRevision };
   if (envelope && envelope.ok === true) return { ok: true, data: envelope.data as T, ...metadata };
   return { ok: false, error: envelope?.error ?? FALLBACK_ERROR, ...metadata };

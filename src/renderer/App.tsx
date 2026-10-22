@@ -34,6 +34,10 @@ export function App(): JSX.Element {
   const [newRequest, setNewRequest] = useState(0);
   const consumeNewRequest = useCallback(() => setNewRequest(0), []);
   const registerGuard = useCallback((guard: LeaveGuard): void => { leaveGuard.current = guard; }, []);
+  const resetRestoredViews = useCallback(() => {
+    setDetailFilter(undefined);
+    setStatisticsInput(value => ({ ...value, snapshotRevision: null }));
+  }, []);
 
   useEffect(() => {
     if (bridgeMissing) return undefined;
@@ -137,7 +141,7 @@ export function App(): JSX.Element {
         {navId === 'queue' ? <QueuePage /> : null}
         {navId === 'review' ? <ReviewPage registerGuard={registerGuard} /> : null}
         {navId === 'categories' ? <CategoriesPage /> : null}
-        {navId === 'data' ? <DataPage /> : null}
+        {navId === 'data' ? <DataPage onDataRestored={resetRestoredViews} /> : null}
         {navId === 'settings' ? (
           <SettingsPage
             ai={ai}

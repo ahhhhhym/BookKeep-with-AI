@@ -31,6 +31,7 @@ import type {
   TransactionMutationResult,
 } from '../../shared/entities';
 import { AppError } from '../../shared/errors';
+import type { RestoreStatus } from '../../shared/maintenance';
 import type { StorageLayout } from '../paths';
 import { insertAuditEvent } from '../db/audit-repo';
 import { countCategories } from '../db/category-repo';
@@ -608,7 +609,7 @@ export class LedgerStore {
     reconcileBackupCatalog(this.paths,nowIso(this.clock));
     mergeCatalogIntoDatabase(this.db,this.ledgerId,readBackupCatalog(this.paths),nowIso(this.clock));
   }
-  backupStatus(restoreId:string):{status:string;result:unknown} {
+  backupStatus(restoreId:string):RestoreStatus {
     const receipt=this.db.prepare<{result_snapshot_json:string}>("SELECT result_snapshot_json FROM mutation_receipt WHERE operation='backup.restore' AND mutation_id=?").get(restoreId);
     const pointer=readActivePointer(this.paths);
     if(receipt && pointer.ok && pointer.pointer.restoreId===restoreId)return {status:'committed',result:JSON.parse(receipt.result_snapshot_json)};
