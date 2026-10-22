@@ -86,7 +86,7 @@ describe('S16 independent arithmetic and persisted invariants', () => {
     for (const c of items) expect(approve(review, c.id).alreadyApproved).toBe(true);
     expect(count('"transaction"')).toBe(3); expect(count('review_posting')).toBe(3);
     expect(store.statisticsSummary(scope('month', '2026-09-09')).totalFen).toBe('606');
-    expect(store.withImports(false, c => c.db.pragma('quick_check', { simple: true }))).toBe('ok');
+    expect(store.withImports(false, c => c.db.pragma('quick_check'))).toEqual([{ quick_check: 'ok' }]);
     expect(store.withImports(false, c => c.db.pragma('foreign_key_check'))).toEqual([]);
   });
 });
