@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState, type JSX } from 'react';
 import { EmptyState, ErrorLine, Notice, PageHeader, Panel, SkeletonNotice } from '../components/ui';
 import { call } from '../lib/bridge';
 import { describeError } from '../lib/messages';
+import { DatasetPanel } from '../components/DatasetPanel';
 import type {
   BackupRecordView,
   BackupRestorePreviewResult,
@@ -131,6 +132,7 @@ export function DataPage(): JSX.Element {
 
       {error ? <ErrorLine message={error} /> : null}
       {notice ? <Notice title="操作完成">{notice}</Notice> : null}
+      <DatasetPanel />
 
       <div className="grid-2">
         <Panel title="正式交易 CSV">
@@ -264,7 +266,6 @@ export function DataPage(): JSX.Element {
         items={[
           'CSV 全量快照导出与中文/公式安全检查',
           '恢复中断/断电故障注入与旧 generation 清理',
-          '数据集独立导出入口（S13）',
         ]}
       >
         CSV 导出与恢复的故障加固将在后续步骤实现；S05 已提供备份创建、校验预览与恢复切换基础。

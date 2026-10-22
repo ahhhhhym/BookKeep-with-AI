@@ -4,6 +4,7 @@ import { CandidateSchemaError, parseCandidateOutput, type CandidateOutput } from
 import { DEEPSEEK_MODEL } from '../../../shared/constants';
 export const ENDPOINT = 'https://api.deepseek.com/chat/completions';
 export interface TransportMetadata {
+  requestSent?: boolean;
   retryAfterMs?: number | null;
   diagnostics?: { stage: string; finishReason: string | null; issues: { path: string; code: string }[] };
   httpStatus: number | null;
@@ -33,6 +34,8 @@ export async function requestImageJson(options: {
   options.metadata.diagnostics = diagnostics;
   const timer = setTimeout(() => abort.abort(), options.timeoutMs ?? 90000);
   try {
+    if(abort.signal.aborted)throw new AppError('CANCELLED');
+    options.metadata.requestSent=true;
     const response = await (options.fetcher ?? fetch)(ENDPOINT, {
       method: 'POST', redirect: 'error', signal: abort.signal,
       headers: { Authorization: `Bearer ${options.key}`, 'Content-Type': 'application/json' },
