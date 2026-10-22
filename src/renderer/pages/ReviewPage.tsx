@@ -50,6 +50,8 @@ export function ReviewPage({registerGuard}:{registerGuard?:(g:LeaveGuard)=>void}
   const approve=async(input:ApprovalInput)=>{
     if(approvalInFlight.current)return;approvalInFlight.current=true;setBusy(true);setError(null);
     try {
+      const finishing=input.mode==='single'?data?.items.filter(c=>c.id===input.id)??[]:input.mode==='commit'?preview?.eligible??[]:[];
+      await Promise.all([...new Set(finishing.map(c=>c.jobId))].map(jobId=>call(a=>a.maintenance.activity({jobId,event:'interaction'})).catch(()=>undefined)));
       const payload=JSON.stringify(input);if(intent.current?.payload!==payload)intent.current={payload,id:crypto.randomUUID()};
       const result=await call(a=>a.candidate.approve(input,{mutationId:intent.current!.id}));
       if('eligible' in result)setPreview(result);

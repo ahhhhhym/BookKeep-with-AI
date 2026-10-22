@@ -7,7 +7,7 @@ import type { BackupArtifactView, TransactionView } from '../../shared/entities'
 import { formatFenToYuan } from '../../shared/amount';
 import { digest } from '../storage/backup-content';
 import { MAX_BACKUP_BYTES, inspectBackupArchive } from '../storage/backup-archive';
-import { regularPath } from '../storage/safe-file';
+import { readBoundedFile, regularPath } from '../storage/safe-file';
 import { atomicFile } from './image-service';
 import { LATEST_SCHEMA_VERSION } from '../db/migrations';
 import { CONTRACT_VERSION } from '../../shared/constants';
@@ -43,9 +43,9 @@ export class MaintenanceService {
     for(const t of rows)lines.push([t.occurredDate,t.occurredTime??'',t.timePrecision,t.name,categories.get(t.categoryId)??'',formatFenToYuan(t.amountFen),t.currency,t.merchant??'',t.note??'',t.source,t.id].map(csvCell).join(','));
     return this.artifact(Buffer.from('\uFEFF'+lines.join('\r\n')+'\r\n','utf8'),'BookKeepAI-正式交易.csv',rows.length).view;
   });}
-  backup(backupId:string){const record=this.store.backupRecord(backupId);if(!record?.archiveHash)throw new AppError('NOT_FOUND');this.store.previewRestore(backupId);const file=regularPath(this.store.diagnostics().backupPathOf(backupId),this.store.diagnostics().root);if(statSync(file).size>MAX_BACKUP_BYTES)throw new AppError('BACKUP_LIMIT');const bytes=readFileSync(file);if(digest(bytes)!==record.archiveHash)throw new AppError('HASH_MISMATCH');return this.artifact(bytes,'BookKeepAI-'+backupId+'.bkdb',null).view;}
+  backup(backupId:string){const record=this.store.backupRecord(backupId);if(!record?.archiveHash)throw new AppError('NOT_FOUND');this.store.previewRestore(backupId);const file=regularPath(this.store.diagnostics().backupPathOf(backupId),this.store.diagnostics().root);if(statSync(file).size>MAX_BACKUP_BYTES)throw new AppError('BACKUP_LIMIT');const bytes=readBoundedFile(file,MAX_BACKUP_BYTES);if(digest(bytes)!==record.archiveHash)throw new AppError('HASH_MISMATCH');return this.artifact(bytes,'BookKeepAI-'+backupId+'.bkdb',null).view;}
   save(id:string,mutationId:string){return this.once(mutationId,{id},async()=>{const a=this.check(this.artifacts.get(id)),target=await this.dialogs.save(a.view.displayName);if(!target)return {saved:false};this.check(a);const root=this.store.diagnostics().root,absolute=path.resolve(target);if(absolute===root||absolute.startsWith(root+path.sep))throw new AppError('PERMISSION_DENIED');regularPath(absolute,path.parse(absolute).root,false);atomicFile(absolute,a.bytes);return {saved:true};});}
-  async select(){this.clean();const epoch=this.store.currentEpoch,file=await this.dialogs.open();if(!file)return {selectionToken:null};if(epoch!==this.store.currentEpoch)throw new AppError('STALE_EPOCH');regularPath(file,path.parse(file).root);if(statSync(file).size>MAX_BACKUP_BYTES)throw new AppError('BACKUP_LIMIT');const a=this.artifact(readFileSync(file),'selected.bkdb',null);this.artifacts.delete(a.view.artifactId);this.selections.set(a.view.artifactId,a);return {selectionToken:a.view.artifactId};}
+  async select(){this.clean();const epoch=this.store.currentEpoch,file=await this.dialogs.open();if(!file)return {selectionToken:null};if(epoch!==this.store.currentEpoch)throw new AppError('STALE_EPOCH');regularPath(file,path.parse(file).root);if(statSync(file).size>MAX_BACKUP_BYTES)throw new AppError('BACKUP_LIMIT');const a=this.artifact(readBoundedFile(file,MAX_BACKUP_BYTES),'selected.bkdb',null);this.artifacts.delete(a.view.artifactId);this.selections.set(a.view.artifactId,a);return {selectionToken:a.view.artifactId};}
   import(token:string,mutationId:string){return this.once(mutationId,{token},()=>{
     const a=this.check(this.selections.get(token)),root=this.store.diagnostics().root,temp=path.join(root,'temp',randomUUID()+'.bkdb');
     try{regularPath(temp,root,false);atomicFile(temp,a.bytes);const inspection=inspectBackupArchive(temp,{latestSchemaVersion:LATEST_SCHEMA_VERSION,contractVersion:CONTRACT_VERSION});if(!inspection.ok)throw new AppError(inspection.code);

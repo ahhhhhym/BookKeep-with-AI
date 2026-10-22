@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { randomUUID } from 'node:crypto';
-import { existsSync, mkdirSync, readFileSync, rmSync, symlinkSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, readFileSync, rmdirSync, rmSync, symlinkSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 import { LedgerStore } from '../../../src/main/services/ledger-store';
 import { MaintenanceService, csvCell } from '../../../src/main/services/maintenance-service';
@@ -95,6 +95,35 @@ describe('S15 consistent backup and recovery',()=>{
 });
 
 describe('S15 safe export and secret boundaries',()=>{
+  it.each(['encrypt','decrypt'])('actual %s failure falls back to session and cannot revive old persistent key',failure=>{
+    const encryption={isEncryptionAvailable:()=>true,encryptString:(v:string)=>Buffer.from('cipher:'+v),decryptString:(v:Buffer)=>v.toString().slice(7)};
+    const secret=new SecretStore(layout.secrets,encryption);
+    secret.save({expectedVersion:0,action:'save',secret:'synthetic-old',persistence:'encrypted'},randomUUID());
+    if(failure==='encrypt')encryption.encryptString=()=>{throw Error('synthetic-secret-must-not-be-logged');};
+    else encryption.decryptString=()=>{throw Error('synthetic-secret-must-not-be-logged');};
+    const saved=secret.save({expectedVersion:1,action:'save',secret:'synthetic-new',persistence:'encrypted'},randomUUID());
+    expect(saved.mode).toBe('session');expect(secret.readForProvider()).toBe('synthetic-new');
+    const persisted=readFileSync(path.join(layout.secrets,'deepseek.secret.json'),'utf8');
+    expect(JSON.parse(persisted)).toMatchObject({mode:'absent',blob:null});expect(persisted).not.toContain('synthetic-');
+    secret.clearSession();expect(new SecretStore(layout.secrets,encryption).status().configured).toBe(false);
+  });
+  it('failed session marker write preserves original encrypted secret and version',()=>{
+    const encryption={isEncryptionAvailable:()=>true,encryptString:(v:string)=>Buffer.from('cipher:'+v),decryptString:(v:Buffer)=>v.toString().slice(7)};
+    const secret=new SecretStore(layout.secrets,encryption);
+    secret.save({expectedVersion:0,action:'save',secret:'synthetic-old',persistence:'encrypted'},randomUUID());
+    const file=path.join(layout.secrets,'deepseek.secret.json'),original=readFileSync(file);rmSync(file);mkdirSync(file);
+    expect(()=>secret.save({expectedVersion:1,action:'save',secret:'synthetic-new',persistence:'session'},randomUUID())).toThrow('STORAGE_UNAVAILABLE');
+    expect(secret.status()).toMatchObject({mode:'encrypted',version:1});rmdirSync(file);writeFileSync(file,original);
+    expect(secret.readForProvider()).toBe('synthetic-old');
+  });
+  it('oversized attachment preview is rejected before reading or decoding content',async()=>{
+    const {images,candidates}=await source(store,[proposal()]);const candidate=candidates[0]!;
+    const token=images.resource({imageAssetId:candidate.imageAssetId,variant:'prepared'}).url.split('/').at(-1)!;
+    const ref=images.asset(candidate.imageAssetId).prepared_ref!;
+    writeFileSync(path.join(path.dirname(store.diagnostics().databasePath),'attachments',ref),Buffer.alloc(10*1024*1024+1));
+    await expect(images.readResource(token)).rejects.toMatchObject({code:'BACKUP_LIMIT'});
+    expect(store.snapshot().transactionCount).toBe(0);
+  });
   it.each(['=HYPERLINK("x")','+1','-1','@SUM(A1)','  =1','\tformula','\rformula','\nformula'])('quotes formula-leading text %j',value=>{expect(csvCell(value)).toBe('"\''+value.replaceAll('"','""')+'"');});
   it('Chinese BOM/CRLF CSV preserves quoting, filters deleted; failed save protects old target',async()=>{
     const outside=path.join(layout.root,'..','s15-'+randomUUID()+'.csv');

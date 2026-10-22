@@ -32,13 +32,8 @@ export function atomicFile(file: string, bytes: Buffer): void {
     const tmp = file + '.' + randomUUID() + '.tmp';
     const fd = openSync(tmp, 'wx');
     try {
-        writeFileSync(fd, bytes);
-        fsyncSync(fd);
-    }
-    finally {
-        closeSync(fd);
-    }
-    try {
+        try { writeFileSync(fd, bytes); fsyncSync(fd); }
+        finally { closeSync(fd); }
         renameSync(tmp, file);
     }
     catch {
@@ -380,7 +375,7 @@ export class ImageService {
         const ref = v.variant === 'original' ? r.original_ref : r.prepared_ref;
         if (!ref)
             throw new AppError('ARTIFACT_MISSING');
-        const bytes = readFileSync(this.safe(ref));
+        const bytes = readBoundedFile(this.safe(ref),IMAGE_LIMIT);
         if (sha256(bytes) !== (v.variant === 'original' ? r.original_hash : r.prepared_hash))
             throw new AppError('HASH_MISMATCH');
         const result=v.variant === 'original' ? (await inspectImage(bytes)).png : bytes;

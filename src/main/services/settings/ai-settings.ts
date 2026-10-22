@@ -60,13 +60,20 @@ export class SecretStore {
     if (this.version >= Number.MAX_SAFE_INTEGER) throw new AppError('VERSION_EXHAUSTED');
     if (this.unreadable && input.action !== 'remove') throw new AppError('SECRET_UNREADABLE');
     if (input.action === 'save') validateSecret(input.secret);
-    const nextMode = input.action === 'remove' ? 'absent' : input.persistence === 'encrypted' && this.encryptionAvailable() ? 'encrypted' : 'session';
+    let nextMode: 'absent' | 'encrypted' | 'session' = input.action === 'remove' ? 'absent' : input.persistence === 'encrypted' && this.encryptionAvailable() ? 'encrypted' : 'session';
+    let blob: string | null = null;
+    if (nextMode === 'encrypted') {
+      try {
+        const encrypted = this.encryption.encryptString(input.secret!);
+        if (!encrypted.length || this.encryption.decryptString(encrypted) !== input.secret) throw new Error();
+        blob = encrypted.toString('base64');
+      } catch { nextMode = 'session'; }
+    }
     const version = this.version + 1;
     const temp = this.file + '.' + randomUUID() + '.tmp';
     try {
       regularPath(this.file,path.dirname(this.file),false);
       mkdirSync(path.dirname(this.file), { recursive: true });
-      const blob = nextMode === 'encrypted' ? this.encryption.encryptString(input.secret!).toString('base64') : null;
       const bytes = JSON.stringify({ version, mode: nextMode === 'encrypted' ? 'encrypted' : 'absent', blob });
       const fd = openSync(temp, 'wx');
       try { writeFileSync(fd, bytes, 'utf8'); fsyncSync(fd); } finally { closeSync(fd); }
