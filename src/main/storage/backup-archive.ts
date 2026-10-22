@@ -1,10 +1,9 @@
 /**
  * 备份档案 = 单文件 SQLite 一致快照（docs/ARCHITECTURE.md §7）。
  *
- * S05 基础版只包含账本数据库本身（尚无附件/候选表）；档案内 backup_manifest 记录
- * 备份时的 schema、ledgerId、snapshotRevision 与逻辑文件清单。archiveHash 是整份档案
- * （含 manifest）的 SHA-256，恢复前必须复核；manifest 内 ledger.db 的 hash/size 记录写入
- * manifest 之前的内容，仅作说明，不替代 archiveHash。
+ * S15的bk-content.v2内嵌全部有效图片引用的字节与逐文件清单；数据库条目明确使用
+ * logical-sqlite.v1摘要（表结构及全部业务行）。整体archiveHash保护完整容器。
+ * 历史S05无附件档案显式兼容，其旧数据库条目hash仅为当时的说明性记录。
  *
  * 档案绝不包含密钥、DSH 配置、日志或临时文件；恢复必须先完整校验，再切换 active 指针。
  */
@@ -24,17 +23,20 @@ import { AppError } from '../../shared/errors';
 import { readAppMeta } from '../db/migrations';
 import { getDefaultLedger } from '../db/ledger-repo';
 import { collectIntegrityViolations, openSqlite, type SqliteDb } from '../db/sqlite';
-import type { StoragePaths } from './layout';
+import { generationDatabasePath, type StoragePaths } from './layout';
+import { CONTENT_VERSION, CONTENT_LIMIT, databaseDigest, embedAttachments, verifyAttachments, extractAttachments } from './backup-content';
+import { regularPath } from './safe-file';
 
 export const BACKUP_MANIFEST_VERSION = 'bk-backup.v1';
 export const BACKUP_MANIFEST_TABLE = 'backup_manifest';
-export const MAX_BACKUP_BYTES = 10 * 1024 * 1024 * 1024;
+export const MAX_BACKUP_BYTES = CONTENT_LIMIT + 256 * 1024 * 1024;
 
 export interface BackupManifestFile {
   readonly path: string;
-  readonly role: 'database';
+  readonly role: 'database' | 'attachment';
   readonly size: number;
   readonly sha256: string;
+  readonly hashMode?: 'logical-sqlite.v1';
 }
 
 export interface BackupManifest {
@@ -48,6 +50,9 @@ export interface BackupManifest {
   readonly snapshotRevision: number;
   readonly files: readonly BackupManifestFile[];
   readonly warnings: readonly string[];
+  readonly contentVersion?: typeof CONTENT_VERSION;
+  readonly databaseDigest?: string;
+  readonly excludes?: readonly string[];
 }
 
 export interface CreateArchiveOptions {
@@ -84,6 +89,7 @@ export function createBackupArchive(options: CreateArchiveOptions): CreatedArchi
     throw new AppError('BACKUP_FAILED', { details: { step: 'read-meta' } });
   }
 
+  regularPath(paths.temp, paths.root, false); regularPath(paths.backups, paths.root, false);
   mkdirSync(paths.temp, { recursive: true });
   mkdirSync(paths.backups, { recursive: true });
   const temporary = temporaryArchivePath(paths, backupId);
@@ -102,7 +108,7 @@ export function createBackupArchive(options: CreateArchiveOptions): CreatedArchi
 
   const snapshotSize = statSync(temporary).size;
   const snapshotHash = sha256File(temporary);
-  const manifest: BackupManifest = {
+  let manifest: BackupManifest = {
     manifestVersion: BACKUP_MANIFEST_VERSION,
     backupId,
     createdAt: now,
@@ -119,6 +125,11 @@ export function createBackupArchive(options: CreateArchiveOptions): CreatedArchi
   try {
     // 不修改档案的 journal/WAL 设置：VACUUM INTO 产物保持默认 rollback journal，避免 -wal 未随档改名。
     archive = openSqlite(temporary, { configure: false });
+    const attachmentDirectory = path.join(path.dirname(generationDatabasePath(paths, meta.activeGeneration)), 'attachments');
+    const attachments = embedAttachments(archive, attachmentDirectory, paths.root);
+    const logicalDigest=databaseDigest(archive);
+    manifest = { ...manifest, contentVersion: CONTENT_VERSION, databaseDigest: logicalDigest,
+      files: [{...manifest.files[0]!,sha256:logicalDigest,hashMode:'logical-sqlite.v1'}, ...attachments], excludes: ['secrets','logs','datasets/state','datasets/images','datasets/artifacts','datasets/withdrawals.json','datasets/test-contacts.json'] };
     archive.exec(
       `CREATE TABLE IF NOT EXISTS ${BACKUP_MANIFEST_TABLE} (
          id TEXT PRIMARY KEY CHECK (id = 'manifest'),
@@ -193,7 +204,8 @@ function readManifest(db: SqliteDb): BackupManifest | null {
     if (!row) return null;
     const parsed = JSON.parse(row.payload_json) as BackupManifest;
     if (parsed.manifestVersion !== BACKUP_MANIFEST_VERSION) return null;
-    if (typeof parsed.ledgerId !== 'string' || parsed.ledgerId.length === 0) return null;
+    if (typeof parsed.ledgerId !== 'string' || !/^[a-f0-9-]{36}$/.test(parsed.ledgerId)) return null;
+    if (typeof parsed.backupId !== 'string' || !/^[a-f0-9-]{36}$/.test(parsed.backupId) || typeof parsed.createdAt!=='string' || !Number.isFinite(Date.parse(parsed.createdAt))) return null;
     if (typeof parsed.dbSchemaVersion !== 'number' || !Number.isSafeInteger(parsed.dbSchemaVersion)) return null;
     if (typeof parsed.snapshotRevision !== 'number' || !Number.isSafeInteger(parsed.snapshotRevision)) return null;
     return parsed;
@@ -213,6 +225,7 @@ export function inspectBackupArchive(
   options: InspectArchiveOptions,
 ): ArchiveInspection {
   if (!existsSync(archivePath)) return { ok: false, code: 'BACKUP_INVALID', reason: 'ARCHIVE_MISSING' };
+  try { regularPath(archivePath, path.dirname(archivePath)); } catch { return {ok:false,code:'BACKUP_INVALID',reason:'ARCHIVE_PATH'}; }
   const size = statSync(archivePath).size;
   if (size <= 0 || size > MAX_BACKUP_BYTES) {
     return { ok: false, code: 'BACKUP_INVALID', reason: 'ARCHIVE_SIZE' };
@@ -225,7 +238,7 @@ export function inspectBackupArchive(
   }
   try {
     const images=db.prepare("SELECT name FROM sqlite_master WHERE type='table' AND name='image_asset'").get();
-    if(images && db.prepare('SELECT id FROM image_asset LIMIT 1').get())return {ok:false,code:'BACKUP_INVALID',reason:'DB_ONLY_ARCHIVE_HAS_ATTACHMENTS'};
+
     const integrity = collectIntegrityViolations(db);
     if (integrity.length > 0) return { ok: false, code: 'BACKUP_INVALID', reason: 'INTEGRITY' };
     const manifest = readManifest(db);
@@ -241,8 +254,13 @@ export function inspectBackupArchive(
     if (meta.dbSchemaVersion < 1 || manifest.dbSchemaVersion !== meta.dbSchemaVersion) {
       return { ok: false, code: 'BACKUP_INVALID', reason: 'MANIFEST_SCHEMA_MISMATCH' };
     }
+    if (!Array.isArray(manifest.files) || manifest.files.length<1 || manifest.files.length>10001 || manifest.files.filter(f=>f.role==='database' && f.path==='ledger.db').length!==1 || manifest.files.filter(f=>f.role==='database').length!==1 || manifest.files.some(f=>!['database','attachment'].includes(f.role)||!Number.isSafeInteger(f.size)||f.size<1||typeof f.sha256!=='string'||!/^[a-f0-9]{64}$/.test(f.sha256))) return {ok:false,code:'BACKUP_INVALID',reason:'MANIFEST_FILES'};
+    if (manifest.contentVersion !== undefined) {
+      if (manifest.contentVersion !== CONTENT_VERSION || manifest.files[0]?.hashMode!=='logical-sqlite.v1' || manifest.files[0]?.sha256!==manifest.databaseDigest || databaseDigest(db)!==manifest.databaseDigest) return {ok:false,code:'BACKUP_INVALID',reason:'DATABASE_DIGEST'};
+      verifyAttachments(db,manifest.files);
+    } else if (images && db.prepare('SELECT id FROM image_asset WHERE deleted_at IS NULL LIMIT 1').get()) return {ok:false,code:'BACKUP_INVALID',reason:'DB_ONLY_ARCHIVE_HAS_ATTACHMENTS'};
     const ledger = getDefaultLedger(db);
-    if (!ledger || ledger.id !== manifest.ledgerId) {
+    if (!ledger || ledger.id !== manifest.ledgerId || ledger.data_revision!==manifest.snapshotRevision || manifest.contractVersion!==meta.contractVersion) {
       return { ok: false, code: 'BACKUP_INVALID', reason: 'LEDGER_MISMATCH' };
     }
     return {
@@ -269,5 +287,9 @@ export function inspectBackupArchive(
 /** 把已验证档案复制到 staging generation（不修改原档案）。 */
 export function stageArchiveDatabase(archivePath: string, destination: string): void {
   mkdirSync(path.dirname(destination), { recursive: true });
+  regularPath(destination,path.dirname(path.dirname(destination)),false);
   copyFileSync(archivePath, destination);
+  const staged=openSqlite(destination,{configure:false});
+  try { const manifest=readManifest(staged); if(manifest?.contentVersion===CONTENT_VERSION) extractAttachments(staged,destination); else staged.exec('DROP TABLE IF EXISTS backup_manifest'); }
+  finally { staged.close(); }
 }

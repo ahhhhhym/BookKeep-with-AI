@@ -211,6 +211,8 @@ export interface BackupCreateResult extends MutationReplayed {
 
 export interface BackupListResult {
   records: BackupRecordView[];
+  nextCursor: string|null;
+  totalCount: number;
 }
 
 export interface BackupRestorePreviewInput {

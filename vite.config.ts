@@ -17,7 +17,7 @@ function cspPlugin(): Plugin {
     transformIndexHtml: {
       order: 'pre',
       handler(html, ctx) {
-        const policy = buildContentSecurityPolicy(ctx.server ? 'development' : 'production');
+        const policy = buildContentSecurityPolicy(ctx.server ? 'development' : 'production').replace("frame-ancestors 'none'; ", '');
         const meta = `<meta http-equiv="Content-Security-Policy" content="${policy}" />`;
         return html.replace('<!--CSP-->', meta);
       },
@@ -33,6 +33,7 @@ export default defineConfig({
     host: DEV_SERVER_HOST,
     port: DEV_SERVER_PORT,
     strictPort: true,
+    headers: { 'Content-Security-Policy': buildContentSecurityPolicy('development') },
   },
   build: {
     outDir: path.resolve(REPO_ROOT, 'dist/renderer'),

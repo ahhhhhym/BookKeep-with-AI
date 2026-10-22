@@ -53,6 +53,7 @@ export function allowedRendererOrigins(devServerOrigin: string | null): string[]
 export function frameOrigin(rawUrl: string): string | null {
   try {
     const url = new URL(rawUrl);
+    if (url.username || url.password || (url.protocol === `${APP_SCHEME}:` && url.pathname !== '/index.html' && url.pathname !== '/')) return null;
     if (!url.protocol || url.protocol === 'about:' || url.protocol === 'data:' || url.protocol === 'blob:') {
       return null;
     }

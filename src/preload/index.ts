@@ -125,6 +125,16 @@ function mutationOptions(options?: MutationOptions): { readonly mutation: true; 
 }
 
 const api: BookKeepApi = {
+  maintenance: {
+    exportCsv:input=>invoke(IPC.maintenanceCsv,input,mutationOptions()),
+    backupArtifact:input=>invoke(IPC.maintenanceBackupArtifact,input,{mutation:false}),
+    save:input=>invoke(IPC.maintenanceSave,input,mutationOptions()),
+    selectBackup:()=>invoke(IPC.maintenanceSelect,{}, {mutation:false}),
+    importBackup:input=>invoke(IPC.maintenanceImport,input,mutationOptions()),
+    restoreStatus:input=>invoke(IPC.maintenanceStatus,input,{mutation:false}),
+    activity:input=>invoke(IPC.maintenanceActivity,input,{mutation:false}),
+    reviewMetrics:input=>invoke(IPC.maintenanceMetrics,input,{mutation:false}),
+  },
   dataset:{
     read:input=>invoke(IPC.datasetRead,input,{mutation:false}),
     command:(command,options)=>invoke(IPC.datasetCommand,{command},mutationOptions(options)),
@@ -219,7 +229,7 @@ const api: BookKeepApi = {
   backup: {
     create: (input: BackupCreateInput, options?: MutationOptions): Promise<ApiResult<BackupCreateResult>> =>
       invoke(IPC.backupCreate, input, mutationOptions(options)),
-    list: (): Promise<ApiResult<BackupListResult>> => invoke(IPC.backupList, {}, { mutation: false }),
+    list: (input={}): Promise<ApiResult<BackupListResult>> => invoke(IPC.backupList, input, { mutation: false }),
     restore: (
       input: BackupRestoreInput,
       options?: MutationOptions,

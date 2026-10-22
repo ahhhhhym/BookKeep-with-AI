@@ -1,6 +1,7 @@
 /** S09: main-process-only secret store; Windows safeStorage user-bound encryption. */
 import { closeSync, existsSync, fsyncSync, mkdirSync, openSync, readFileSync, renameSync, unlinkSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
+import { readBoundedFile, regularPath } from '../../storage/safe-file';
 import { randomUUID } from 'node:crypto';
 import { CANDIDATE_SCHEMA_VERSION, DEEPSEEK_MODEL, PROMPT_VERSION } from '../../../shared/constants';
 import { AppError } from '../../../shared/errors';
@@ -23,7 +24,8 @@ export class SecretStore {
     this.file = path.join(directory, 'deepseek.secret.json');
     try {
       if (!existsSync(this.file)) return;
-      const raw = readFileSync(this.file);
+      regularPath(this.file,path.dirname(this.file));
+      const raw = readBoundedFile(this.file,16384);
       if (raw.length > 16384) throw new Error();
       const value = JSON.parse(raw.toString('utf8'));
       if (!Number.isSafeInteger(value.version) || value.version < 0 || !['absent', 'encrypted'].includes(value.mode)) throw new Error();
@@ -31,9 +33,10 @@ export class SecretStore {
       if (value.mode === 'encrypted') this.readForProvider();
     } catch { this.unreadable = true; }
   }
+  private encryptionAvailable():boolean {try{return this.encryption.isEncryptionAvailable();}catch{return false;}}
   status(): SecretStatusView {
     return { configured: !this.unreadable && this.mode !== 'absent', mode: this.mode,
-      encryptionAvailable: this.encryption.isEncryptionAvailable(), version: this.version,
+      encryptionAvailable: this.encryptionAvailable(), version: this.version,
       lastErrorCode: this.unreadable ? 'SECRET_UNREADABLE' : null };
   }
   /** Never exposed over IPC. No env/config/tool credential fallback. */
@@ -42,8 +45,9 @@ export class SecretStore {
     if (this.mode === 'session' && this.session !== null) return this.session;
     if (this.mode === 'absent') throw new AppError('SECRET_REQUIRED');
     try {
-      if (!this.encryption.isEncryptionAvailable()) throw new Error();
-      const value = JSON.parse(readFileSync(this.file, 'utf8'));
+      if (!this.encryptionAvailable()) throw new Error();
+      regularPath(this.file,path.dirname(this.file));
+      const value = JSON.parse(readBoundedFile(this.file,16384).toString('utf8'));
       const key = this.encryption.decryptString(Buffer.from(value.blob, 'base64'));
       validateSecret(key); return key;
     } catch { this.unreadable = true; throw new AppError('SECRET_UNREADABLE'); }
@@ -56,10 +60,11 @@ export class SecretStore {
     if (this.version >= Number.MAX_SAFE_INTEGER) throw new AppError('VERSION_EXHAUSTED');
     if (this.unreadable && input.action !== 'remove') throw new AppError('SECRET_UNREADABLE');
     if (input.action === 'save') validateSecret(input.secret);
-    const nextMode = input.action === 'remove' ? 'absent' : input.persistence === 'encrypted' && this.encryption.isEncryptionAvailable() ? 'encrypted' : 'session';
+    const nextMode = input.action === 'remove' ? 'absent' : input.persistence === 'encrypted' && this.encryptionAvailable() ? 'encrypted' : 'session';
     const version = this.version + 1;
     const temp = this.file + '.' + randomUUID() + '.tmp';
     try {
+      regularPath(this.file,path.dirname(this.file),false);
       mkdirSync(path.dirname(this.file), { recursive: true });
       const blob = nextMode === 'encrypted' ? this.encryption.encryptString(input.secret!).toString('base64') : null;
       const bytes = JSON.stringify({ version, mode: nextMode === 'encrypted' ? 'encrypted' : 'absent', blob });
@@ -77,7 +82,7 @@ export class SecretStore {
     const result: SecretSaveResult = { configured: nextMode !== 'absent', mode: nextMode, version };
     this.receipts.set(mutationId, result); return { ...result };
   }
-  clearSession(): void { this.session = null; }
+  clearSession(): void { this.session = null; if(this.mode==='session')this.mode='absent'; }
 }
 export function validateSecret(value: unknown): asserts value is string {
   if (typeof value !== 'string' || value.length < 1 || value.length > 512 || value.trim() !== value || /[\u0000-\u0020\u007f]/.test(value)) throw new AppError('SECRET_INVALID');

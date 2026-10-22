@@ -1,5 +1,5 @@
-import { useCallback, useEffect, useState, type JSX } from 'react';
-import { EmptyState, ErrorLine, Notice, PageHeader, Panel, SkeletonNotice } from '../components/ui';
+import { useCallback, useEffect, useRef, useState, type JSX } from 'react';
+import { EmptyState, ErrorLine, Notice, PageHeader, Panel } from '../components/ui';
 import { call } from '../lib/bridge';
 import { describeError } from '../lib/messages';
 import { DatasetPanel } from '../components/DatasetPanel';
@@ -30,6 +30,7 @@ function formatSize(bytes: number): string {
  * 备份/恢复的真实文件操作全部在主进程；渲染层只拿到受限 Artifact/token。
  */
 export function DataPage(): JSX.Element {
+  const backupIntent=useRef<string|null>(null),restoreIntent=useRef<string|null>(null);
   const [records, setRecords] = useState<BackupRecordView[] | null>(null);
   const [preview, setPreview] = useState<BackupRestorePreviewResult | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -38,8 +39,9 @@ export function DataPage(): JSX.Element {
 
   const load = useCallback(async (): Promise<void> => {
     try {
-      const result = await call((api) => api.backup.list());
-      setRecords(result.records);
+      const all:BackupRecordView[]=[];let cursor:string|null=null;
+      do{const result=await call(api=>api.backup.list({page:{limit:50,cursor}}));all.push(...result.records);cursor=result.nextCursor;}while(cursor);
+      setRecords(all);
     } catch (loadError) {
       setError(describeError(loadError));
     }
@@ -52,7 +54,7 @@ export function DataPage(): JSX.Element {
   const createBackup = async (): Promise<void> => {
     if (
       !window.confirm(
-        '本地备份会包含账本数据库（可能含私人消费内容），请妥善保管；备份不含密钥与日志。是否继续？',
+        '备份包含账本、候选、审核记录及引用图片，可能含私人内容。不包含密钥、日志和独立数据集（含撤回/test记录）。请妥善保管，是否继续？',
       )
     ) {
       return;
@@ -61,9 +63,11 @@ export function DataPage(): JSX.Element {
     setError(null);
     setNotice(null);
     try {
+      backupIntent.current??=crypto.randomUUID();
       const result = await call((api) =>
-        api.backup.create({ kind: 'manual', containsPrivateDataAcknowledged: true }),
+        api.backup.create({ kind: 'manual', containsPrivateDataAcknowledged: true },{mutationId:backupIntent.current!}),
       );
+      backupIntent.current=null;
       setNotice(`已创建备份（${formatSize(result.artifact.byteSize)}）。`);
       await load();
     } catch (createError) {
@@ -80,6 +84,7 @@ export function DataPage(): JSX.Element {
     try {
       const result = await call((api) => api.backup.restore({ mode: 'preview', backupId: record.id }));
       const previewResult = result as BackupRestorePreviewResult;
+      restoreIntent.current=crypto.randomUUID();
       setPreview(previewResult);
     } catch (previewError) {
       setNotice(null);
@@ -107,22 +112,28 @@ export function DataPage(): JSX.Element {
           mode: 'commit',
           restoreToken: preview.restoreToken,
           currentDataWillBeReplaced: true,
-        }),
+        },{mutationId:restoreIntent.current??(restoreIntent.current=crypto.randomUUID())}),
       )) as BackupRestoreResult;
       setPreview(null);
+      restoreIntent.current=null;
       setNotice(
         `恢复完成：已切换数据世代，当前修订号 ${result.revision}；恢复前备份 ${result.preRestoreBackupId.slice(0, 8)}…`,
       );
       await load();
     } catch (commitError) {
       setPreview(null);
-      setError(describeError(commitError));
+      const status=restoreIntent.current?await call(api=>api.maintenance.restoreStatus({restoreId:restoreIntent.current!})).catch(()=>null):null;
+      if(status?.status==='committed'){setNotice('已核实恢复提交成功，请重新打开列表核对。');restoreIntent.current=null;}
+      else setError(describeError(commitError));
       await load();
     } finally {
       setPending(false);
     }
   };
 
+  const exportCsv=async()=>{setPending(true);setError(null);try{const a=await call(api=>api.maintenance.exportCsv({filter:{dateStart:null,dateEnd:null,nameQuery:null,categoryIds:[],deleted:'active'},snapshotRevision:null}));const saved=await call(api=>api.maintenance.save({artifactId:a.artifactId}));setNotice(saved.saved?`已导出${a.recordCount}笔正式交易。`:'已取消保存。');}catch(e){setError(describeError(e));}finally{setPending(false);}};
+  const saveBackup=async(id:string)=>{setPending(true);try{const a=await call(api=>api.maintenance.backupArtifact({backupId:id}));const saved=await call(api=>api.maintenance.save({artifactId:a.artifactId}));setNotice(saved.saved?'备份已保存到所选位置。':'已取消保存。');}catch(e){setError(describeError(e));}finally{setPending(false);}};
+  const importBackup=async()=>{setPending(true);setError(null);try{const r=await call(api=>api.maintenance.selectBackup());if(!r.selectionToken)return;if(!window.confirm('将校验并登记所选备份，不立即替换账本。备份可能含私人内容，是否继续？'))return;await call(api=>api.maintenance.importBackup({selectionToken:r.selectionToken!,containsPrivateDataAcknowledged:true}));await load();setNotice('备份已校验并登记；请预览后单独确认恢复。');}catch(e){setError(describeError(e));}finally{setPending(false);}};
   return (
     <div className="page">
       <PageHeader
@@ -138,18 +149,18 @@ export function DataPage(): JSX.Element {
         <Panel title="正式交易 CSV">
           <p className="muted">导出全部正式未删除记录或当前筛选结果，UTF-8 带 BOM、CRLF、公式前缀转义。</p>
           <div className="form-actions">
-            <button type="button" className="button" disabled title="S15 实现">
+            <button type="button" className="button" disabled={pending} onClick={()=>void exportCsv()}>
               选择保存位置并导出
             </button>
           </div>
-          <p className="tiny">导出接口按契约预留；S05 不伪造成功结果。</p>
+          <p className="tiny">仅导出正式未删除交易；候选、失败任务和已删除记录不在范围内。</p>
         </Panel>
 
-        <Panel title="本地数据库备份" actions={<span className="tiny">不含密钥/日志</span>}>
+        <Panel title="账本与附件备份" actions={<span className="tiny">不含密钥/日志/独立数据集</span>}>
           <p className="muted">
             一致数据库快照，保存到 <code>%LOCALAPPDATA%\BookKeepAI\backups</code>；档案记录 schema、账本与修订号，
             恢复前会再次校验 hash 与完整性。
-            当前仅支持无图片附件的账本；已有图片时会拒绝数据库单独备份或恢复。包含附件的完整备份将在S15接入。
+            包含候选与引用的原图/预处理图。独立数据集state/images/artifacts、撤回墓碑与test接触记录不在备份中，恢复时保持本地独立记录并使旧授权失效。
           </p>
           <div className="form-actions">
             <button
@@ -160,6 +171,7 @@ export function DataPage(): JSX.Element {
             >
               创建备份
             </button>
+            <button className="button" disabled={pending} onClick={()=>void importBackup()}>选择外部备份</button>
           </div>
         </Panel>
       </div>
@@ -209,6 +221,7 @@ export function DataPage(): JSX.Element {
                     >
                       校验并恢复
                     </button>
+                    <button className="button button-small" disabled={pending||!record.artifact} onClick={()=>void saveBackup(record.id)}>另存备份</button>
                   </td>
                 </tr>
               ))}
@@ -261,15 +274,6 @@ export function DataPage(): JSX.Element {
         </Panel>
       ) : null}
 
-      <SkeletonNotice
-        step="S15（CSV 与恢复加固）"
-        items={[
-          'CSV 全量快照导出与中文/公式安全检查',
-          '恢复中断/断电故障注入与旧 generation 清理',
-        ]}
-      >
-        CSV 导出与恢复的故障加固将在后续步骤实现；S05 已提供备份创建、校验预览与恢复切换基础。
-      </SkeletonNotice>
     </div>
   );
 }

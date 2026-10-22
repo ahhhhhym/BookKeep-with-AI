@@ -20,6 +20,7 @@ export function LedgerPage({ onManageCategories, registerGuard, newRequest = 0, 
   const [start, setStart] = useState(initialFilter?.dateStart ?? ''); const [end, setEnd] = useState(initialFilter?.dateEnd ? shiftDate(initialFilter.dateEnd, -1) : '');
   const [query, setQuery] = useState(''); const [selected, setSelected] = useState<string[]>(initialFilter?.categoryIds ?? []);
   const [loading, setLoading] = useState(true); const [error, setError] = useState<string | null>(null);
+  const [exporting,setExporting]=useState(false);
   const [notice, setNotice] = useState<string | null>(null);
   const [today, setToday] = useState(todayInShanghai);
   const [offline, setOffline] = useState(!navigator.onLine);
@@ -130,8 +131,9 @@ export function LedgerPage({ onManageCategories, registerGuard, newRequest = 0, 
   const deleted = filter.deleted === 'deleted';
   const categoryMap = new Map(categories.map((category) => [category.id, category]));
 
+  const exportFiltered=async()=>{if(!result||filter.deleted!=='active')return;setExporting(true);try{const a=await call(api=>api.maintenance.exportCsv({filter:result.filterEcho,snapshotRevision:result.snapshotRevision}));const r=await call(api=>api.maintenance.save({artifactId:a.artifactId}));setNotice(r.saved?`已导出当前筛选${a.recordCount}笔正式交易。`:'已取消保存。');}catch(e){setError(describeError(e));}finally{setExporting(false);}};
   return <div className="page ledger-page">
-    <PageHeader title="记账" subtitle="默认账本 · 人民币 · 上海时间" actions={<div className="expense-actions"><button className="button" onClick={onManageCategories}>管理分类</button><button ref={newButton} className="button button-primary" onClick={() => epoch && setEditor({ original: null, epoch })}>记一笔</button></div>} />
+    <PageHeader title="记账" subtitle="默认账本 · 人民币 · 上海时间" actions={<div className="expense-actions"><button className="button" disabled={exporting||loading||filter.deleted!=='active'} onClick={()=>void exportFiltered()}>导出当前筛选CSV</button><button className="button" onClick={onManageCategories}>管理分类</button><button ref={newButton} className="button button-primary" onClick={() => epoch && setEditor({ original: null, epoch })}>记一笔</button></div>} />
     {offline ? <p role="status" className="notice">当前离线，手工记账可用。</p> : null}
     <Panel title="筛选支出"><form className="ledger-filters" onSubmit={(event) => { event.preventDefault(); applyFilters(); }}>
       <label className="field">开始日期（含）<input type="date" min="1900-01-01" max="9998-12-31" value={start} onChange={(event) => setStart(event.target.value)} /></label>

@@ -13,6 +13,7 @@
 
 import { mkdirSync } from 'node:fs';
 import path from 'node:path';
+import { regularPath } from './safe-file';
 import type { StorageLayout } from '../paths';
 
 export interface StoragePaths {
@@ -48,6 +49,7 @@ export function ensureStorageDirectories(paths: StoragePaths): void {
     paths.logs,
     paths.temp,
   ]) {
+    regularPath(directory,paths.root,false);
     mkdirSync(directory, { recursive: true });
   }
 }

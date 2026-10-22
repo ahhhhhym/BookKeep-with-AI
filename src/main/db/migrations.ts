@@ -461,7 +461,7 @@ export function migrateDatabase(db: SqliteDb, options: MigrateOptions): MigrateR
   if (!meta) throw new AppError('INTEGRITY_ERROR', { details: { reason: 'APP_META_INVALID' } });
   if (meta.contractVersion !== options.contractVersion) {
     throw new AppError('SCHEMA_UNSUPPORTED', {
-      details: { reason: `DB_CONTRACT_${meta.contractVersion}` },
+      details: { reason: 'DB_CONTRACT_MISMATCH' },
     });
   }
   if (meta.dbSchemaVersion > latest) {

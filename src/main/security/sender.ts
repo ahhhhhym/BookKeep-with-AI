@@ -8,6 +8,7 @@ import { frameOrigin, isAllowedNavigation } from './window-options';
 export interface SenderFacts {
   /** 触发事件的主 frame URL。 */
   readonly frameUrl: string;
+  readonly isMainFrame?: boolean;
   /** 父 frame URL；主 frame 为 null。 */
   readonly parentFrameUrl: string | null;
   /** 事件来自的 webContents.id。 */
@@ -26,7 +27,7 @@ export function evaluateSender(facts: SenderFacts): SenderDecision {
   if (!Number.isInteger(facts.senderId) || facts.senderId !== facts.expectedSenderId) {
     return { ok: false, reason: 'SENDER_NOT_MAIN_WINDOW' };
   }
-  if (facts.parentFrameUrl !== null) {
+  if (facts.isMainFrame===false || facts.parentFrameUrl !== null) {
     return { ok: false, reason: 'SENDER_IS_CHILD_FRAME' };
   }
   if (!isAllowedNavigation(facts.frameUrl, facts.allowedOrigins)) {

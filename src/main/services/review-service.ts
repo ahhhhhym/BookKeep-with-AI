@@ -18,6 +18,7 @@ import { findReceipt, insertReceipt } from '../db/receipt-repo';
 import { getTransactionById } from '../db/transaction-repo';
 import { mapTransaction } from '../db/rows';
 import { validateTransactionInput } from './ledger-service';
+import { completeReviewSessions } from './review-activity';
 
 type Resolution = { warnings?: Record<string,string>; duplicate?: { decision:'distinct'|'duplicate'; digest:string } };
 interface Row { id:string; ledger_id:string; version:number; job_id:string; image_asset_id:string; prepared_hash:string; ordinal:number; proposal_json:string; current_json:string; missing_json:string; warnings_json:string; review_state:Candidate['reviewState']; posted_transaction_id:string|null; resolution_json:string; created_at:string }
@@ -113,6 +114,7 @@ export class ReviewService {
       const digest=hashPayload(input),receipt=findReceipt(c.db,c.ledgerId,operation,mutationId);
       if(receipt){if(receipt.payload_hash!==digest)throw new AppError('IDEMPOTENCY_CONFLICT');return {...JSON.parse(receipt.result_snapshot_json),replayed:true} as T;}
       const result=fn(c), now=new Date(this.clock()).toISOString();
+      completeReviewSessions(c,now);
       if(c.revision>=Number.MAX_SAFE_INTEGER)throw new AppError('COUNTER_EXHAUSTED');
       const alreadyApproved=!!result && typeof result==='object' && 'alreadyApproved' in result && result.alreadyApproved===true;
       if(!alreadyApproved)c.db.prepare('UPDATE ledger SET data_revision=data_revision+1,updated_at=? WHERE id=?').run(now,c.ledgerId);

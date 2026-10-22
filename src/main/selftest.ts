@@ -3,7 +3,7 @@
  * 不是业务验收，也不代表 G1～G6 任一通过。
  */
 
-import type { BrowserWindow } from 'electron';
+import { net, type BrowserWindow } from 'electron';
 import { writeFileSync } from 'node:fs';
 import { APP_ORIGIN, CONTRACT_VERSION } from '../shared/constants';
 import { REQUIRED_PRODUCTION_DIRECTIVES } from '../shared/csp';
@@ -89,9 +89,9 @@ function sqliteCheck(): SelfTestCheck {
       napi: process.versions.napi ?? 'unknown',
       amountFen: row?.amount_fen ?? null,
     });
-  } catch (error) {
+  } catch {
     return check('sqlite.better-sqlite3', false, {
-      error: error instanceof Error ? error.message : String(error),
+      error: 'SELF_TEST_FAILED',
     });
   } finally {
     try {
@@ -179,7 +179,7 @@ export async function runSelfTest(deps: SelfTestDependencies): Promise<SelfTestR
       'preload.bridgeSurface',
       isolation.bridgeType === 'object' &&
         isolation.bridgeKeys.join(',') ===
-          'backup,candidate,category,contractVersion,dataset,image,ledger,provider,recognition,settings,skeleton,skeletonStage,statistics,transaction' &&
+          'backup,candidate,category,contractVersion,dataset,image,ledger,maintenance,provider,recognition,settings,skeleton,skeletonStage,statistics,transaction' &&
         isolation.statisticsKeys.join(',') === 'series,summary,topCategories,topTransactions' &&
         isolation.datasetKeys.join(',') === 'command,read,save',
       { bridgeType: isolation.bridgeType, bridgeKeys: isolation.bridgeKeys, statisticsKeys: isolation.statisticsKeys },
@@ -249,8 +249,10 @@ export async function runSelfTest(deps: SelfTestDependencies): Promise<SelfTestR
     };
   })()`);
 
+  let headerPolicy='';
+  try{headerPolicy=(await net.fetch(deps.devServerUrl??`${APP_ORIGIN}/index.html`)).headers.get('content-security-policy')??'';}catch{/* selftest records a missing policy below */}
   const cspMissing = REQUIRED_PRODUCTION_DIRECTIVES.filter(
-    (directive) => dom.csp === null || !dom.csp.includes(directive),
+    (directive) => !headerPolicy.includes(directive) || (directive !== "frame-ancestors 'none'" && (dom.csp === null || !dom.csp.includes(directive))),
   );
   checks.push(
     check('renderer.mounted', dom.shell === 'ready' && dom.navItems === 8, {
@@ -264,6 +266,7 @@ export async function runSelfTest(deps: SelfTestDependencies): Promise<SelfTestR
   checks.push(
     check('renderer.contentSecurityPolicy', cspMissing.length === 0, {
       missing: cspMissing,
+      headerPolicy,
       origin: dom.origin,
     }),
   );
@@ -459,7 +462,7 @@ export async function runSelfTest(deps: SelfTestDependencies): Promise<SelfTestR
     check(
       'ipc.channelWhitelist',
       deps.registeredChannels.length === ALL_CHANNELS.length &&
-        !deps.registeredChannels.some((channel) => channel.startsWith('ipcRenderer')),
+        !deps.registeredChannels.some((channel) => !ALL_CHANNELS.includes(channel as typeof ALL_CHANNELS[number])),
       { channels: [...deps.registeredChannels] },
     ),
   );

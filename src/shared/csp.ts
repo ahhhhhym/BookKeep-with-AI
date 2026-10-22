@@ -18,6 +18,7 @@ const BASE_DIRECTIVES: readonly string[] = [
   "form-action 'none'",
   "frame-ancestors 'none'",
   "object-src 'none'",
+  "frame-src 'none'",
 ];
 
 export function buildContentSecurityPolicy(mode: BuildMode): string {

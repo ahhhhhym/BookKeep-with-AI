@@ -45,6 +45,7 @@ export type ApiResult<T> = ({ ok: true; data: T } | { ok: false; error: AppError
 };
 
 export interface BookKeepApi {
+  readonly maintenance: import('./maintenance').MaintenanceApi;
   readonly dataset: {
     read(input:DatasetRead):Promise<ApiResult<unknown>>;
     command(command:DatasetCommand,options?:MutationOptions):Promise<ApiResult<unknown>>;
@@ -135,7 +136,7 @@ export interface BookKeepApi {
       input: BackupCreateInput,
       options?: MutationOptions,
     ): Promise<ApiResult<BackupCreateResult>>;
-    list(): Promise<ApiResult<BackupListResult>>;
+    list(input?: import('./ipc').BackupListInput): Promise<ApiResult<BackupListResult>>;
     restore(
       input: BackupRestoreInput,
       options?: MutationOptions,
