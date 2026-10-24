@@ -18,6 +18,15 @@ const localAppData=mkdtempSync(path.join(tmpdir(),'BookKeep layout synthetic '))
 const report={ok:false,kind:'implementation selftest; logical viewport and Electron zoom; no native DPI/human acceptance',harnessDeviceScaleFactor:1,appRoot,localAppData,rows:[],sql:[],errors:[],http:0};
 let app,page;
 const save=(name,data)=>writeFileSync(path.join(target,name),JSON.stringify(data,null,2));
+// Electron zoom can make Playwright's page screenshot clip to logical dimensions.
+// capturePage returns the entire webContents surface; pixel size is recorded separately
+// from the logical viewport and is never treated as physical display resolution.
+async function screen(name){
+  const capture=await app.evaluate(async({BrowserWindow})=>{const window=BrowserWindow.getAllWindows()[0],image=await window.webContents.capturePage();return {png:image.toPNG().toString('base64'),pixels:image.getSize(),contentSize:window.getContentSize()};});
+  assert.deepEqual([capture.pixels.width,capture.pixels.height],capture.contentSize);
+  writeFileSync(path.join(target,name),Buffer.from(capture.png,'base64'));
+  report.screens??=[];report.screens.push({file:name,pixels:capture.pixels,contentSize:capture.contentSize});
+}
 const invoke=async(method,input)=>{const result=await page.evaluate(({method,input})=>{const [group,name]=method.split('.');return window.bookkeep[group][name](input);},{method,input});assert.equal(result.ok,true,JSON.stringify(result.error));return result.data;};
 const sql=async label=>{const result=await app.evaluate(({app})=>{
   const require=process.getBuiltinModule('node:module').createRequire(app.getAppPath()+'/package.json'),fs=require('node:fs'),path=require('node:path'),Db=require('better-sqlite3');
@@ -111,7 +120,7 @@ try{
     const before=await sql(key+'-before-preview');noPosting(before);
     await card.getByRole('button',{name:'批准本笔',exact:true}).click();const dialog=page.getByRole('dialog',{name:'确认本笔入账'});await dialog.waitFor();
     access.cancel=await reachable(dialog.getByRole('button',{name:'取消',exact:true}));assert.equal(await dialog.getByRole('button',{name:'取消',exact:true}).evaluate(e=>document.activeElement===e),true);
-    await page.screenshot({path:path.join(target,`preview-${key}.png`)});await dialog.getByRole('button',{name:'取消',exact:true}).click();
+    await screen(`preview-${key}.png`);await dialog.getByRole('button',{name:'取消',exact:true}).click();
     await dialog.waitFor({state:'hidden'});assert.equal(await card.getByRole('button',{name:'批准本笔',exact:true}).evaluate(e=>document.activeElement===e),true,'cancel returns focus to trigger');
     const after=await sql(key+'-after-cancel');noPosting(after);assert.deepEqual(after.candidates,before.candidates);assert.deepEqual(after.review,before.review);
     // Existing activity tracking appends interaction/cancel audit records; verify the
@@ -121,9 +130,9 @@ try{
     for(const event of auditAdded){assert.equal(event.action,'review.activity');const kind=JSON.parse(event.diff_json).find(d=>d.field==='event')?.after;assert(['interaction','cancel','focus','blur'].includes(kind));}
     assert(auditAdded.some(e=>JSON.parse(e.diff_json).some(d=>d.field==='event'&&d.after==='cancel')));
     await card.getByRole('button',{name:'并排对照',exact:true}).click();await compare.evaluate(el=>{el.firstElementChild.scrollTop=0;el.lastElementChild.scrollTop=0;el.parentElement.scrollLeft=0;});await compare.scrollIntoViewIfNeeded();
-    await page.screenshot({path:path.join(target,`compare-${key}.png`)});report.rows.push({key,requested:{width,height,zoom},native,geometry,access,modesPreserved:true,previewCancelLedgerUnchanged:true,auditAdded});console.log('PASS '+key);
+    await screen(`compare-${key}.png`);report.rows.push({key,requested:{width,height,zoom},native,geometry,access,modesPreserved:true,previewCancelLedgerUnchanged:true,auditAdded});console.log('PASS '+key);
   }
   noPosting(await sql('final'));assert.equal(report.http+await app.evaluate(()=>globalThis.layoutHttp),0);assert.deepEqual(report.errors,[]);report.ok=true;
-}catch(e){report.failure=String(e.stack??e);if(page){await page.screenshot({path:path.join(target,'failure.png')}).catch(()=>{});report.failureState=await page.locator('[data-candidate-id]').evaluateAll(nodes=>nodes.map(n=>({text:n.innerText,fields:[...n.querySelectorAll('input,select,textarea')].map(e=>({label:e.getAttribute('aria-label'),value:e.value}))}))).catch(()=>null);}process.exitCode=1;}
+}catch(e){report.failure=String(e.stack??e);if(page){await screen('failure.png').catch(()=>{});report.failureState=await page.locator('[data-candidate-id]').evaluateAll(nodes=>nodes.map(n=>({text:n.innerText,fields:[...n.querySelectorAll('input,select,textarea')].map(e=>({label:e.getAttribute('aria-label'),value:e.value}))}))).catch(()=>null);}process.exitCode=1;}
 finally{if(app){report.http+=await app.evaluate(()=>globalThis.layoutHttp??0).catch(()=>0);await app.close().catch(()=>{});}report.finishedAt=new Date().toISOString();save('result.json',report);}
 console.log(JSON.stringify({ok:report.ok,rows:report.rows.length,http:report.http,failure:report.failure}));
