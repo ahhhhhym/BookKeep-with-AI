@@ -1,0 +1,7 @@
+{
+  "repository": "https://github.com/lovell/sharp-libvips",
+  "commit": "de4cb2b83409512ab62efacb8d7c32e00c054226",
+  "url": "https://raw.githubusercontent.com/lovell/sharp-libvips/de4cb2b83409512ab62efacb8d7c32e00c054226/THIRD-PARTY-NOTICES.md",
+  "sha256": "6F0D5086E3BCBEE12BCDACF5878B31D1104002AEECAEB241D3FFF466108082FE",
+  "note": "上游汇总许可原文；具体随包版本以 @img/sharp-win32-x64/versions.json 和 README 为准，不表示全部上游组件随包。"
+}

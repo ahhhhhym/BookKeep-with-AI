@@ -985,12 +985,21 @@ select, textarea { font: inherit; color: inherit; }
 .receipt-frame { display:inline-block; position:relative; max-width:100%; line-height:0; }
 .evidence-region { position:absolute; border:3px solid #db8b13; background:#ffeaa344; pointer-events:none; }
 .review-warning { padding:8px 12px; margin:8px 0; border-left:3px solid #b98223; background:#fff6e5; overflow-wrap:anywhere; }
-.review-compare { overflow-wrap:anywhere; }
+.review-comparison-scroll { max-width:100%; overflow-x:auto; }
+.review-compare { min-width:572px; gap:0; margin-top:0; overflow-wrap:anywhere; }
+.review-compare[data-mode="image"],.review-compare[data-mode="fields"] { min-width:280px; grid-template-columns:minmax(280px,1fr); }
+.review-image-panel,.review-fields-panel { max-height:clamp(180px,calc(100vh - 160px),640px); overflow:auto; scrollbar-gutter:stable; }
+.review-compare [hidden] { display:none; }
+.review-fields-panel { padding:0 8px; }
+.review-divider { width:12px; cursor:col-resize; touch-action:none; background:linear-gradient(to right,transparent 5px,#b6c8be 5px,#b6c8be 7px,transparent 7px); }
+.review-modes { margin-block:12px; }
+.review-modes [aria-pressed="true"] { background:#eff6ff; border-color:#2563eb; }
+.review-small-hint { display:none; }
 .review-compare>* { min-width:0; }
 .review-compare .notice { display:block; }
 .review-compare .notice .button { margin:6px 8px 0 0; }
 .review-compare fieldset { min-inline-size:0; border:1px solid #d8e0dc; border-radius:8px; padding:12px; margin:12px 0; }
-@media(max-width:900px) { .review-compare { grid-template-columns:1fr; } }
+@media(max-width:899px),(max-height:639px) { .review-small-hint { display:block; } .review-fields { grid-template-columns:1fr; } }
 @media(max-width:540px) { .review-fields { grid-template-columns:1fr; } }
 @media (max-width: 800px) { .task-row { grid-template-columns:70px minmax(0,1fr); } .task-row>.form-actions { grid-column:2; } }
 /* Dataset reports can be large; keep the page usable on narrow windows. */
