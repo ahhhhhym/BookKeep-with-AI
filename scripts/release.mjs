@@ -81,10 +81,12 @@ export async function buildRelease() {
       const relative = row.file.split('/builds/candidate/')[1]; assert(relative);
       const before = readFileSync(path.join(ROOT, row.file)), after = readFileSync(path.join(source, 'dist', relative));
       const identical = before.equals(after);
-      const normalized = b => b.toString().replace(/commit: "[a-f0-9]{40}"/, 'commit: "BUILD_COMMIT"');
-      const commitMetadataOnly = !identical && relative === 'main/index.cjs' && normalized(before) === normalized(after);
-      assert(identical || commitMetadataOnly, '构建行为变化，先回 S17：' + relative);
-      return { file: relative, frozenSha256: row.sha256, releaseSha256: sha(path.join(source, 'dist', relative)), identical, commitMetadataOnly };
+      // 冻结构建来自仓库外目录，esbuild 源码位置注释带绝对路径。
+      // 仅规范明确的整行源码注释及构建 commit；可执行代码须逐字一致。
+      const normalized = b => b.toString().replace(/^\/\/ [^\r\n]*\/(src\/[^\r\n]+\.tsx?)$/gm, '// $1').replace(/commit: "[a-f0-9]{40}"/, 'commit: "BUILD_COMMIT"');
+      const buildCommentAndCommitMetadataOnly = !identical && /^(main|preload)\/index\.cjs$/.test(relative) && normalized(before) === normalized(after);
+      assert(identical || buildCommentAndCommitMetadataOnly, '构建行为变化，先回 S17：' + relative);
+      return { file: relative, frozenSha256: row.sha256, releaseSha256: sha(path.join(source, 'dist', relative)), identical, buildCommentAndCommitMetadataOnly };
     });
     assert.equal(realpathSync(modules), realpathSync(path.join(ROOT, 'node_modules'))); unlinkSync(modules);
     const npm = process.env.npm_execpath ?? path.join(path.dirname(process.execPath), 'node_modules/npm/bin/npm-cli.js');
