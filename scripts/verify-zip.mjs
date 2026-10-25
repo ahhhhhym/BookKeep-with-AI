@@ -46,7 +46,7 @@ export function findLatestZip() {
     .filter(name => /BookKeepAI-\d+\.\d+\.\d+-win-x64\.zip$/.test(name))
     .map(name => path.join(RELEASE, name));
   if (candidates.length === 0) throw new Error('release 目录中没有 ZIP');
-  candidates.sort((a, b) => a.localeCompare(b, undefined, { numeric: true }));
+  candidates.sort((a, b) => path.basename(a).localeCompare(path.basename(b), undefined, { numeric: true }));
   return candidates[candidates.length - 1];
 }
 
