@@ -42,11 +42,11 @@ export function readAsarHeader(asarBuffer) {
 
 export function findLatestZip() {
   if (!existsSync(RELEASE)) throw new Error('release 目录不存在，请先 npm run package:zip');
-  const candidates = readdirSync(RELEASE)
-    .filter((name) => name.toLowerCase().endsWith('.zip'))
-    .map((name) => path.join(RELEASE, name));
+  const candidates = readdirSync(RELEASE, { recursive: true })
+    .filter(name => /BookKeepAI-\d+\.\d+\.\d+-win-x64\.zip$/.test(name))
+    .map(name => path.join(RELEASE, name));
   if (candidates.length === 0) throw new Error('release 目录中没有 ZIP');
-  candidates.sort((a, b) => a.localeCompare(b));
+  candidates.sort((a, b) => a.localeCompare(b, undefined, { numeric: true }));
   return candidates[candidates.length - 1];
 }
 
@@ -73,6 +73,11 @@ export function verifyZipFile(zipPath) {
     try {
       const header = readAsarHeader(zipEntryData(buffer, asarEntry));
       asarTopLevel = Object.keys(header).sort();
+      const allowedTop = new Set(['dist', 'node_modules', 'package.json']);
+      for (const name of asarTopLevel) if (!allowedTop.has(name)) findings.push({ level: 'error', id: 'asar-unexpected-root', detail: name });
+      const modules = Object.keys(header.node_modules?.files ?? {});
+      const allowedModules = new Set(['better-sqlite3', 'sharp', '@img', '@emnapi', 'detect-libc', 'semver', 'node-addon-api', 'tslib']);
+      for (const name of modules) if (!allowedModules.has(name)) findings.push({ level: 'error', id: 'asar-unexpected-dependency', detail: name });
     } catch (error) {
       findings.push({ level: 'error', id: 'asar-unreadable', detail: String(error) });
     }

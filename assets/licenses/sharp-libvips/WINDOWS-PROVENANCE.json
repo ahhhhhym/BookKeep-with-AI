@@ -1,0 +1,13 @@
+{
+  "libvipsVersion": "8.18.7",
+  "archive": "https://github.com/libvips/build-win64-mxe/releases/download/v8.18.7/vips-dev-x64-web-8.18.7-static.zip",
+  "archiveSha256": "A736AF61D3B46499760EFA606E469CB14E060445B1F6FD36A1FA2E75009E1197",
+  "entry": "vips-dev-8.18/LICENSE",
+  "licenseSha256": "DC626520DCD53A22F727AF3EE42C770E56C97A64FE3ADB063799D8AB032FE551",
+  "additionalTexts": [
+    "https://www.gnu.org/licenses/lgpl-3.0.txt",
+    "https://www.gnu.org/licenses/gpl-3.0.txt",
+    "https://www.mozilla.org/media/MPL/1.1/index.0c5913925d40.txt"
+  ],
+  "downloadedFor": "仅提取原文许可，不使用此开发ZIP中的二进制或头文件替换锁定npm运行依赖"
+}

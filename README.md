@@ -72,7 +72,13 @@ test接触记录独立保存在匿名`test-contacts.json`中，旧state回拷、
 
 `assets/app/icon.png` 是原创应用图标，由 `npm run icon:generate` 生成；界面图标通过锁定版本的 Lucide 依赖提供，许可位于 `resources/licenses/`。`node_modules/`、`dist/`、`build/`、本地数据库、日志和备份均不上传。
 
-## 自动化回归
+## Windows x64 双 ZIP
+
+`npm run package:zip` 使用已提交源码，在隔离目录构建并安装锁定生产依赖；本地须有 S17 的 G5 判定及冻结清单。输出位于 `release/<package版本>/`，包含软件 ZIP、独立源码 ZIP、release manifest、逐文件清单和 `SHA256SUMS.txt`。旧 ZIP 和失败现场保留；同版本冲突时先同步递增 package/锁文件补丁版本并提交。源码包仅含应用白名单文件、必要资源、许可及构建说明，不含依赖目录、开发验收资料或用户数据。
+
+软件 ZIP 完整解压后直接启动 `BookKeepAI.exe`，无需 Node、Python、Codex 或 DSH。首次为空账本，数据放在 `%LOCALAPPDATA%\BookKeepAI`；合成探针资源不预置交易。打包会从中文空格路径解压启动、重启，并核实随包 SQLite/sharp、34个分类和零交易。此为 S18 构建自测，仍须 S19/G6 与干净 Windows 10/11 验收；不自动发布。升级及备份限制见包内说明。
+
+## 自动化回归命令
 
 `npm run test:regression -- ".tmp/S16 新回归"` 顺序运行类型检查、维护测试、图标检查、构建、首启/重启、真实 Electron/IPC/SQLite 流程和进程中断，以及隔离临时目录的打包冒烟。每次使用新输出目录，命令、退出码、日志和失败截图保留在该目录；已配置 lint 时才运行 lint。运行前设置 `BOOKKEEP_QA_NODE_MODULES`，指向一个已安装 `playwright` 的 `node_modules` 目录；该包只供开发回归，不是应用运行依赖。
 
