@@ -3,6 +3,12 @@
 !include FileFunc.nsh
 
 Var bkDirectorySafe
+!ifndef BUILD_UNINSTALLER
+  Var bkDesktopOption
+  Var bkStartMenuOption
+  Var bkDesktopCheckbox
+  Var bkStartMenuCheckbox
+!endif
 
 !macro bkCheckOverlap LOCALROOT
   GetFullPathName $1 "${LOCALROOT}\BookKeepAI"
@@ -58,6 +64,27 @@ Var bkDirectorySafe
     !insertmacro bkDirectoryFunction "un."
   !else
     !insertmacro bkDirectoryFunction ""
+    Function bkOptionsPage
+      !insertmacro MUI_HEADER_TEXT "快捷方式" "选择需要创建的快捷方式。"
+      nsDialogs::Create 1018
+      Pop $0
+      ${If} $0 == error
+        Abort
+      ${EndIf}
+      ${NSD_CreateCheckbox} 0 12u 100% 14u "创建桌面快捷方式"
+      Pop $bkDesktopCheckbox
+      ${NSD_SetState} $bkDesktopCheckbox $bkDesktopOption
+      ${NSD_CreateCheckbox} 0 38u 100% 14u "创建开始菜单快捷方式"
+      Pop $bkStartMenuCheckbox
+      ${NSD_SetState} $bkStartMenuCheckbox $bkStartMenuOption
+      nsDialogs::Show
+    FunctionEnd
+
+    Function bkOptionsLeave
+      ${NSD_GetState} $bkDesktopCheckbox $bkDesktopOption
+      ${NSD_GetState} $bkStartMenuCheckbox $bkStartMenuOption
+    FunctionEnd
+
     Function .onVerifyInstDir
       Call bkValidateDirectory
       ${If} $bkDirectorySafe != "1"
@@ -110,6 +137,12 @@ Var bkDirectorySafe
   StrCpy $hasPerMachineInstallation "0"
   StrCpy $hasPerUserInstallation "1"
   !insertmacro setInstallModePerUser
+  StrCpy $bkDesktopOption 1
+  StrCpy $bkStartMenuOption 1
+!macroend
+
+!macro customPageAfterChangeDir
+  Page custom bkOptionsPage bkOptionsLeave
 !macroend
 
 !macro customInstallMode
@@ -121,6 +154,12 @@ Var bkDirectorySafe
   FileOpen $0 "$INSTDIR\.bookkeepai-install" w
   FileWrite $0 "ai.bookkeep.desktop"
   FileClose $0
+  ${If} $bkDesktopOption != 1
+    Delete "$newDesktopLink"
+  ${EndIf}
+  ${If} $bkStartMenuOption != 1
+    Delete "$newStartMenuLink"
+  ${EndIf}
 !macroend
 
 !macro customUnInstall
