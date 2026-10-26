@@ -68,6 +68,7 @@ function invalidMutationId(): AppErrorPayload {
 /** 启动读取允许 null epoch 的通道（CONTRACTS §1）。 */
 const EPOCH_OPTIONAL_CHANNELS: ReadonlySet<string> = new Set([
   IPC.settingsReadAi,
+  IPC.appearanceRead,
   IPC.settingsReadStatus,
   IPC.providerCapabilities,
   IPC.skeletonMockRecognition,
@@ -129,6 +130,10 @@ function mutationOptions(options?: MutationOptions): { readonly mutation: true; 
 }
 
 const api: BookKeepApi = {
+  appearance: {
+    read: () => invoke(IPC.appearanceRead, {}, { mutation: false }),
+    apply: source => invoke(IPC.appearanceApply, { source }, { mutation: false }),
+  },
   maintenance: {
     exportCsv:input=>invoke(IPC.maintenanceCsv,input,mutationOptions()),
     backupArtifact:input=>invoke(IPC.maintenanceBackupArtifact,input,{mutation:false}),

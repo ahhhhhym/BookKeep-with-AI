@@ -6,6 +6,8 @@ import type { NavId } from '../../shared/nav';
 import { CONTRACT_VERSION } from '../../shared/constants';
 import { call } from '../lib/bridge';
 import { describeError } from '../lib/messages';
+import { PrivacyPolicy } from '../components/PrivacyPolicy';
+import type { ThemeSource } from '../../shared/appearance';
 
 export interface SettingsPageProps {
   readonly ai: AiSettingsView | null;
@@ -31,6 +33,20 @@ const SECRET_LABEL: Record<SecretStatusView['mode'], string> = {
 
 /** P07 设置：S09 安全配置与固定无隐私合成图探针。 */
 export function SettingsPage({ ai: initialAi, secret: initialSecret, capabilities: initialCapabilities, onNavigate, onError, onAiChange, onSecretChange }: SettingsPageProps): JSX.Element {
+  const [privacyOpen, setPrivacyOpen] = useState(false);
+  const [theme, setTheme] = useState<ThemeSource>('system');
+  const [themeBusy, setThemeBusy] = useState(false);
+  useEffect(() => {
+    let cancelled = false;
+    void call(api => api.appearance.read()).then(value => { if (!cancelled) setTheme(value); }).catch(caught => { if (!cancelled) setError(describeError(caught)); });
+    return () => { cancelled = true; };
+  }, []);
+  const changeTheme = async (source: ThemeSource): Promise<void> => {
+    setThemeBusy(true);
+    try { setTheme(await call(api => api.appearance.apply(source))); }
+    catch (caught) { setError(describeError(caught)); }
+    finally { setThemeBusy(false); }
+  };
   const [localCapabilities, setLocalCapabilities] = useState<readonly ProviderCapabilitiesView[] | null>(null);
   const capabilities = localCapabilities ?? initialCapabilities;
   const [localAi, setLocalAi] = useState<AiSettingsView | null>(null);
@@ -113,7 +129,17 @@ export function SettingsPage({ ai: initialAi, secret: initialSecret, capabilitie
 
   return (
     <div className="page">
-      <PageHeader title="设置" subtitle="AI 服务、本地数据与关于；不展示内部数据库路径或堆栈信息。" />
+      <PageHeader title="设置" subtitle="AI 服务、本地数据与隐私" />
+
+      <Panel title="外观">
+        <div className="field">
+          <label htmlFor="appearance-theme">界面主题</label>
+          <select id="appearance-theme" value={theme} disabled={themeBusy} onChange={event => void changeTheme(event.target.value as ThemeSource)} aria-describedby="appearance-hint">
+            <option value="system">跟随系统</option><option value="light">浅色</option><option value="dark">深色</option>
+          </select>
+          <span id="appearance-hint" className="field-hint">默认跟随系统，可随时切换；选择会自动保存在本机。</span>
+        </div>
+      </Panel>
 
       <Panel title="AI 服务" actions={<Badge tone="warn">{ai ? READINESS_LABEL[ai.readiness] : '读取中…'}</Badge>}>
         <MetaList
@@ -134,7 +160,7 @@ export function SettingsPage({ ai: initialAi, secret: initialSecret, capabilitie
           ))}
         </ul>
         <Notice>
-          当前仅提供 S09 固定合成图探针。识别质量仍为实验性；图片导入、队列和审核闭环由后续步骤实现。mock 为本地模拟，不能证明真实 API 可用。
+          在 AI记账中导入图片、查看任务并逐笔审核。识别质量仍为实验性；mock 为本地模拟，不能证明真实 API 可用。
         </Notice>
       </Panel>
 
@@ -205,6 +231,8 @@ export function SettingsPage({ ai: initialAi, secret: initialSecret, capabilitie
       </Panel>
 
       <Panel title="本地数据">
+        <p>存储位置：<code className="storage-location">%LOCALAPPDATA%\BookKeepAI</code>（当前 Windows 用户）</p>
+        <p className="tiny">账本及附件：data · 备份：backups · 日志：logs · 密钥：secrets。手工记账与已有数据浏览在本机处理。</p>
         <p className="muted">
           数据库、附件、备份与脱敏日志保存在当前 Windows 用户目录下的 BookKeepAI 文件夹，与程序解压目录分离；移动或重新解压程序不会移动账本。
         </p>
@@ -218,13 +246,15 @@ export function SettingsPage({ ai: initialAi, secret: initialSecret, capabilitie
       <Panel title="关于">
         <MetaList
           entries={[
-            ['应用', 'BookKeepAI 0.1.0（S09 安全配置与图片探针）'],
+            ['应用', 'BookKeepAI 0.1.3'],
             ['契约版本', CONTRACT_VERSION],
             ['AI 状态', '实验性：真实识别质量尚未验收'],
             ['第三方许可', 'Electron / React / Lucide（ISC + MIT）等，见随包 licenses 目录'],
           ]}
         />
+        <button type="button" className="privacy-link" onClick={() => setPrivacyOpen(true)}>隐私政策</button>
       </Panel>
+      {privacyOpen ? <PrivacyPolicy onClose={() => setPrivacyOpen(false)} /> : null}
     </div>
   );
 }

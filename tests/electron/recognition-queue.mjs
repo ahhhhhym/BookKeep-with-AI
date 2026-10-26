@@ -35,7 +35,12 @@ async function mockHttp(){await app.evaluate(()=>{
 });}
 async function setScenario(scenario){await app.evaluate((_,value)=>{globalThis.s10.scenario=value;},scenario);}
 async function release(){await app.evaluate(()=>globalThis.s10.pending.splice(0).forEach(r=>r()));}
-async function navigate(label){await page.getByRole('button',{name:label,exact:true}).click();}
+async function navigate(label){
+  if(['图片导入','任务队列','候选审核'].includes(label)) {
+    await page.getByRole('button',{name:'AI记账',exact:true}).click();
+    await page.getByRole('group',{name:'AI记账子页',exact:true}).getByRole('button',{name:label,exact:true}).click();
+  } else await page.getByRole('button',{name:label,exact:true}).click();
+}
 const start=async(asset,forceNew=true)=>invoke('recognition.start',{images:[{imageAssetId:asset.id,preparedHash:asset.preparedHash}],provider:'deepseek',promptVersion:'bk-receipt.s10.v1',uploadConsent:[{preparedHash:asset.preparedHash,confirmed:true,noticeVersion:'recognition.v1'}],forceNew,reason:forceNew?'合成竞态测试':null});
 const current=async id=>(await list()).items.find(x=>x.id===id);
 const finish=async id=>until(async()=>['completed','failed','cancelled'].includes((await current(id)).status));
@@ -72,7 +77,7 @@ try{
   const webpFile=path.join(localAppData,'synthetic.webp');writeFileSync(webpFile,await sharp({create:{width:40,height:30,channels:3,background:'#abcdef'}}).webp().toBuffer());
   await page.evaluate(()=>{const el=document.createElement('input');el.type='file';el.id='qa-real-file';document.body.appendChild(el);});await page.locator('#qa-real-file').setInputFiles(webpFile);
   const drop=await page.evaluate(()=>window.bookkeep.image.drop([...document.querySelector('#qa-real-file').files]));assert.equal(drop.ok,true,JSON.stringify(drop.error));const imp=await invoke('image.import',{selectionTokens:drop.data.tokens,retention:'keep_original'});assert.equal(imp.results[0].errorCode,null);check('actual-File-WebP-through-webUtils-drop-token-and-IPC');
-  await navigate('图片导入');await page.evaluate(()=>{const dataTransfer=new DataTransfer();for(const file of document.querySelector('#qa-real-file').files)dataTransfer.items.add(file);document.querySelector('.page').dispatchEvent(new DragEvent('drop',{bubbles:true,cancelable:true,dataTransfer}));});await page.getByText(/本地校验完成 1\/1/).waitFor();check('UI-drop-handler-imports-real-File-and-reuses-image');
+  await navigate('图片导入');await page.evaluate(()=>{const dataTransfer=new DataTransfer();for(const file of document.querySelector('#qa-real-file').files)dataTransfer.items.add(file);document.querySelector('#ai-import .page').dispatchEvent(new DragEvent('drop',{bubbles:true,cancelable:true,dataTransfer}));});await page.getByText(/本地校验完成 1\/1/).waitFor();check('UI-drop-handler-imports-real-File-and-reuses-image');
   const fake=await page.evaluate(()=>window.bookkeep.image.drop(['C:/Windows/system.ini']));assert.equal(fake.ok,false);check('drop-rejects-path-string-masquerading-as-File');
   await setScenario('interrupt');const interrupted=(await start(asset)).jobs[0];await until(async()=>(await current(interrupted.id)).status==='processing');
   const actualMainPid=await app.evaluate(()=>process.pid);const launcherPid=app.process().pid;const closed=app.waitForEvent('close',{timeout:15000});process.kill(actualMainPid,'SIGKILL');await closed;report.termination={actualMainPid,launcherPid,signal:'SIGKILL'};app=null;await launch();await mockHttp();const restarted=await list();assert.equal(restarted.items.find(j=>j.id===interrupted.id).errorCode,'INTERRUPTED');assert.equal(await app.evaluate(()=>globalThis.s10.calls),0);assert.equal((await drafts()).totalCount,2);check('real-SIGKILL-restart-persists-pending-failed-cancelled-and-interrupted-no-charge-resume');

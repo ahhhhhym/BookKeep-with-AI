@@ -1,6 +1,7 @@
 /** 通道处理器：参数编排 + 调用主进程账本服务；业务事务与校验在 services/仓储层。 */
 
 import { normalizeCandidateOutput } from '../../shared/candidate';
+import { readAppearance, applyAppearance } from '../appearance';
 import { CANDIDATE_SCHEMA_VERSION, PROMPT_VERSION } from '../../shared/constants';
 import { AppError } from '../../shared/errors';
 import type { MockRecognitionView } from '../../shared/dto';
@@ -33,6 +34,8 @@ export interface HandlerDependencies {
 }
 
 export function registerIpcHandlers(router: IpcRouter, deps: HandlerDependencies): void {
+  router.handle(CHANNEL_SPECS.appearanceRead, () => readAppearance());
+  router.handle(CHANNEL_SPECS.appearanceApply, r => applyAppearance(r.payload.source));
   router.handle(CHANNEL_SPECS.maintenanceCsv,r=>deps.maintenance.csv(r.payload as unknown as import('../../shared/maintenance').CsvInput,r.mutationId!));
   router.handle(CHANNEL_SPECS.maintenanceBackupArtifact,r=>deps.maintenance.backup(String(r.payload.backupId)));
   router.handle(CHANNEL_SPECS.maintenanceSave,r=>deps.maintenance.save(String(r.payload.artifactId),r.mutationId!));

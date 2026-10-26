@@ -32,6 +32,7 @@ import type { MockRecognitionInput, ProviderId } from './dto.js';
 import type { StatisticsInput, TopTransactionsInput, TopCategoriesInput } from './statistics';
 import { SECRET_MAX_LENGTH, SECRET_MIN_LENGTH } from './constants.js';
 import { isPlainRecord, isSafeIntegerInRange, isUuidV4 } from './validation.js';
+import { isThemeSource, type ThemeSource } from './appearance';
 
 export const IPC = {
   ...MAINTENANCE_CHANNELS,
@@ -39,6 +40,8 @@ export const IPC = {
   ...REVIEW_CHANNELS,
   ...IMPORT_CHANNELS,
   settingsReadAi: 'settings.ai',
+  appearanceRead: 'appearance.read',
+  appearanceApply: 'appearance.apply',
   settingsReadStatus: 'settings.readStatus',
   settingsSaveSecret: 'settings.saveSecret',
   providerCapabilities: 'provider.capabilities',
@@ -457,6 +460,8 @@ function statisticsSpec<T>(channel: IpcChannel, extra: 'pointDate' | 'pointMonth
 }
 
 export const CHANNEL_SPECS: {
+  readonly appearanceRead: ChannelSpec<Record<string, never>>;
+  readonly appearanceApply: ChannelSpec<{ source: ThemeSource }>;
   readonly settingsReadAi: ChannelSpec<Record<string, never>>;
   readonly settingsReadStatus: ChannelSpec<Record<string, never>>;
   readonly settingsSaveSecret: ChannelSpec<SaveSecretInput>;
@@ -481,6 +486,12 @@ export const CHANNEL_SPECS: {
   readonly backupList: ChannelSpec<BackupListInput>;
   readonly backupRestore: ChannelSpec<BackupRestoreInput>;
 } & typeof IMPORT_SPECS & typeof REVIEW_SPECS & typeof DATASET_SPECS & typeof MAINTENANCE_SPECS = {
+  appearanceRead: { channel: IPC.appearanceRead, permission: 'R', skeletonOnly: false, request: EMPTY_SPEC },
+  appearanceApply: { channel: IPC.appearanceApply, permission: 'U', skeletonOnly: false, request: {
+    required: ['source'], optional: [], allowNullEpoch: false, requireMutationId: false,
+    validatePayload: payload => isThemeSource(payload.source) ? [] : [{path:'payload.source',code:'EXPECTED_THEME_SOURCE'}],
+    cast: payload => payload as unknown as {source:ThemeSource},
+  } },
   ...MAINTENANCE_SPECS,
   ...DATASET_SPECS,
   ...REVIEW_SPECS,
@@ -709,6 +720,8 @@ export const CHANNEL_SPECS: {
 
 /** 业务契约通道（可出现在 CONTRACTS 中）；skeleton.* 不计入。 */
 export const BUSINESS_CHANNELS: readonly IpcChannel[] = [
+  IPC.appearanceRead,
+  IPC.appearanceApply,
   ...Object.values(MAINTENANCE_CHANNELS),
   ...Object.values(DATASET_CHANNELS),
   ...Object.values(REVIEW_CHANNELS),

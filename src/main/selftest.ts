@@ -3,7 +3,7 @@
  * 不是业务验收，也不代表 G1～G6 任一通过。
  */
 
-import { net, type BrowserWindow } from 'electron';
+import { net, nativeTheme, type BrowserWindow } from 'electron';
 import { writeFileSync } from 'node:fs';
 import { APP_ORIGIN, CONTRACT_VERSION } from '../shared/constants';
 import { REQUIRED_PRODUCTION_DIRECTIVES } from '../shared/csp';
@@ -179,7 +179,7 @@ export async function runSelfTest(deps: SelfTestDependencies): Promise<SelfTestR
       'preload.bridgeSurface',
       isolation.bridgeType === 'object' &&
         isolation.bridgeKeys.join(',') ===
-          'backup,candidate,category,contractVersion,dataset,image,ledger,maintenance,provider,recognition,settings,skeleton,skeletonStage,statistics,transaction' &&
+          'appearance,backup,candidate,category,contractVersion,dataset,image,ledger,maintenance,provider,recognition,settings,skeleton,skeletonStage,statistics,transaction' &&
         isolation.statisticsKeys.join(',') === 'series,summary,topCategories,topTransactions' &&
         isolation.datasetKeys.join(',') === 'command,read,save',
       { bridgeType: isolation.bridgeType, bridgeKeys: isolation.bridgeKeys, statisticsKeys: isolation.statisticsKeys },
@@ -255,13 +255,13 @@ export async function runSelfTest(deps: SelfTestDependencies): Promise<SelfTestR
     (directive) => !headerPolicy.includes(directive) || (directive !== "frame-ancestors 'none'" && (dom.csp === null || !dom.csp.includes(directive))),
   );
   checks.push(
-    check('renderer.mounted', dom.shell === 'ready' && dom.navItems === 8, {
+    check('renderer.mounted', dom.shell === 'ready' && dom.navItems === 5, {
       shell: dom.shell,
       navItems: dom.navItems,
     }),
   );
   checks.push(
-    check('renderer.stylesApplied', dom.background === 'rgb(245, 247, 251)', { background: dom.background }),
+    check('renderer.stylesApplied', dom.background === (nativeTheme.shouldUseDarkColors ? 'rgb(15, 15, 15)' : 'rgb(245, 247, 251)'), { background: dom.background, themeSource: nativeTheme.themeSource }),
   );
   checks.push(
     check('renderer.contentSecurityPolicy', cspMissing.length === 0, {
