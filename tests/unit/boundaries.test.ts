@@ -30,10 +30,10 @@ describe('密钥提交限流', () => {
 });
 
 describe('主导航元数据', () => {
-  it('8 个入口且顺序与 UX §1 一致（设置独立、不是分类）', () => {
-    expect(NAV_IDS).toHaveLength(8);
+  it('5 个一级入口，AI 子页归并、分类无可视入口', () => {
+    expect(NAV_IDS).toHaveLength(5);
     expect(NAV_ITEMS_META.map((item) => item.label)).toEqual([
-      '记账', '统计', '图片导入', '任务队列', '候选审核', '分类', '数据管理', '设置',
+      '记账', '统计', 'AI记账', '数据管理', '设置',
     ]);
     expect(NAV_ITEMS_META.at(-1)?.id).toBe('settings');
   });

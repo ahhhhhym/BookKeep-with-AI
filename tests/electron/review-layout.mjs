@@ -86,7 +86,7 @@ try{
   app=await _electron.launch({executablePath:electronExecutable(),args:[appRoot,'--force-device-scale-factor=1'],cwd:appRoot,env:electronSafeEnv({LOCALAPPDATA:localAppData}),timeout:30000});
   report.restartPid=app.process().pid;page=await app.firstWindow();page.setDefaultTimeout(10000);page.on('pageerror',e=>report.errors.push(e.message));
   await app.evaluate(({session})=>{globalThis.layoutHttp=0;globalThis.fetch=async()=>{globalThis.layoutHttp++;throw Error('Layout selftest forbids network');};session.defaultSession.webRequest.onBeforeRequest({urls:['http://*/*','https://*/*']},(_d,c)=>{globalThis.layoutHttp++;c({cancel:true});});});
-  await page.locator('[data-ledger-total]').waitFor();await page.locator('[data-nav-item="review"]').click();
+  await page.locator('[data-ledger-total]').waitFor();await page.locator('[data-nav-item="ai"]').click();await page.getByRole('group',{name:'AI记账子页'}).getByRole('button',{name:'候选审核',exact:true}).click();
   const card=page.locator(`[data-candidate-id="${id}"]`);await card.waitFor();await card.locator('img').first().waitFor();
   await page.waitForFunction(()=>document.querySelector('[data-candidate-id] img')?.naturalWidth>0);
   const modes=card.getByRole('group',{name:'审核对照模式'}),compare=card.locator('.review-compare');
@@ -112,7 +112,7 @@ try{
     // Discard through navigation so the existing card is unmounted, without saving.
     const menu=page.getByRole('button',{name:'菜单',exact:true});if(await menu.isVisible())await menu.click();
     await page.locator('[data-nav-item="ledger"]').click();await page.getByRole('button',{name:'放弃未保存修改并离开',exact:true}).click();
-    if(await menu.isVisible())await menu.click();await page.locator('[data-nav-item="review"]').click();
+    if(await menu.isVisible())await menu.click();await page.locator('[data-nav-item="ai"]').click();await page.getByRole('group',{name:'AI记账子页'}).getByRole('button',{name:'候选审核',exact:true}).click();
     await card.getByLabel('购买物或服务名称',{exact:true}).filter({visible:true}).waitFor();
     await page.waitForFunction(id=>document.querySelector(`[data-candidate-id="${id}"] input[aria-label="购买物或服务名称"]`)?.value==='布局合成商品',id);
     for(const name of ['实付金额','实际日期及时间精度','购买物或服务名称','分类'])await card.getByRole('checkbox',{name:'确认'+name,exact:true}).check();

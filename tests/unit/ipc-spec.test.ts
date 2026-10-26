@@ -55,9 +55,9 @@ function mutation(payload: unknown, extra: Record<string, unknown> = {}): Record
 }
 
 describe('IPC 通道白名单', () => {
-  it('S15 开放 49 个通道（48 个业务 + 1 个历史诊断），无 ipcRenderer 直通', () => {
-    expect(ALL_CHANNELS).toHaveLength(49);
-    expect(BUSINESS_CHANNELS).toHaveLength(48);
+  it('开放 51 个通道（含两个受限外观通道与历史诊断），无 ipcRenderer 直通', () => {
+    expect(ALL_CHANNELS).toHaveLength(51);
+    expect(BUSINESS_CHANNELS).toHaveLength(50);
     expect(SKELETON_CHANNELS).toEqual([IPC.skeletonMockRecognition]);
     expect(BUSINESS_CHANNELS).not.toContain(IPC.skeletonMockRecognition);
     for (const channel of ALL_CHANNELS) {
@@ -78,6 +78,18 @@ describe('IPC 通道白名单', () => {
     expect(CHANNEL_SPECS.backupCreate.permission).toBe('W');
     expect(CHANNEL_SPECS.backupList.permission).toBe('R');
     expect(CHANNEL_SPECS.backupRestore.permission).toBe('W');
+  });
+});
+
+describe('本机外观 IPC', () => {
+  it('仅允许三个主题枚举，不接受任意样式或未知键', () => {
+    for (const source of ['system', 'light', 'dark']) {
+      expect(validateIpcRequest(CHANNEL_SPECS.appearanceApply, buildRequest({ dataEpoch: EPOCH, payload: { source } })).payload).toEqual({ source });
+    }
+    for (const source of ['auto', '#ffffff', null, 1, {}]) {
+      expectAppError(() => validateIpcRequest(CHANNEL_SPECS.appearanceApply, buildRequest({ dataEpoch: EPOCH, payload: { source } })), 'FIELD_INVALID');
+    }
+    expectAppError(() => validateIpcRequest(CHANNEL_SPECS.appearanceApply, buildRequest({ dataEpoch: EPOCH, payload: { source: 'dark', path: 'outside' } })), 'PAYLOAD_INVALID');
   });
 });
 

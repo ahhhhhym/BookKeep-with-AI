@@ -41,7 +41,27 @@ win:
     - target: zip
       arch:
         - x64
+    - target: nsis
+      arch:
+        - x64
   icon: assets/app/icon.png
   artifactName: BookKeepAI-${version}-win-x64.${ext}
   requestedExecutionLevel: asInvoker
   legalTrademarks: ""
+
+nsis:
+  include: scripts/installer.nsh
+  artifactName: BookKeepAI-${version}-win-x64-setup.${ext}
+  oneClick: false
+  perMachine: false
+  selectPerMachineByDefault: false
+  allowElevation: false
+  allowToChangeInstallationDirectory: true
+  createDesktopShortcut: true
+  createStartMenuShortcut: true
+  deleteAppDataOnUninstall: false
+  runAfterFinish: false
+  installerLanguages:
+    - zh_CN
+    - en_US
+  language: 2052

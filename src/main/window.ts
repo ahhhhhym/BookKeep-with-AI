@@ -1,7 +1,8 @@
 /** 主窗口与进程级硬化：拒绝新窗口、远端导航、webview 与全部权限请求。 */
 
-import { BrowserWindow, session, type Session } from 'electron';
+import { BrowserWindow, nativeTheme, session, type Session } from 'electron';
 import path from 'node:path';
+import { initializeAppearance, titlebarPalette, followWindowAppearance } from './appearance';
 import { APP_DISPLAY_NAME, APP_ORIGIN } from '../shared/constants';
 import {
   buildSecureWebPreferences,
@@ -31,6 +32,7 @@ export function resolveRendererDir(mainDir: string): string {
 }
 
 export function createMainWindow(options: MainWindowOptions): CreatedMainWindow {
+  initializeAppearance();
   const preferences = buildSecureWebPreferences({
     preloadPath: options.preloadPath,
     devTools: options.devServerUrl !== null,
@@ -43,10 +45,14 @@ export function createMainWindow(options: MainWindowOptions): CreatedMainWindow 
     minHeight: 480,
     show: options.show,
     title: APP_DISPLAY_NAME,
-    backgroundColor: '#F5F7FB',
+    titleBarStyle: 'hidden',
+    titleBarOverlay: titlebarPalette(),
+    backgroundColor: nativeTheme.shouldUseDarkColors ? '#0f0f0f' : '#f5f7fb',
     autoHideMenuBar: true,
     webPreferences: preferences,
   });
+
+  followWindowAppearance(window);
 
   window.webContents.setWindowOpenHandler(() => ({ action: 'deny' }));
   window.webContents.on('will-navigate', (event, url) => {

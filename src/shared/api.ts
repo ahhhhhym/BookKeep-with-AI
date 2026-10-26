@@ -45,6 +45,10 @@ export type ApiResult<T> = ({ ok: true; data: T } | { ok: false; error: AppError
 };
 
 export interface BookKeepApi {
+  readonly appearance: {
+    read(): Promise<ApiResult<import('./appearance').ThemeSource>>;
+    apply(source: import('./appearance').ThemeSource): Promise<ApiResult<import('./appearance').ThemeSource>>;
+  };
   readonly maintenance: import('./maintenance').MaintenanceApi;
   readonly dataset: {
     read(input:DatasetRead):Promise<ApiResult<unknown>>;

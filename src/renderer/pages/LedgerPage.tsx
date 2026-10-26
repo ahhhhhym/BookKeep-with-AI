@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState, type JSX } from 'react';
 import type { CategoryView, TransactionFilter, TransactionListResult, TransactionView } from '../../shared/entities';
 import { isTransactionDate, todayInShanghai } from '../../shared/date';
-import { EmptyState, PageHeader, Panel } from '../components/ui';
+import { EmptyState, PageHeader } from '../components/ui';
 import { Modal } from '../components/Modal';
 import { ExpenseEditor, type LeaveGuard } from '../components/ExpenseEditor';
 import { ChevronDown, ChevronRight } from 'lucide-react';
@@ -10,15 +10,16 @@ import { call, errorCodeOf, getBridge } from '../lib/bridge';
 import { describeError } from '../lib/messages';
 import { dateGroupLabel, EMPTY_FILTER, LedgerReader, MutationAttempt, shiftDate, untilShanghaiMidnight, displayFen } from '../lib/ledger';
 
-export function LedgerPage({ onManageCategories, registerGuard, newRequest = 0, onNewRequestHandled, initialFilter }: {
+export function LedgerPage({ registerGuard, newRequest = 0, onNewRequestHandled, initialFilter }: {
   initialFilter?: TransactionFilter;
-  onManageCategories: () => void; registerGuard: (guard: LeaveGuard) => void; newRequest?: number; onNewRequestHandled: () => void;
+  registerGuard: (guard: LeaveGuard) => void; newRequest?: number; onNewRequestHandled: () => void;
 }): JSX.Element {
   const [result, setResult] = useState<TransactionListResult | null>(null);
   const [categories, setCategories] = useState<CategoryView[]>([]);
   const [filter, setFilter] = useState<TransactionFilter>(initialFilter ?? EMPTY_FILTER);
   const [start, setStart] = useState(initialFilter?.dateStart ?? ''); const [end, setEnd] = useState(initialFilter?.dateEnd ? shiftDate(initialFilter.dateEnd, -1) : '');
-  const [query, setQuery] = useState(''); const [selected, setSelected] = useState<string[]>(initialFilter?.categoryIds ?? []);
+  const [query, setQuery] = useState(initialFilter?.nameQuery ?? ''); const [selected, setSelected] = useState<string[]>(initialFilter?.categoryIds ?? []);
+  const [filtersOpen, setFiltersOpen] = useState(false);
   const [loading, setLoading] = useState(true); const [error, setError] = useState<string | null>(null);
   const [exporting,setExporting]=useState(false);
   const [notice, setNotice] = useState<string | null>(null);
@@ -91,7 +92,7 @@ export function LedgerPage({ onManageCategories, registerGuard, newRequest = 0, 
   useEffect(() => {
     const handler = (event: KeyboardEvent): void => {
       if (event.isComposing || !event.ctrlKey || document.querySelector('dialog[open]')) return;
-      if (event.key.toLowerCase() === 'f') { event.preventDefault(); search.current?.focus(); }
+      if (event.key.toLowerCase() === 'f') { event.preventDefault(); setFiltersOpen(true); requestAnimationFrame(() => search.current?.focus()); }
     };
     window.addEventListener('keydown', handler); return () => window.removeEventListener('keydown', handler);
   }, []);
@@ -133,20 +134,22 @@ export function LedgerPage({ onManageCategories, registerGuard, newRequest = 0, 
 
   const exportFiltered=async()=>{if(!result||filter.deleted!=='active')return;setExporting(true);try{const a=await call(api=>api.maintenance.exportCsv({filter:result.filterEcho,snapshotRevision:result.snapshotRevision}));const r=await call(api=>api.maintenance.save({artifactId:a.artifactId}));setNotice(r.saved?`已导出当前筛选${a.recordCount}笔正式交易。`:'已取消保存。');}catch(e){setError(describeError(e));}finally{setExporting(false);}};
   return <div className="page ledger-page">
-    <PageHeader title="记账" subtitle="默认账本 · 人民币 · 上海时间" actions={<div className="expense-actions"><button className="button" disabled={exporting||loading||filter.deleted!=='active'} onClick={()=>void exportFiltered()}>导出当前筛选CSV</button><button className="button" onClick={onManageCategories}>管理分类</button><button ref={newButton} className="button button-primary" onClick={() => epoch && setEditor({ original: null, epoch })}>记一笔</button></div>} />
+    <PageHeader title="记账" actions={<button ref={newButton} className="button button-primary" onClick={() => epoch && setEditor({ original: null, epoch })}>记一笔</button>} />
     {offline ? <p role="status" className="notice">当前离线，手工记账可用。</p> : null}
-    <Panel title="筛选支出"><form className="ledger-filters" onSubmit={(event) => { event.preventDefault(); applyFilters(); }}>
+    <section className="filter-disclosure" aria-label="支出筛选">
+    <button type="button" className="filter-toggle" aria-expanded={filtersOpen} aria-controls="ledger-filter-content" onClick={() => setFiltersOpen(open => !open)}><ChevronDown size={16} aria-hidden="true"/>筛选支出{filtered ? ` · 已应用${Number(!!filter.dateStart || !!filter.dateEnd) + Number(!!filter.nameQuery) + Number(filter.categoryIds.length > 0)}项条件` : ''}</button>
+    <div id="ledger-filter-content" className="filter-collapse" data-open={filtersOpen} inert={!filtersOpen} aria-hidden={!filtersOpen}><div className="filter-collapse-inner"><form className="ledger-filters" onSubmit={(event) => { event.preventDefault(); applyFilters(); }}>
       <label className="field">开始日期（含）<input type="date" min="1900-01-01" max="9998-12-31" value={start} onChange={(event) => setStart(event.target.value)} /></label>
       <label className="field">结束日期（含）<input type="date" min="1900-01-01" max="9998-12-31" value={end} onChange={(event) => setEnd(event.target.value)} /></label>
       <label className="field ledger-search">名称搜索<input ref={search} type="search" value={query} placeholder="输入购买物或服务名称" onChange={(event) => setQuery(event.target.value)} /></label>
       <details className="category-filter"><summary>分类筛选{selected.length ? `（已选${selected.length}类）` : '（全部）'}</summary><div className="filter-categories">{categories.map((item) => <label key={item.id}><input type="checkbox" checked={selected.includes(item.id)} onChange={(event) => setSelected((value) => event.target.checked ? [...value, item.id] : value.filter((id) => id !== item.id))} />{item.name}{item.enabled ? '' : '（已停用）'}</label>)}</div></details>
-      <div className="expense-actions"><button className="button button-primary" type="submit">应用筛选</button><button className="button" type="button" onClick={clear}>清空筛选</button></div>
-    </form></Panel>
-    <div className="ledger-summary" tabIndex={-1}><p role="status" aria-live="polite" data-ledger-total={loading || error ? undefined : result?.filteredTotalFen}>{loading ? '正在读取本地账本…' : error ? '列表尚未读取成功' : result ? `符合筛选 ${result.totalCount} 笔 · ¥${displayFen(result.filteredTotalFen)}` : '—'}</p><button className="button" aria-pressed={deleted} disabled={loading} onClick={() => setFilter((value) => ({ ...value, deleted: deleted ? 'active' : 'deleted' }))}>{deleted ? '返回正式支出' : '已删除记录'}</button></div>
+      <div className="expense-actions"><button className="button button-primary" type="submit">应用筛选</button><button className="button ledger-filter-clear" type="button" onClick={clear}>清空筛选</button><button className="button" type="button" disabled={exporting||loading||filter.deleted!=='active'} onClick={()=>void exportFiltered()}>导出当前筛选CSV</button></div>
+    </form></div></div></section>
+    <div className="ledger-summary" tabIndex={-1}><p role="status" aria-live="polite" data-ledger-total={loading || error ? undefined : result?.filteredTotalFen}>{loading ? '正在读取本地账本…' : error ? '列表尚未读取成功' : result ? `支出明细 ${result.totalCount} 笔 · ¥${displayFen(result.filteredTotalFen)}` : '—'}</p><button className="button" aria-pressed={deleted} disabled={loading} onClick={() => setFilter((value) => ({ ...value, deleted: deleted ? 'active' : 'deleted' }))}>{deleted ? '返回正式支出' : '已删除记录'}</button></div>
     {deleted ? <p className="notice notice-warn">已删除记录：此处金额不计入正式统计。</p> : null}
     {notice ? <p role="status" className="notice">{notice}</p> : null}
     {error ? <div role="alert" className="error-line">{error} <button className="button" onClick={() => void load()}>重新读取</button></div> : null}
-    {!loading && !error && result?.items.length === 0 ? <EmptyState title={filtered ? '没有符合条件的记录。' : deleted ? '暂无已删除记录。' : '还没有支出，记下第一笔吧。'}><button className="button" onClick={filtered ? clear : () => epoch && setEditor({ original: null, epoch })}>{filtered ? '清空筛选' : '记一笔'}</button></EmptyState> : null}
+    {!loading && !error && result?.items.length === 0 ? <div className={!filtered && !deleted ? 'ledger-empty-book' : undefined}><EmptyState title={filtered ? '没有符合条件的记录。' : deleted ? '暂无已删除记录。' : '还没有支出，记下第一笔吧。'} /></div> : null}
     <div className="ledger-groups" aria-busy={loading}>
       {!error && result?.dateGroups.map((group) => {
         const rows = result.items.filter((item) => item.occurredDate === group.date);

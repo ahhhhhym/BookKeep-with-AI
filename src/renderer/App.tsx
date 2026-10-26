@@ -1,8 +1,5 @@
 import { useCallback, useEffect, useRef, useState, type JSX } from 'react';
 import { NavShell } from './components/NavShell';
-import { StatusBar } from './components/StatusBar';
-import { NAV_ITEMS } from './navigation';
-import { CategoriesPage } from './pages/CategoriesPage';
 import { DataPage } from './pages/DataPage';
 import { ImportPage } from './pages/ImportPage';
 import { LedgerPage } from './pages/LedgerPage';
@@ -12,7 +9,7 @@ import { SettingsPage } from './pages/SettingsPage';
 import { StatisticsPage } from './pages/StatisticsPage';
 import { bridgeAvailable, call } from './lib/bridge';
 import { BRIDGE_UNAVAILABLE_TEXT, describeError } from './lib/messages';
-import type { NavId } from '../shared/nav';
+import { primaryNavId, type AiPageId, type NavId } from '../shared/nav';
 import type { AiSettingsView, ProviderCapabilitiesView, SecretStatusView } from '../shared/dto';
 import type { LeaveGuard } from './components/ExpenseEditor';
 import type { StatisticsInput } from '../shared/statistics';
@@ -23,11 +20,13 @@ export function App(): JSX.Element {
   const [statisticsInput, setStatisticsInput] = useState<StatisticsInput>(() => ({ period: 'month', anchorDate: todayInShanghai(), categoryIds: [], snapshotRevision: null }));
   const [detailFilter, setDetailFilter] = useState<TransactionFilter | undefined>();
   const [navId, setNavId] = useState<NavId>('ledger');
+  const [aiPage, setAiPage] = useState<AiPageId>('import');
+  const [importVisited, setImportVisited] = useState(false);
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [ai, setAi] = useState<AiSettingsView | null>(null);
   const [secret, setSecret] = useState<SecretStatusView | null>(null);
   const [capabilities, setCapabilities] = useState<ProviderCapabilitiesView[]>([]);
-  const [lastError, setLastError] = useState<string | null>(null);
+  const [, setLastError] = useState<string | null>(null);
   const [bridgeMissing] = useState(() => !bridgeAvailable());
   const menuButtonRef = useRef<HTMLButtonElement | null>(null);
   const leaveGuard = useRef<LeaveGuard>(null);
@@ -36,6 +35,8 @@ export function App(): JSX.Element {
   const registerGuard = useCallback((guard: LeaveGuard): void => { leaveGuard.current = guard; }, []);
   const resetRestoredViews = useCallback(() => {
     setDetailFilter(undefined);
+    setImportVisited(false);
+    setAiPage('import');
     setStatisticsInput(value => ({ ...value, snapshotRevision: null }));
   }, []);
 
@@ -66,10 +67,18 @@ export function App(): JSX.Element {
   }, [bridgeMissing]);
 
   const navigate = useCallback((id: NavId) => {
-    const leave = (): void => { setNavId(id); setDrawerOpen(false); };
+    const target = id === 'ai' ? aiPage : id;
+    if (target === navId) { setDrawerOpen(false); return; }
+    const leave = (): void => {
+      setNavId(target); setDrawerOpen(false);
+      if (target === 'import' || target === 'queue' || target === 'review') {
+        setAiPage(target);
+        if (target === 'import') setImportVisited(true);
+      }
+    };
     if (leaveGuard.current) leaveGuard.current(leave);
     else leave();
-  }, []);
+  }, [aiPage, navId]);
 
   useEffect(() => {
     const handler = (event: KeyboardEvent): void => {
@@ -109,7 +118,7 @@ export function App(): JSX.Element {
     );
   }
 
-  const current = NAV_ITEMS.find((item) => item.id === navId) ?? NAV_ITEMS[0];
+  const primaryId = primaryNavId(navId);
 
   return (
     <div className="app" data-app-shell="ready" data-nav={navId}>
@@ -128,19 +137,23 @@ export function App(): JSX.Element {
         >
           菜单
         </button>
-        <strong>{current?.label}</strong>
-        <span className="tiny">BookKeepAI</span>
+        <span className="window-brand"><span className="nav-brand-mark" aria-hidden="true">¥</span>BookKeepAI</span>
       </header>
 
-      <NavShell current={navId} onNavigate={navigate} open={drawerOpen} onClose={() => setDrawerOpen(false)} />
+      <NavShell current={primaryId} onNavigate={navigate} open={drawerOpen} onClose={() => setDrawerOpen(false)} />
 
       <main id="main-content" className="main" tabIndex={-1}>
-        {navId === 'ledger' ? <LedgerPage initialFilter={detailFilter} onManageCategories={() => navigate('categories')} registerGuard={registerGuard} newRequest={newRequest} onNewRequestHandled={consumeNewRequest} /> : null}
+        {navId === 'ledger' ? <LedgerPage initialFilter={detailFilter} registerGuard={registerGuard} newRequest={newRequest} onNewRequestHandled={consumeNewRequest} /> : null}
         {navId === 'statistics' ? <StatisticsPage input={statisticsInput} onInput={setStatisticsInput} onDetails={(filter) => { setDetailFilter(filter); navigate('ledger'); }} /> : null}
-        {navId === 'import' ? <ImportPage onError={setLastError} /> : null}
-        {navId === 'queue' ? <QueuePage /> : null}
-        {navId === 'review' ? <ReviewPage registerGuard={registerGuard} /> : null}
-        {navId === 'categories' ? <CategoriesPage /> : null}
+        <div className="page ai-page" hidden={primaryId !== 'ai'}>
+          <div className="segmented ai-switcher" role="group" aria-label="AI记账子页">
+            {([['import', '图片导入'], ['queue', '任务队列'], ['review', '候选审核']] as const).map(([id, label]) =>
+              <button type="button" key={id} aria-pressed={aiPage === id} aria-controls={`ai-${id}`} onClick={() => navigate(id)}>{label}</button>)}
+          </div>
+          <section id="ai-import" hidden={navId !== 'import'} aria-label="图片导入">{importVisited ? <ImportPage onError={setLastError} /> : null}</section>
+          <section id="ai-queue" hidden={navId !== 'queue'} aria-label="任务队列">{navId === 'queue' ? <QueuePage /> : null}</section>
+          <section id="ai-review" hidden={navId !== 'review'} aria-label="候选审核">{navId === 'review' ? <ReviewPage registerGuard={registerGuard} /> : null}</section>
+        </div>
         {navId === 'data' ? <DataPage onDataRestored={resetRestoredViews} /> : null}
         {navId === 'settings' ? (
           <SettingsPage
@@ -155,7 +168,6 @@ export function App(): JSX.Element {
         ) : null}
       </main>
 
-      <StatusBar ai={ai} secret={secret} lastError={lastError} />
     </div>
   );
 }
