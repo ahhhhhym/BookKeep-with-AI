@@ -6,6 +6,7 @@ import { copyFileSync, existsSync, mkdirSync, readFileSync, readdirSync, realpat
 import os from 'node:os';
 import path from 'node:path';
 import { pathToFileURL } from 'node:url';
+import { isDeepStrictEqual } from 'node:util';
 import { ROOT, RELEASE, electronSafeEnv, ensurePlainNode } from './lib/paths.mjs';
 import { readZip, zipEntryData } from './lib/zip.mjs';
 import { verifyZipFile } from './verify-zip.mjs';
@@ -96,14 +97,14 @@ export async function buildDesktopRelease() {
     const app = path.join(artifacts, 'win-unpacked');
     const identity = { version, commit, tree, platform: 'win32', arch: 'x64', publisher: '瀚宇铭', signing: 'unsigned', dataDirectory: '%LOCALAPPDATA%\\BookKeepAI' };
     save(path.join(app, 'RELEASE.json'), identity);
-    writeFileSync(path.join(app, '使用说明.txt'), `BookKeepAI ${version}\n\nZIP 完整解压后启动 BookKeepAI.exe；安装版运行 setup.exe，按向导选择安装目录。无需安装 Node.js 或 Python。\n\n账本和设置保存在 %LOCALAPPDATA%\\BookKeepAI，不随程序目录移动。ZIP 与安装版使用同一用户的数据目录，请勿同时运行。卸载保留用户数据。\n\n升级前关闭应用，在数据管理中创建并另存 .bkdb 备份，再安装新版或解压到新目录。不要用旧版程序打开新版数据库。备份不含 API 密钥和独立数据集，请分别保护相关资料。\n\n手工记账可离线使用。AI 识别需在设置配置自己的密钥，并确认图片上传与费用；结果须逐笔审核后才入账。\n\n隐私政策：设置 → 隐私政策。运营主体：瀚宇铭。\n第三方许可见 resources/licenses、LICENSE、LICENSES.chromium.html。\n本版本未数字签名，下载请核对发行页的 SHA256SUMS.txt。\n`, 'utf8');
+    writeFileSync(path.join(app, '使用说明.txt'), `BookKeepAI ${version}\n\nZIP 完整解压后启动 BookKeepAI.exe；安装版运行 setup.exe，按向导选择安装目录。无需安装 Node.js 或 Python。\n\n账本和设置保存在 %LOCALAPPDATA%\\BookKeepAI，不随程序目录移动。ZIP 与安装版使用同一用户的数据目录，请勿同时运行。卸载保留用户数据。\n\n升级前关闭应用，在数据管理中创建并另存 .bkdb 备份，再安装新版或解压到新目录。不要用旧版程序打开新版数据库。备份不含 API 密钥和独立数据集，请分别保护相关资料。\n\n手工记账可离线使用。AI 识别需在设置配置自己的密钥，并确认图片上传与费用；结果须逐笔审核后才入账。\n\n隐私政策：设置 → 隐私政策。运营主体：瀚宇铭。\n第三方许可见 resources/licenses、LICENSE.electron.txt、LICENSES.chromium.html。\n本版本未数字签名，下载请核对发行页的 SHA256SUMS.txt。\n`, 'utf8');
     const softwareRows = inventory(app);
     assert(softwareRows.every(r => !/(^|\/)(data|datasets|secrets|attachments|backups)\/|\.(db|sqlite3?|bkdb|jsonl|pem|key|pfx)(-wal|-shm|-journal)?$|(^|\/)\.env(\.|$)/i.test(r.file)));
     const softwareZip = path.join(folder, `BookKeepAI-${version}-win-x64.zip`);
     zip(app, softwareZip, 'zip-software'); verifyArchive(softwareZip, softwareRows);
     report.zipVerification = verifyZipFile(softwareZip); assert(report.zipVerification.ok);
     run('package-installer', process.execPath, [builder, '--prepackaged', app, '--win', 'nsis', '--x64', '--publish', 'never', ...config]);
-    assert.deepEqual(inventory(app), softwareRows, 'Installer packaging changed portable payload');
+    assert(isDeepStrictEqual(inventory(app), softwareRows), 'Installer packaging changed portable payload');
     const setupName = `BookKeepAI-${version}-win-x64-setup.exe`;
     copy(path.join(artifacts, setupName), path.join(folder, setupName));
     const sourceArchive = path.join(work, 'source-archive'); mkdirSync(sourceArchive);
