@@ -1,6 +1,8 @@
 /** 通道处理器：参数编排 + 调用主进程账本服务；业务事务与校验在 services/仓储层。 */
 
 import { normalizeCandidateOutput } from '../../shared/candidate';
+import { BrowserWindow } from 'electron';
+import { ForegroundClock } from '../services/foreground-clock';
 import { readAppearance, applyAppearance } from '../appearance';
 import { CANDIDATE_SCHEMA_VERSION, PROMPT_VERSION } from '../../shared/constants';
 import { AppError } from '../../shared/errors';
@@ -34,6 +36,32 @@ export interface HandlerDependencies {
 }
 
 export function registerIpcHandlers(router: IpcRouter, deps: HandlerDependencies): void {
+  const foregroundClock = new ForegroundClock();
+  let observedWindow: BrowserWindow | null = null;
+  const foreground = (): boolean => {
+    const window = BrowserWindow.getFocusedWindow();
+    return !!window && !window.isDestroyed() && window.isEnabled() && window.isVisible() && !window.isMinimized()
+      && (!deps.reviewOwner || window.webContents.id === deps.reviewOwner());
+  };
+  const sampleForeground = (): {foreground:boolean;foregroundMs:number} => {
+    const window = BrowserWindow.getAllWindows().find(w => !deps.reviewOwner || w.webContents.id === deps.reviewOwner());
+    if (window && window !== observedWindow) {
+      observedWindow = window;
+      const update = (): void => { foregroundClock.sample(foreground()); };
+      window.on('focus',update); window.on('blur',update); window.on('minimize',update);
+      window.on('restore',update); window.on('show',update); window.on('hide',update);
+      window.once('closed',() => { foregroundClock.sample(false); observedWindow = null; });
+    }
+    const current = foreground();
+    return {foreground:current,foregroundMs:foregroundClock.sample(current)};
+  };
+  router.handle(CHANNEL_SPECS.achievementPreferencesRead, () => deps.store.achievementPreferences());
+  router.handle(CHANNEL_SPECS.achievementPreferencesApply, r => deps.store.applyAchievementPreferences(r.payload));
+  router.handle(CHANNEL_SPECS.achievementPresentation, () => ({ledgerId:deps.store.currentLedgerId, dataEpoch:deps.store.currentEpoch,
+    revision:deps.store.currentRevision, ...sampleForeground(), preferences:deps.store.achievementPreferences()}));
+  router.handle(CHANNEL_SPECS.achievementPresent, r => foreground() && deps.store.presentAchievementNotices(r.payload.noticeIds, r.dataEpoch!));
+  router.handle(CHANNEL_SPECS.achievementList, () => deps.store.achievementsList());
+  router.handle(CHANNEL_SPECS.achievementConsume, r => deps.store.consumeAchievementNotice(r.payload, r.dataEpoch!));
   router.handle(CHANNEL_SPECS.appearanceRead, () => readAppearance());
   router.handle(CHANNEL_SPECS.appearanceApply, r => applyAppearance(r.payload.source));
   router.handle(CHANNEL_SPECS.maintenanceCsv,r=>deps.maintenance.csv(r.payload as unknown as import('../../shared/maintenance').CsvInput,r.mutationId!));

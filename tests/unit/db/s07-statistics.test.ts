@@ -178,7 +178,9 @@ describe('S07 渲染快照读取器', () => {
   it('revision变动自动整组重读，不混入旧卡片或分类', async () => {
     f02(); const api = apiForStore(); const read = api.statistics.summary; let changed = false;
     api.statistics.summary = async (input) => { if (!changed) { changed = true; add(100, '2026-09-08'); } return read(input); };
-    expect((await readStatistics(api, scope())).summary.totalFen).toBe('96630');
+    let invalidated = 0;
+    expect((await readStatistics(api, scope(), { scope: () => undefined, invalidated: () => { invalidated++; } })).summary.totalFen).toBe('96630');
+    expect(invalidated).toBe(0); // A revision retry must not clear the same generation's completed view.
   });
   it('同revision跨午夜scope变化时自动重读', async () => {
     f02(); const api = apiForStore(); const read = api.statistics.summary; let changed = false;
@@ -193,7 +195,9 @@ describe('S07 渲染快照读取器', () => {
   it('同revision但信封世代不同也整组重读，不能混用恢复前后结果', async () => {
     f02(); const api = apiForStore(); const read = api.statistics.summary; let calls = 0;
     api.statistics.summary = async (input) => { const reply = await read(input); calls++; return calls === 1 ? { ...reply, dataEpoch: randomUUID() } : reply; };
-    expect((await readStatistics(api, scope())).summary.totalFen).toBe('96530'); expect(calls).toBe(2);
+    let invalidated = 0;
+    expect((await readStatistics(api, scope(), { scope: () => undefined, invalidated: () => { invalidated++; } })).summary.totalFen).toBe('96530'); expect(calls).toBe(2);
+    expect(invalidated).toBe(1); // Cross-generation envelopes invalidate before the next complete snapshot.
   });
   it('服务金额互不一致时明确完整性错误，不显示近似或0', async () => {
     f02(); const api = apiForStore(); const read = api.statistics.summary;

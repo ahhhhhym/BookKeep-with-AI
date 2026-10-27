@@ -1,14 +1,9 @@
-/** 主导航：记账、统计、AI记账、数据管理、设置。 */
+/** 主导航：顶部四项，底部成就和设置。 */
 
-import type { NavId } from '../shared/nav';
+import type { NavId, NavMeta } from '../shared/nav';
 import { NAV_ITEMS_META, primaryNavId } from '../shared/nav';
 
-export interface NavItem {
-  readonly id: NavId;
-  readonly label: string;
-  readonly iconKey: string;
-  readonly description: string;
-}
+export type NavItem = NavMeta;
 
 export const NAV_ITEMS: readonly NavItem[] = NAV_ITEMS_META;
 

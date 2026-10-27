@@ -8,6 +8,7 @@ import path from 'node:path';
 import { ROOT, electronExecutable, electronSafeEnv } from '../../scripts/lib/paths.mjs';
 const { _electron } = createRequire(path.join(process.env.BOOKKEEP_QA_NODE_MODULES ?? path.join(ROOT, 'node_modules'), '__qa__.cjs'))('playwright');
 const output = path.resolve(process.env.BOOKKEEP_QA_OUTPUT ?? path.join(ROOT, '.tmp/ui-privacy'));
+const appRoot = path.resolve(process.env.BOOKKEEP_QA_APP_ROOT ?? ROOT);
 mkdirSync(output, {recursive:true});
 const localAppData = mkdtempSync(path.join(tmpdir(), 'BookKeepAI 013 隔离 '));
 const report = {ok:false, localAppData, checks:[], errors:[], console:[], externalHttp:0, kind:'implementation self-test; not acceptance', browser:'Browser plugin not available; project Playwright Electron workflow'};
@@ -18,11 +19,11 @@ const frames = () => page.evaluate(()=>new Promise(r=>requestAnimationFrame(()=>
 const shot = name => page.screenshot({path:path.join(output,name+'.png')});
 const raw = (method,input) => page.evaluate(({method,input})=>{const [g,m]=method.split('.');return window.bookkeep[g][m](input);},{method,input});
 const invoke = async (...args) => {const r=await raw(...args);assert.equal(r.ok,true,JSON.stringify(r.error));return r.data;};
-const primary = async id => {const menu=page.getByRole('button',{name:'菜单',exact:true});const narrow=await menu.isVisible();if(narrow)await menu.click();await page.locator(`[data-nav-item="${id}"]`).click();if(narrow)await until(()=>page.locator('#main-nav').evaluate(el=>el.getBoundingClientRect().right<=0));};
+const primary = async id => {const menu=page.getByRole('button',{name:'菜单',exact:true});const narrow=await menu.isVisible();if(narrow)await menu.click();await page.locator(`[data-nav-item="${id}"]`).click();if(narrow)await until(()=>page.locator('#main-nav').evaluate(el=>el.getBoundingClientRect().right<=0));await page.locator('[data-main-transition][data-phase="stable"]').waitFor();};
 const aiTab = async name => {await page.getByRole('group',{name:'AI记账子页',exact:true}).getByRole('button',{name,exact:true}).click();};
-const geometry = () => page.locator('.main').evaluate(main=>{const p=[...main.children].find(e=>!e.hidden&&e.classList.contains('page'));const m=main.getBoundingClientRect(),r=p.getBoundingClientRect();return {left:r.left-m.left,right:m.left+main.clientWidth-r.right,width:r.width,overflow:document.documentElement.scrollWidth>innerWidth,mainOverflow:main.scrollWidth>main.clientWidth};});
+const geometry = () => page.locator('.main').evaluate(main=>{const p=main.querySelector('.main-content-transition > .page:not([hidden])');const m=main.getBoundingClientRect(),r=p.getBoundingClientRect();return {left:r.left-m.left,right:m.left+main.clientWidth-r.right,width:r.width,overflow:document.documentElement.scrollWidth>innerWidth,mainOverflow:main.scrollWidth>main.clientWidth};});
 try {
-  app = await _electron.launch({executablePath:electronExecutable(),args:[ROOT],cwd:ROOT,env:electronSafeEnv({LOCALAPPDATA:localAppData}),timeout:30000});
+  app = await _electron.launch({executablePath:electronExecutable(),args:[appRoot],cwd:appRoot,env:electronSafeEnv({LOCALAPPDATA:localAppData}),timeout:30000});
   await app.evaluate(() => {globalThis.fetch = async()=>{throw Error('external HTTP prohibited');};});
   page = await app.firstWindow(); page.setDefaultTimeout(10000);
   page.on('pageerror',e=>report.errors.push(e.message));
@@ -33,9 +34,9 @@ try {
   assert.equal(await page.locator('vite-error-overlay').count(),0);
   await app.evaluate(({BrowserWindow})=>BrowserWindow.getAllWindows()[0].setContentSize(1600,950));
   await frames();
-  assert.equal(await page.locator('[data-nav-item]').count(),5);
+  assert.equal(await page.locator('[data-nav-item]').count(),6);
   assert.equal(await page.locator('[data-nav-item="categories"]').count(),0);
-  check('five-primary-pages-no-category-route');
+  check('six-primary-pages-no-category-route');
   const toggle = page.getByRole('button',{name:/筛选支出/});
   assert.equal(await toggle.getAttribute('aria-expanded'),'false');
   check('filter-default-collapsed');
@@ -159,11 +160,11 @@ try {
   report.windowAfterCdpConfirm=await app.evaluate(({BrowserWindow})=>({enabled:BrowserWindow.getAllWindows()[0].isEnabled()}));
   report.nativeConfirmLimitation='CDP dialog.accept leaves native window disabled on both frozen 0.1.2 and 0.1.3; actual native confirmation requires desktop validation. No production workaround applied.';
   check('restore-clears-cached-import-batch-and-old-generation-references');
-  for(const [id,route] of [['ledger','ledger'],['statistics','statistics'],['ai','import'],['data','data'],['settings','settings']]){
+  for(const [id,route] of [['ledger','ledger'],['statistics','statistics'],['ai','import'],['data','data'],['achievements','achievements'],['settings','settings']]){
     await primary(id);await page.locator(`[data-nav="${route}"]`).waitFor();const g=await geometry();assert(Math.abs(g.left-g.right)<=2);assert(!g.overflow&&!g.mainOverflow);check('centered-'+id,g);
   }
   assert((await page.locator('.storage-location').innerText()).includes('%LOCALAPPDATA%'));
-  assert((await page.getByRole('region',{name:'关于',exact:true}).innerText()).includes('0.1.3'));
+  assert((await page.getByRole('region',{name:'关于',exact:true}).innerText()).includes('0.1.5'));
   const policy=page.getByRole('button',{name:'隐私政策',exact:true});await policy.scrollIntoViewIfNeeded();
   const scrollBefore=await page.locator('.main').evaluate(el=>el.scrollTop);
   await page.context().setOffline(true);await policy.click();
@@ -177,7 +178,7 @@ try {
   assert(Math.abs((await page.locator('.main').evaluate(el=>el.scrollTop))-scrollBefore)<2);
   await page.context().setOffline(false);check('privacy-offline-scroll-copyable-escape-focus-return');
   await app.evaluate(({BrowserWindow})=>BrowserWindow.getAllWindows()[0].setContentSize(680,650));await frames();
-  for(const id of ['ledger','statistics','ai','data','settings']){await primary(id);const g=await geometry();assert(!g.overflow&&!g.mainOverflow,JSON.stringify({id,g}));}
+  for(const id of ['ledger','statistics','ai','data','achievements','settings']){await primary(id);const g=await geometry();assert(!g.overflow&&!g.mainOverflow,JSON.stringify({id,g}));}
   await primary('ai');
   for(const [name,key] of [['任务队列','Space'],['候选审核','Enter'],['图片导入','Space']]){
     const button=page.getByRole('group',{name:'AI记账子页',exact:true}).getByRole('button',{name,exact:true});

@@ -14,6 +14,19 @@ beforeEach(async () => {
 });
 afterEach(() => vi.useRealTimers());
 describe('preload epoch response fence', () => {
+  it.each(['presentation','watch','present','consume'] as const)('achievement background %s cannot advance an intermediate epoch during restore reconciliation', async method => {
+    transport.invoke.mockResolvedValueOnce(envelope('intermediate'));
+    const reply=method==='present' ? api.achievement.present({noticeIds:[crypto.randomUUID()]})
+      : method==='consume' ? api.achievement.consume({noticeId:crypto.randomUUID(),state:'closed'}) : api.achievement[method]();
+    expect(await reply).toMatchObject({ok:false,error:{code:'STALE_EPOCH'},dataEpoch:'old'});
+    transport.invoke.mockImplementation(async(channel,request)=>{
+      expect(channel).toBe('backup.restoreStatus');
+      if(request.dataEpoch==='old')return {...envelope('final'),ok:false,error:{code:'STALE_EPOCH'}};
+      expect(request.dataEpoch).toBe('final');return envelope('final',{status:'previously_committed',result:null});
+    });
+    expect(await reconcileRestore(api,crypto.randomUUID())).toEqual({status:'previously_committed',result:null});
+    expect(transport.invoke.mock.calls.slice(-2).map(c=>c[1].dataEpoch)).toEqual(['old','final']);
+  });
   it.each([true, false])('late old envelope (ok=%s) cannot publish stale data or roll back the next request', async ok => {
     let release!: (v: unknown) => void;
     transport.invoke.mockImplementationOnce(() => new Promise(resolve => { release = resolve; }));

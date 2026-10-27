@@ -186,7 +186,8 @@ export class ReviewService {
   }
   approve(input:ApprovalInput,mutationId:string|null):ApprovalResult|ApprovalPreview {
     if(input.mode==='preview')return this.preview(input.items);
-    return this.mutate('candidate.approve',input,mutationId!,c=>{
+    const epoch=this.store.currentEpoch;
+    const result=this.mutate<ApprovalResult>('candidate.approve',input,mutationId!,c=>{
       let items:ApprovalItem[];
       if(input.mode==='single'){
         const r=this.row(c,input.id);
@@ -216,5 +217,7 @@ export class ReviewService {
       });
       return {transactions,candidateIds:views.map(v=>v.id),count:views.length,totalFen:transactions.reduce((n,t)=>n+BigInt(t.amountFen),0n).toString(),alreadyApproved:false,replayed:false};
     });
+    this.store.settleAchievementsAfterSuccess(epoch);
+    return result;
   }
 }

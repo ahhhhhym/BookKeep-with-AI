@@ -89,7 +89,7 @@ async function ensureEpoch(): Promise<void> {
 async function invoke<T>(
   channel: string,
   payload: unknown,
-  options: { readonly mutation: boolean; readonly mutationId?: string; readonly dataEpoch?: string },
+  options: { readonly mutation: boolean; readonly mutationId?: string; readonly dataEpoch?: string; readonly observeOnly?: boolean },
 ): Promise<ApiResult<T>> {
   if (currentEpoch === null && !EPOCH_OPTIONAL_CHANNELS.has(channel)) {
     await ensureEpoch();
@@ -115,7 +115,9 @@ async function invoke<T>(
     return { ok: false, error: FALLBACK_ERROR };
   }
 
-  if (envelope && typeof envelope.dataEpoch === 'string' && (currentEpoch === null || currentEpoch === request.dataEpoch)) currentEpoch = envelope.dataEpoch;
+  // Background observers must not steal epoch synchronization from an in-flight restore reconciliation.
+  // They still receive the exact same stale-envelope fence; only an owning/foreground call advances it.
+  if (!options.observeOnly && envelope && typeof envelope.dataEpoch === 'string' && (currentEpoch === null || currentEpoch === request.dataEpoch)) currentEpoch = envelope.dataEpoch;
   // 缓存已进入新世代时，迟到旧信封也不能把旧成功数据交给页面。
   if (typeof envelope?.dataEpoch === 'string' && envelope.dataEpoch !== currentEpoch) {
     return { ok: false, error: { ...FALLBACK_ERROR, code: 'STALE_EPOCH', message: 'STALE_EPOCH' }, dataEpoch: currentEpoch };
@@ -130,6 +132,15 @@ function mutationOptions(options?: MutationOptions): { readonly mutation: true; 
 }
 
 const api: BookKeepApi = {
+  achievement: {
+    watch: () => invoke(IPC.achievementList, {}, {mutation:false,observeOnly:true}),
+    readPreferences: () => invoke(IPC.achievementPreferencesRead, {}, {mutation:false}),
+    applyPreferences: (input, options) => invoke(IPC.achievementPreferencesApply, input, mutationOptions(options)),
+    presentation: () => invoke(IPC.achievementPresentation, {}, {mutation:false,observeOnly:true}),
+    present: (input, options) => invoke(IPC.achievementPresent, input, {...mutationOptions(options),observeOnly:true}),
+    list: () => invoke(IPC.achievementList, {}, { mutation: false }),
+    consume: (input, options) => invoke(IPC.achievementConsume, input, {...mutationOptions(options),observeOnly:true}),
+  },
   appearance: {
     read: () => invoke(IPC.appearanceRead, {}, { mutation: false }),
     apply: source => invoke(IPC.appearanceApply, { source }, { mutation: false }),

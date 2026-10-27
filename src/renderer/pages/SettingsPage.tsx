@@ -4,10 +4,13 @@ import { Badge, MetaList, Notice, PageHeader, Panel } from '../components/ui';
 import type { AiSettingsView, ProviderCapabilitiesView, SecretStatusView } from '../../shared/dto';
 import type { NavId } from '../../shared/nav';
 import { CONTRACT_VERSION } from '../../shared/constants';
+import { APP_VERSION } from '../../shared/app-version';
 import { call } from '../lib/bridge';
 import { describeError } from '../lib/messages';
 import { PrivacyPolicy } from '../components/PrivacyPolicy';
 import type { ThemeSource } from '../../shared/appearance';
+import { achievementController, useAchievementContent } from '../lib/achievement-controller';
+import type { AchievementPreferences } from '../../shared/achievement-presentation';
 
 export interface SettingsPageProps {
   readonly ai: AiSettingsView | null;
@@ -33,6 +36,13 @@ const SECRET_LABEL: Record<SecretStatusView['mode'], string> = {
 
 /** P07 设置：S09 安全配置与固定无隐私合成图探针。 */
 export function SettingsPage({ ai: initialAi, secret: initialSecret, capabilities: initialCapabilities, onNavigate, onError, onAiChange, onSecretChange }: SettingsPageProps): JSX.Element {
+  const achievements = useAchievementContent();
+  const [noticeError,setNoticeError] = useState<string | null>(null);
+  const changeNotices = async (value: AchievementPreferences): Promise<void> => {
+    setNoticeError(null);
+    try { await achievementController.applyPreferences(value); }
+    catch (caught) { setNoticeError(describeError(caught)); }
+  };
   const [privacyOpen, setPrivacyOpen] = useState(false);
   const [theme, setTheme] = useState<ThemeSource>('system');
   const [themeBusy, setThemeBusy] = useState(false);
@@ -141,6 +151,22 @@ export function SettingsPage({ ai: initialAi, secret: initialSecret, capabilitie
         </div>
       </Panel>
 
+      <Panel title="成就提示">
+        {achievements.preferences ? <>
+          <label className="achievement-preference"><input id="achievement-notices-enabled" type="checkbox" checked={achievements.preferences.enabled} disabled={achievements.saving}
+            onChange={event => void changeNotices({...achievements.preferences!,enabled:event.target.checked})}/>显示成就提示</label>
+          <div className="field"><label htmlFor="achievement-notices-position">提示位置</label>
+            <select id="achievement-notices-position" value={achievements.preferences.position} disabled={achievements.saving}
+              onChange={event => void changeNotices({...achievements.preferences!,position:event.target.value as AchievementPreferences['position']})}>
+              <option value="center">中央（默认）</option><option value="bottom-right">右下角</option>
+            </select>
+          </div>
+          <button type="button" className="button" disabled={achievements.saving} onClick={achievementController.preview}>预览效果</button>
+          <p className="field-hint">选择自动保存在本机。关闭后仍正常解锁，重新开启不补弹旧提示；预览不会记录成就。</p>
+        </> : <p role="status">正在读取提示偏好…</p>}
+        {noticeError ? <p role="alert">保存失败：{noticeError}</p> : null}
+      </Panel>
+
       <Panel title="AI 服务" actions={<Badge tone="warn">{ai ? READINESS_LABEL[ai.readiness] : '读取中…'}</Badge>}>
         <MetaList
           entries={[
@@ -246,7 +272,8 @@ export function SettingsPage({ ai: initialAi, secret: initialSecret, capabilitie
       <Panel title="关于">
         <MetaList
           entries={[
-            ['应用', 'BookKeepAI 0.1.3'],
+            ['应用', `BookKeepAI ${APP_VERSION}`],
+            ['发行者', '瀚宇铭'],
             ['契约版本', CONTRACT_VERSION],
             ['AI 状态', '实验性：真实识别质量尚未验收'],
             ['第三方许可', 'Electron / React / Lucide（ISC + MIT）等，见随包 licenses 目录'],

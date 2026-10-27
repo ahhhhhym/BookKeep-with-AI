@@ -1,5 +1,5 @@
 import { useEffect, useLayoutEffect, useRef, useState, type JSX } from 'react';
-import { NAV_ITEMS } from '../navigation';
+import { NAV_ITEMS, type NavItem } from '../navigation';
 import type { NavId } from '../../shared/nav';
 import { AppIcon } from '../lib/icon-registry';
 
@@ -31,7 +31,7 @@ export function NavShell({ current, onNavigate, open, onClose }: NavShellProps):
     const items = itemsRef.current;
     const update = (): void => {
       const selected = items?.querySelector<HTMLButtonElement>('[aria-current="page"]');
-      if (selected) setIndicator({ top: selected.offsetTop, height: selected.offsetHeight });
+      if (selected && items) setIndicator({ top: selected.getBoundingClientRect().top - items.getBoundingClientRect().top, height: selected.offsetHeight });
     };
     update();
     const observer = new ResizeObserver(update);
@@ -45,27 +45,31 @@ export function NavShell({ current, onNavigate, open, onClose }: NavShellProps):
     media.addEventListener('change', update);
     return () => media.removeEventListener('change', update);
   }, []);
+  const renderItem = (item: NavItem): JSX.Element => (
+    <button
+      key={item.id}
+      type="button"
+      className="nav-item"
+      data-nav-item={item.id}
+      aria-current={current === item.id ? 'page' : undefined}
+      aria-label={item.label}
+      title={item.label}
+      onClick={() => onNavigate(item.id)}
+    >
+      <AppIcon iconKey={item.iconKey} size={24} />
+      <span className="nav-label">{item.label}</span>
+    </button>
+  );
   return (
     <>
       <div className="backdrop" data-open={open} onClick={onClose} aria-hidden="true" />
       <nav className="nav" id="main-nav" aria-label="主导航" data-open={open} data-resizing={resizing} inert={narrow && !open}>
         <div className="nav-items" ref={itemsRef}>
-        <div className="nav-indicator" aria-hidden="true" style={{ transform: `translateY(${indicator.top}px)`, height: indicator.height }} />
-        {NAV_ITEMS.map((item) => (
-          <button
-            key={item.id}
-            type="button"
-            className="nav-item"
-            data-nav-item={item.id}
-            aria-current={current === item.id ? 'page' : undefined}
-            aria-label={item.label}
-            title={item.label}
-            onClick={() => onNavigate(item.id)}
-          >
-            <AppIcon iconKey={item.iconKey} size={20} />
-            <span className="nav-label">{item.label}</span>
-          </button>
-        ))}
+          <div className="nav-indicator" aria-hidden="true" style={{ transform: `translateY(${indicator.top}px)`, height: indicator.height }} />
+          {NAV_ITEMS.filter(item => item.group === 'main').map(renderItem)}
+          <div className="nav-bottom">
+            {NAV_ITEMS.filter(item => item.group === 'bottom').map(renderItem)}
+          </div>
         </div>
         <div className="nav-resizer" role="separator" aria-label="调整侧栏宽度" aria-orientation="vertical" aria-valuemin={160} aria-valuemax={280} aria-valuenow={width} tabIndex={0}
           onPointerDown={event => { if (event.button !== 0) return; event.preventDefault(); event.currentTarget.setPointerCapture(event.pointerId); setResizing(true); }}

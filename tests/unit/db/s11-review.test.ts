@@ -28,7 +28,7 @@ describe('S11 true persistent human review',()=>{
   const baseline=strip(formal());const {review,candidates}=await source(store,[proposal(),proposal({name:'拒绝隔离测试',amountFen:8800})]);
   const id=candidates[0]!.id;review.reject({id:candidates[1]!.id,expectedVersion:1,reason:'合成拒绝测试'},randomUUID());update(review,review.get(id),{merchant:'合成测试商户'});await source(store,[],true);
   expect(strip(formal())).toEqual(baseline);store.close();store=LedgerStore.open(storeOptions(layout,clock));
-  expect(store.snapshot()).toMatchObject({dbSchemaVersion:3,transactionCount:6,recoveryRequired:false});expect(count('candidate',"review_state='rejected'")).toBe(1);expect(count('import_job',"status='failed'")).toBe(1);
+  expect(store.snapshot()).toMatchObject({dbSchemaVersion:4,transactionCount:6,recoveryRequired:false});expect(count('candidate',"review_state='rejected'")).toBe(1);expect(count('import_job',"status='failed'")).toBe(1);
   const next=new ReviewService(store,new ImageService(store,()=>1),()=>1,clock);expect(next.get(id).current.merchant).toBe('合成测试商户');expect(strip(formal())).toEqual(baseline);
   expect(approve(next,id).totalFen).toBe('9900');for(const f of formal()){expect(f.summary).toMatchObject({count:7,totalFen:'106430'});expect(f.rank.items.find(i=>i.categoryId==='cat_food')?.totalFen).toBe('14250');}
   expect(store.statisticsTopTransactions({...scope(),pointDate:'2026-09-09'}).pointTotalFen).toBe('102004');
@@ -108,8 +108,8 @@ describe('S11 true persistent human review',()=>{
   const indexes=store.withImports(false,x=>x.db.prepare<{name:string;sql:string}>("SELECT name,sql FROM sqlite_master WHERE name='ux_transaction_candidate'").get()!);expect(indexes.sql).toContain('UNIQUE');expect(indexes.sql).toContain('source_candidate_id IS NOT NULL');expect(indexes.sql).not.toContain('deleted_at');
   store.withImports(true,x=>x.db.exec('DROP TRIGGER trg_ai_candidate_insert'));expect(()=>insert(randomUUID(),c.id)).toThrowError(/UNIQUE constraint/);
  });
- it('v2→v3 migration backs up and preserves actual pending and failed source records',async()=>{
-  store.close();cleanupLayout(layout);layout=createTestLayout();store=LedgerStore.open(storeOptions(layout,clock,{migrations:MIGRATIONS.slice(0,2)}));await source(store,[proposal()]);await source(store,[],true);const before=count('candidate');store.close();store=LedgerStore.open(storeOptions(layout,clock));expect(store.snapshot()).toMatchObject({dbSchemaVersion:3,recoveryRequired:false});expect(count('candidate')).toBe(before);expect(store.listBackups().records.some(b=>b.kind==='pre_migration')).toBe(true);
+ it('v2→v4 migration backs up and preserves actual pending and failed source records',async()=>{
+  store.close();cleanupLayout(layout);layout=createTestLayout();store=LedgerStore.open(storeOptions(layout,clock,{migrations:MIGRATIONS.slice(0,2)}));await source(store,[proposal()]);await source(store,[],true);const before=count('candidate');store.close();store=LedgerStore.open(storeOptions(layout,clock));expect(store.snapshot()).toMatchObject({dbSchemaVersion:4,recoveryRequired:false});expect(count('candidate')).toBe(before);expect(store.listBackups().records.some(b=>b.kind==='pre_migration')).toBe(true);
  });
  it('strict restricted IPC rejects source overrides, malformed confirmations, >100 batch and absent mutation at service',async()=>{
   const request=(payload:unknown)=>({contractVersion:CONTRACT_VERSION,requestId:randomUUID(),dataEpoch:store.currentEpoch,payload});

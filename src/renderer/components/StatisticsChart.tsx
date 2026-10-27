@@ -3,9 +3,9 @@ import type { StatisticsPoint } from '../../shared/statistics';
 import { displayFen } from '../lib/ledger';
 
 /** SVG仅负责坐标，金额/序列/排序均来自服务。详情在正常流内，不遮挡周期操作。 */
-export function StatisticsChart({ points, onSelect, selected, onClose, children }: {
+export function StatisticsChart({ points, onSelect, selected, onClose, children, disabled = false }: {
   points: StatisticsPoint[]; onSelect: (index: number) => void; selected: number | null;
-  onClose: () => void; children: ReactNode;
+  onClose: () => void; children: ReactNode; disabled?: boolean;
 }): JSX.Element {
   const [active, setActive] = useState(0); const [pinned, setPinned] = useState(false);
   const chart = useRef<HTMLDivElement>(null);
@@ -18,21 +18,23 @@ export function StatisticsChart({ points, onSelect, selected, onClose, children 
   }, []);
   useEffect(() => { setActive(0); setPinned(false); }, [points]);
   useEffect(() => { if (selected !== null) setActive(selected); }, [selected]);
+  useEffect(() => { if (disabled) setPinned(false); }, [disabled]);
   const maximum = points.reduce((max, point) => BigInt(point.amountFen) > max ? BigInt(point.amountFen) : max, 0n);
   const max = Math.max(1, Number(maximum));
   const plotWidth = width - 64;
   const labelStep = Math.ceil((points.length - 1) / Math.max(1, Math.floor(width / 65) - 1));
   const coords = points.map((point, index) => ({ x: 32 + index * plotWidth / (points.length - 1), y: 215 - Number(point.amountFen) / max * 170 }));
-  const choose = (index: number, pin = false): void => { setActive(index); setPinned(pin); onSelect(index); };
+  const choose = (index: number, pin = false): void => { if (disabled) return; setActive(index); setPinned(pin); onSelect(index); };
   const close = (): void => { setPinned(false); onClose(); };
   return <div className="statistics-chart-area" onMouseLeave={(event) => { if (!pinned && !event.currentTarget.contains(document.activeElement)) onClose(); }}
     onBlur={(event) => { if (!pinned && !event.currentTarget.contains(event.relatedTarget as Node)) onClose(); }}
     onKeyDown={(event) => { if (event.key === 'Escape') { event.preventDefault(); close(); chart.current?.focus({ preventScroll: true }); onClose(); } }}>
-    <div ref={chart} className="statistics-chart" tabIndex={0} role="group" aria-roledescription="交互折线图"
+    <div ref={chart} className="statistics-chart" tabIndex={disabled ? -1 : 0} aria-disabled={disabled} role="group" aria-roledescription="交互折线图"
       aria-label={`支出趋势，共${points.length}个点。左右键选择，Home或End到首尾，回车或空格固定，Esc关闭。`}
-      onFocus={() => { if (selected === null) onSelect(active); }}
+      onFocus={() => { if (!disabled && selected === null) onSelect(active); }}
       onBlur={(event) => { if (!pinned && !event.currentTarget.parentElement?.contains(event.relatedTarget as Node)) onClose(); }}
       onKeyDown={(event) => {
+        if (disabled) return;
         if (['ArrowLeft', 'ArrowRight', 'Home', 'End'].includes(event.key)) {
           keyboardMode.current = true;
           event.preventDefault(); const next = event.key === 'Home' ? 0 : event.key === 'End' ? points.length - 1 : Math.max(0, Math.min(points.length - 1, active + (event.key === 'ArrowLeft' ? -1 : 1))); choose(next, pinned);

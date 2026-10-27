@@ -146,10 +146,9 @@ export function LedgerPage({ registerGuard, newRequest = 0, onNewRequestHandled,
       <div className="expense-actions"><button className="button button-primary" type="submit">应用筛选</button><button className="button ledger-filter-clear" type="button" onClick={clear}>清空筛选</button><button className="button" type="button" disabled={exporting||loading||filter.deleted!=='active'} onClick={()=>void exportFiltered()}>导出当前筛选CSV</button></div>
     </form></div></div></section>
     <div className="ledger-summary" tabIndex={-1}><p role="status" aria-live="polite" data-ledger-total={loading || error ? undefined : result?.filteredTotalFen}>{loading ? '正在读取本地账本…' : error ? '列表尚未读取成功' : result ? `支出明细 ${result.totalCount} 笔 · ¥${displayFen(result.filteredTotalFen)}` : '—'}</p><button className="button" aria-pressed={deleted} disabled={loading} onClick={() => setFilter((value) => ({ ...value, deleted: deleted ? 'active' : 'deleted' }))}>{deleted ? '返回正式支出' : '已删除记录'}</button></div>
-    {deleted ? <p className="notice notice-warn">已删除记录：此处金额不计入正式统计。</p> : null}
     {notice ? <p role="status" className="notice">{notice}</p> : null}
     {error ? <div role="alert" className="error-line">{error} <button className="button" onClick={() => void load()}>重新读取</button></div> : null}
-    {!loading && !error && result?.items.length === 0 ? <div className={!filtered && !deleted ? 'ledger-empty-book' : undefined}><EmptyState title={filtered ? '没有符合条件的记录。' : deleted ? '暂无已删除记录。' : '还没有支出，记下第一笔吧。'} /></div> : null}
+    {!loading && !error && result?.items.length === 0 ? <div className={!filtered ? deleted ? 'ledger-empty-deleted' : 'ledger-empty-book' : undefined}>{!filtered ? <p>{deleted ? '暂无已删除记录' : <strong>还没有支出，记下第一笔吧</strong>}</p> : <EmptyState title="没有符合条件的记录。" />}</div> : null}
     <div className="ledger-groups" aria-busy={loading}>
       {!error && result?.dateGroups.map((group) => {
         const rows = result.items.filter((item) => item.occurredDate === group.date);

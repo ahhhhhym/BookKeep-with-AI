@@ -52,6 +52,7 @@ interface RendererIsolationFacts {
   bridgeKeys: string[];
   statisticsKeys: string[];
   datasetKeys: string[];
+  achievementKeys: string[];
   ipcRendererType: string;
   electronType: string;
 }
@@ -157,6 +158,7 @@ export async function runSelfTest(deps: SelfTestDependencies): Promise<SelfTestR
     bridgeKeys: window.bookkeep ? Object.keys(window.bookkeep).sort() : [],
     statisticsKeys: window.bookkeep?.statistics ? Object.keys(window.bookkeep.statistics).sort() : [],
     datasetKeys: window.bookkeep?.dataset ? Object.keys(window.bookkeep.dataset).sort() : [],
+    achievementKeys: window.bookkeep?.achievement ? Object.keys(window.bookkeep.achievement).sort() : [],
     ipcRendererType: typeof window.ipcRenderer,
     electronType: typeof window.electron,
   }))()`);
@@ -179,10 +181,11 @@ export async function runSelfTest(deps: SelfTestDependencies): Promise<SelfTestR
       'preload.bridgeSurface',
       isolation.bridgeType === 'object' &&
         isolation.bridgeKeys.join(',') ===
-          'appearance,backup,candidate,category,contractVersion,dataset,image,ledger,maintenance,provider,recognition,settings,skeleton,skeletonStage,statistics,transaction' &&
+          'achievement,appearance,backup,candidate,category,contractVersion,dataset,image,ledger,maintenance,provider,recognition,settings,skeleton,skeletonStage,statistics,transaction' &&
         isolation.statisticsKeys.join(',') === 'series,summary,topCategories,topTransactions' &&
-        isolation.datasetKeys.join(',') === 'command,read,save',
-      { bridgeType: isolation.bridgeType, bridgeKeys: isolation.bridgeKeys, statisticsKeys: isolation.statisticsKeys },
+        isolation.datasetKeys.join(',') === 'command,read,save' &&
+        isolation.achievementKeys.join(',') === 'applyPreferences,consume,list,present,presentation,readPreferences,watch',
+      { bridgeType: isolation.bridgeType, bridgeKeys: isolation.bridgeKeys, statisticsKeys: isolation.statisticsKeys, achievementKeys: isolation.achievementKeys },
     ),
   );
 
@@ -255,7 +258,7 @@ export async function runSelfTest(deps: SelfTestDependencies): Promise<SelfTestR
     (directive) => !headerPolicy.includes(directive) || (directive !== "frame-ancestors 'none'" && (dom.csp === null || !dom.csp.includes(directive))),
   );
   checks.push(
-    check('renderer.mounted', dom.shell === 'ready' && dom.navItems === 5, {
+    check('renderer.mounted', dom.shell === 'ready' && dom.navItems === 6, {
       shell: dom.shell,
       navItems: dom.navItems,
     }),

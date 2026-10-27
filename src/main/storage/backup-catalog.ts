@@ -320,6 +320,7 @@ interface RawManifest {
   dbSchemaVersion?: unknown;
   appVersion?: unknown;
   createdAt?: unknown;
+  backupKind?: unknown;
 }
 
 /** 从无创建记录的独立档案读取内嵌 manifest；当前 hash 仅作为该档案的发现基准。 */
@@ -351,7 +352,7 @@ function discoverEntry(paths: StoragePaths, id: string): BackupCatalogEntry | nu
     return {
       id,
       ledgerId: manifest.ledgerId,
-      kind: 'manual',
+      kind: manifest.backupKind==='pre_restore'||manifest.backupKind==='pre_migration'?manifest.backupKind:'manual',
       status: 'completed',
       manifestVersion: BACKUP_MANIFEST_VERSION,
       dbSchemaVersion: manifest.dbSchemaVersion,

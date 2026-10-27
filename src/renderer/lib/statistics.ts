@@ -16,20 +16,27 @@ export function sameStatisticsScope(expected: StatisticsScope, result: { scope: 
 export function snapshotChanged(): BridgeError { return new BridgeError('SNAPSHOT_STALE', null); }
 
 /** 四方读快照：不拼接不同revision/today/epoch，变化则整组重读；重试有界。 */
-export async function readStatistics(api: BookKeepApi, input: StatisticsInput): Promise<StatisticsBundle> {
+export async function readStatistics(api: BookKeepApi, input: StatisticsInput, observe?: {
+  scope: (scope: StatisticsScope) => void; invalidated: () => void;
+}): Promise<StatisticsBundle> {
   for (let attempt = 0; attempt < 3; attempt++) {
     try {
       const first = await api.statistics.series({ ...input, snapshotRevision: null });
       const series = unwrapStatistics(first);
+      observe?.scope(series.scope);
       const bound = { ...input, snapshotRevision: series.scope.revision };
       const [summaryReply, rankReply, categoryReply] = await Promise.all([
         api.statistics.summary(bound), api.statistics.topCategories({ ...bound, pointMonth: null }), api.category.list({ includeDisabled: true }),
       ]);
       const summary = unwrapStatistics(summaryReply); const ranking = unwrapStatistics(rankReply); const cats = unwrapStatistics(categoryReply);
+      if ([first, summaryReply, rankReply, categoryReply].some(reply => reply.dataEpoch !== series.scope.dataEpoch)) observe?.invalidated();
       if (!sameStatisticsScope(series.scope, series, first.dataEpoch) || !sameStatisticsScope(series.scope, summary, summaryReply.dataEpoch) || !sameStatisticsScope(series.scope, ranking, rankReply.dataEpoch) || cats.revision !== series.scope.revision || categoryReply.dataEpoch !== series.scope.dataEpoch) throw snapshotChanged();
       if (series.totalFen !== summary.totalFen || series.totalFen !== ranking.totalFen || series.points.reduce((sum, point) => sum + BigInt(point.amountFen), 0n).toString() !== series.totalFen || ranking.items.reduce((sum, item) => sum + BigInt(item.totalFen), 0n).toString() !== series.totalFen) throw new BridgeError('INTEGRITY_ERROR', null);
       return { series, summary, ranking, categories: cats.categories };
     } catch (error) {
+      // A revision/today retry within the same generation keeps the completed view.
+      // An epoch fence (or explicitly mismatched envelopes above) discards it.
+      if (error instanceof BridgeError && error.code === 'STALE_EPOCH') observe?.invalidated();
       if (!(error instanceof BridgeError) || !['STALE_EPOCH', 'SNAPSHOT_STALE'].includes(error.code) || attempt === 2) throw error;
     }
   }

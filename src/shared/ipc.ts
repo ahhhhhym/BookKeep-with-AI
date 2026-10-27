@@ -33,8 +33,16 @@ import type { StatisticsInput, TopTransactionsInput, TopCategoriesInput } from '
 import { SECRET_MAX_LENGTH, SECRET_MIN_LENGTH } from './constants.js';
 import { isPlainRecord, isSafeIntegerInRange, isUuidV4 } from './validation.js';
 import { isThemeSource, type ThemeSource } from './appearance';
+import type { NoticeConsumeInput } from './achievements';
+import { isAchievementPreferences, type AchievementPreferences } from './achievement-presentation';
 
 export const IPC = {
+  achievementList: 'achievement.list',
+  achievementPreferencesRead: 'achievement.preferences.read',
+  achievementPreferencesApply: 'achievement.preferences.apply',
+  achievementPresentation: 'achievement.presentation',
+  achievementPresent: 'achievement.present',
+  achievementConsume: 'achievement.consume',
   ...MAINTENANCE_CHANNELS,
   ...DATASET_CHANNELS,
   ...REVIEW_CHANNELS,
@@ -460,6 +468,12 @@ function statisticsSpec<T>(channel: IpcChannel, extra: 'pointDate' | 'pointMonth
 }
 
 export const CHANNEL_SPECS: {
+  readonly achievementList: ChannelSpec<Record<string, never>>;
+  readonly achievementPreferencesRead: ChannelSpec<Record<string, never>>;
+  readonly achievementPreferencesApply: ChannelSpec<AchievementPreferences>;
+  readonly achievementPresentation: ChannelSpec<Record<string, never>>;
+  readonly achievementPresent: ChannelSpec<{noticeIds: readonly string[]}>;
+  readonly achievementConsume: ChannelSpec<NoticeConsumeInput>;
   readonly appearanceRead: ChannelSpec<Record<string, never>>;
   readonly appearanceApply: ChannelSpec<{ source: ThemeSource }>;
   readonly settingsReadAi: ChannelSpec<Record<string, never>>;
@@ -486,6 +500,26 @@ export const CHANNEL_SPECS: {
   readonly backupList: ChannelSpec<BackupListInput>;
   readonly backupRestore: ChannelSpec<BackupRestoreInput>;
 } & typeof IMPORT_SPECS & typeof REVIEW_SPECS & typeof DATASET_SPECS & typeof MAINTENANCE_SPECS = {
+  achievementList: { channel: IPC.achievementList, permission: 'R', skeletonOnly: false, request: READ_EPOCH_SPEC },
+  achievementPreferencesRead: { channel: IPC.achievementPreferencesRead, permission: 'R', skeletonOnly: false, request: READ_EPOCH_SPEC },
+  achievementPreferencesApply: { channel: IPC.achievementPreferencesApply, permission: 'W', skeletonOnly: false, request: {
+    required:['enabled','position'], optional:[], allowNullEpoch:false, requireMutationId:true,
+    validatePayload: p => isAchievementPreferences(p) ? [] : [{path:'payload',code:'INVALID_NOTICE_PREFERENCES'}],
+    cast: p => p as unknown as AchievementPreferences,
+  } },
+  achievementPresentation: { channel: IPC.achievementPresentation, permission: 'R', skeletonOnly: false, request: READ_EPOCH_SPEC },
+  achievementPresent: { channel: IPC.achievementPresent, permission: 'W', skeletonOnly: false, request: {
+    required:['noticeIds'], optional:[], allowNullEpoch:false, requireMutationId:true,
+    validatePayload: p => Array.isArray(p.noticeIds) && p.noticeIds.length > 0 && p.noticeIds.length <= 10 && p.noticeIds.every(isUuidV4) && new Set(p.noticeIds).size === p.noticeIds.length
+      ? [] : [{path:'payload.noticeIds',code:'INVALID_NOTICE_IDS'}],
+    cast: p => p as unknown as {noticeIds: readonly string[]},
+  } },
+  achievementConsume: { channel: IPC.achievementConsume, permission: 'W', skeletonOnly: false, request: {
+    required: ['noticeId','state'], optional: [], allowNullEpoch: false, requireMutationId: true,
+    validatePayload: p => isUuidV4(p.noticeId) && typeof p.state === 'string' && ['shown','closed','suppressed'].includes(p.state)
+      ? [] : [{path:'payload',code:'INVALID_NOTICE_CONSUMPTION'}],
+    cast: p => p as unknown as NoticeConsumeInput,
+  } },
   appearanceRead: { channel: IPC.appearanceRead, permission: 'R', skeletonOnly: false, request: EMPTY_SPEC },
   appearanceApply: { channel: IPC.appearanceApply, permission: 'U', skeletonOnly: false, request: {
     required: ['source'], optional: [], allowNullEpoch: false, requireMutationId: false,
@@ -720,6 +754,12 @@ export const CHANNEL_SPECS: {
 
 /** 业务契约通道（可出现在 CONTRACTS 中）；skeleton.* 不计入。 */
 export const BUSINESS_CHANNELS: readonly IpcChannel[] = [
+  IPC.achievementPreferencesRead,
+  IPC.achievementPreferencesApply,
+  IPC.achievementPresentation,
+  IPC.achievementPresent,
+  IPC.achievementList,
+  IPC.achievementConsume,
   IPC.appearanceRead,
   IPC.appearanceApply,
   ...Object.values(MAINTENANCE_CHANNELS),

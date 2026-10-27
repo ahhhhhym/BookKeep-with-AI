@@ -5,6 +5,7 @@ import {
   ICON_SLUGS,
   iconSlug,
   isKnownIconKey,
+  isCategoryIconKey,
 } from '../../src/shared/icons';
 import { ICON_COMPONENTS } from '../../src/renderer/lib/icon-registry';
 
@@ -18,7 +19,10 @@ describe('图标白名单与本地映射', () => {
     expect(ICON_SLUGS.length).toBeGreaterThanOrEqual(35);
     expect(new Set(ICON_SLUGS).size).toBe(ICON_SLUGS.length);
     expect(ICON_SLUGS).toContain('settings');
-    expect(ICON_SLUGS.length).toBe(CATEGORY_ICON_SLUGS.length + 8);
+    expect(ICON_SLUGS.length).toBe(CATEGORY_ICON_SLUGS.length + 9);
+    expect(ICON_SLUGS).toContain('party-popper');
+    expect(isKnownIconKey('lucide:party-popper')).toBe(true);
+    expect(isCategoryIconKey('lucide:party-popper')).toBe(false);
   });
 
   it('渲染映射覆盖且仅覆盖白名单 slug', () => {

@@ -7,6 +7,7 @@ import path from 'node:path';
 import { ROOT, electronExecutable, electronSafeEnv } from '../../scripts/lib/paths.mjs';
 const { _electron } = createRequire(path.join(process.env.BOOKKEEP_QA_NODE_MODULES, '__qa__.cjs'))('playwright');
 const output = process.env.BOOKKEEP_QA_OUTPUT;
+const appRoot = path.resolve(process.env.BOOKKEEP_QA_APP_ROOT ?? ROOT);
 mkdirSync(output,{recursive:true});
 const localAppData = mkdtempSync(path.join(tmpdir(),'BookKeep appearance '));
 const report = {ok:false,localAppData,checks:[],errors:[],console:[],browser:'Browser plugin not available; existing Playwright Electron workflow'};
@@ -14,7 +15,7 @@ let app,page;
 const check = id => { report.checks.push(id); console.log('PASS '+id); };
 const settle = () => page.waitForTimeout(320);
 const launch = async () => {
-  app=await _electron.launch({executablePath:electronExecutable(),args:[ROOT],cwd:ROOT,env:electronSafeEnv({LOCALAPPDATA:localAppData})});
+  app=await _electron.launch({executablePath:electronExecutable(),args:[appRoot],cwd:appRoot,env:electronSafeEnv({LOCALAPPDATA:localAppData})});
   page=await app.firstWindow(); page.setDefaultTimeout(7000);
   // Playwright defaults to emulated light; remove it to observe Electron's real theme.
   await page.emulateMedia({colorScheme:null});
@@ -27,7 +28,7 @@ const launch = async () => {
   });
   await app.evaluate(({BrowserWindow})=>BrowserWindow.getAllWindows()[0].setContentSize(1450,900));
 };
-const nav = id => page.locator(`[data-nav-item="${id}"]`).click();
+const nav = async id => {await page.locator(`[data-nav-item="${id}"]`).click();await page.locator('[data-main-transition][data-phase="stable"]').waitFor();};
 const theme = () => page.getByLabel('界面主题',{exact:true});
 const dark = () => page.evaluate(()=>matchMedia('(prefers-color-scheme: dark)').matches);
 const anchoredMenu = async label => {
@@ -93,8 +94,8 @@ try {
   await app.close();app=null;await launch();
   assert.equal(await dark(),true);await nav('settings');assert.equal(await theme().inputValue(),'dark');
   assert.equal(await page.getByRole('separator',{name:'调整侧栏宽度'}).getAttribute('aria-valuenow'),'240');check('theme-and-width-persist-after-restart');
-  for(const id of ['ledger','statistics','ai','data','settings']){await nav(id);await settle();assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth),false);await page.screenshot({path:path.join(output,id+'-dark.png')});}
-  check('five-pages-dark-without-horizontal-overflow');
+  for(const id of ['ledger','statistics','ai','data','achievements','settings']){await nav(id);await settle();assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth),false);await page.screenshot({path:path.join(output,id+'-dark.png')});}
+  check('six-pages-dark-without-horizontal-overflow');
   await theme().selectOption('light');await nav('ledger');await page.getByRole('button',{name:'记一笔',exact:true}).click();await page.screenshot({path:path.join(output,'ledger-dialog-light.png')});await page.keyboard.press('Escape');check('light-dialog');
   await app.evaluate(({BrowserWindow})=>BrowserWindow.getAllWindows()[0].setContentSize(1000,700));await settle();assert.equal(await page.getByRole('separator',{name:'调整侧栏宽度'}).isVisible(),false);check('medium-window-icon-rail');
   await anchoredMenu('icon rail');check('menu-anchors-icon-rail');

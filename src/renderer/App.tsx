@@ -1,5 +1,8 @@
 import { useCallback, useEffect, useRef, useState, type JSX } from 'react';
 import { NavShell } from './components/NavShell';
+import { AchievementNotice } from './components/AchievementNotice';
+import { achievementController } from './lib/achievement-controller';
+import { AchievementsPage } from './pages/AchievementsPage';
 import { DataPage } from './pages/DataPage';
 import { ImportPage } from './pages/ImportPage';
 import { LedgerPage } from './pages/LedgerPage';
@@ -15,11 +18,18 @@ import type { LeaveGuard } from './components/ExpenseEditor';
 import type { StatisticsInput } from '../shared/statistics';
 import type { TransactionFilter } from '../shared/entities';
 import { todayInShanghai } from '../shared/date';
+import { SlidingSegments } from './components/SlidingSegments';
+import { useMainTransition } from './lib/use-main-transition';
+
+const AI_SEGMENTS = ([['import', '图片导入'], ['queue', '任务队列'], ['review', '候选审核']] as const).map(([value, label]) => ({ value, label, controls: `ai-${value}` }));
 
 export function App(): JSX.Element {
   const [statisticsInput, setStatisticsInput] = useState<StatisticsInput>(() => ({ period: 'month', anchorDate: todayInShanghai(), categoryIds: [], snapshotRevision: null }));
   const [detailFilter, setDetailFilter] = useState<TransactionFilter | undefined>();
-  const [navId, setNavId] = useState<NavId>('ledger');
+  const [targetNav, setTargetNav] = useState<NavId>('ledger');
+  const { shown: navId, phase, ref: transitionRef } = useMainTransition(targetNav);
+  const [subMotion, setSubMotion] = useState(false);
+  const navigationTarget = useRef<NavId>('ledger');
   const [aiPage, setAiPage] = useState<AiPageId>('import');
   const [importVisited, setImportVisited] = useState(false);
   const [drawerOpen, setDrawerOpen] = useState(false);
@@ -34,6 +44,7 @@ export function App(): JSX.Element {
   const consumeNewRequest = useCallback(() => setNewRequest(0), []);
   const registerGuard = useCallback((guard: LeaveGuard): void => { leaveGuard.current = guard; }, []);
   const resetRestoredViews = useCallback(() => {
+    achievementController.reset();
     setDetailFilter(undefined);
     setImportVisited(false);
     setAiPage('import');
@@ -66,17 +77,22 @@ export function App(): JSX.Element {
     };
   }, [bridgeMissing]);
 
-  const navigate = useCallback((id: NavId) => {
+  const navigate = useCallback((id: NavId, onAccepted?: () => void) => {
     const target = id === 'ai' ? aiPage : id;
-    if (target === navId) { setDrawerOpen(false); return; }
+    if (target === navigationTarget.current) { setDrawerOpen(false); onAccepted?.(); return; }
     const leave = (): void => {
-      setNavId(target); setDrawerOpen(false);
+      setSubMotion(primaryNavId(navigationTarget.current) === 'ai' && primaryNavId(target) === 'ai');
+      navigationTarget.current = target;
+      setTargetNav(target); setDrawerOpen(false);
       if (target === 'import' || target === 'queue' || target === 'review') {
         setAiPage(target);
         if (target === 'import') setImportVisited(true);
       }
+      onAccepted?.();
     };
-    if (leaveGuard.current) leaveGuard.current(leave);
+    // Once the displayed page has approved departure it is inert; a rapid retarget
+    // must not ask that same abandoned draft again before it unmounts.
+    if (leaveGuard.current && navigationTarget.current === navId) leaveGuard.current(leave);
     else leave();
   }, [aiPage, navId]);
 
@@ -85,7 +101,7 @@ export function App(): JSX.Element {
       if (event.isComposing || !event.ctrlKey || event.key.toLowerCase() !== 'n') return;
       if (document.querySelector('dialog[open]') || (event.target instanceof HTMLInputElement && event.target.type === 'password')) return;
       event.preventDefault();
-      navigate('ledger'); setNewRequest((value) => value + 1);
+      navigate('ledger', () => setNewRequest((value) => value + 1));
     };
     window.addEventListener('keydown', handler);
     return () => window.removeEventListener('keydown', handler);
@@ -140,21 +156,20 @@ export function App(): JSX.Element {
         <span className="window-brand"><span className="nav-brand-mark" aria-hidden="true">¥</span>BookKeepAI</span>
       </header>
 
-      <NavShell current={primaryId} onNavigate={navigate} open={drawerOpen} onClose={() => setDrawerOpen(false)} />
+      <NavShell current={primaryNavId(targetNav)} onNavigate={navigate} open={drawerOpen} onClose={() => setDrawerOpen(false)} />
 
       <main id="main-content" className="main" tabIndex={-1}>
+        <div ref={transitionRef} className="main-content-transition" data-main-transition data-phase={phase} inert={phase === 'leaving'}>
         {navId === 'ledger' ? <LedgerPage initialFilter={detailFilter} registerGuard={registerGuard} newRequest={newRequest} onNewRequestHandled={consumeNewRequest} /> : null}
         {navId === 'statistics' ? <StatisticsPage input={statisticsInput} onInput={setStatisticsInput} onDetails={(filter) => { setDetailFilter(filter); navigate('ledger'); }} /> : null}
         <div className="page ai-page" hidden={primaryId !== 'ai'}>
-          <div className="segmented ai-switcher" role="group" aria-label="AI记账子页">
-            {([['import', '图片导入'], ['queue', '任务队列'], ['review', '候选审核']] as const).map(([id, label]) =>
-              <button type="button" key={id} aria-pressed={aiPage === id} aria-controls={`ai-${id}`} onClick={() => navigate(id)}>{label}</button>)}
-          </div>
-          <section id="ai-import" hidden={navId !== 'import'} aria-label="图片导入">{importVisited ? <ImportPage onError={setLastError} /> : null}</section>
-          <section id="ai-queue" hidden={navId !== 'queue'} aria-label="任务队列">{navId === 'queue' ? <QueuePage /> : null}</section>
-          <section id="ai-review" hidden={navId !== 'review'} aria-label="候选审核">{navId === 'review' ? <ReviewPage registerGuard={registerGuard} /> : null}</section>
+          <SlidingSegments className="ai-switcher" value={aiPage} items={AI_SEGMENTS} label="AI记账子页" onChange={navigate} />
+          <section id="ai-import" className={subMotion ? 'ai-sub-fade' : undefined} hidden={navId !== 'import'} aria-label="图片导入">{importVisited ? <ImportPage onError={setLastError} /> : null}</section>
+          <section id="ai-queue" className={subMotion ? 'ai-sub-fade' : undefined} hidden={navId !== 'queue'} aria-label="任务队列">{navId === 'queue' ? <QueuePage /> : null}</section>
+          <section id="ai-review" className={subMotion ? 'ai-sub-fade' : undefined} hidden={navId !== 'review'} aria-label="候选审核">{navId === 'review' ? <ReviewPage registerGuard={registerGuard} /> : null}</section>
         </div>
         {navId === 'data' ? <DataPage onDataRestored={resetRestoredViews} /> : null}
+        {navId === 'achievements' ? <AchievementsPage /> : null}
         {navId === 'settings' ? (
           <SettingsPage
             ai={ai}
@@ -166,8 +181,9 @@ export function App(): JSX.Element {
             onSecretChange={setSecret}
           />
         ) : null}
+        </div>
       </main>
-
+      <AchievementNotice onOpen={() => navigate('achievements')} />
     </div>
   );
 }
