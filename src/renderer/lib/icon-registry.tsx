@@ -34,6 +34,7 @@ import {
   Mic,
   NotebookPen,
   Package,
+  PartyPopper,
   PersonStanding,
   PhoneCall,
   Plane,
@@ -92,6 +93,7 @@ export const ICON_COMPONENTS: Readonly<Record<string, LucideIcon>> = {
   'clipboard-check': ClipboardCheck,
   'layout-grid': LayoutGrid,
   database: Database,
+  'party-popper': PartyPopper,
 };
 
 export interface AppIconProps {

@@ -17,6 +17,7 @@ import {
   renameSync,
   statSync,
   unlinkSync,
+  truncateSync,
 } from 'node:fs';
 import path from 'node:path';
 import { AppError } from '../../shared/errors';
@@ -26,6 +27,7 @@ import { collectIntegrityViolations, openSqlite, type SqliteDb } from '../db/sql
 import { generationDatabasePath, type StoragePaths } from './layout';
 import { CONTENT_VERSION, CONTENT_LIMIT, databaseDigest, embedAttachments, verifyAttachments, extractAttachments } from './backup-content';
 import { regularPath } from './safe-file';
+import {verifyBackupSuccess,backupPayloadSize,type BackupSuccess} from './backup-success';
 
 export const BACKUP_MANIFEST_VERSION = 'bk-backup.v1';
 export const BACKUP_MANIFEST_TABLE = 'backup_manifest';
@@ -53,6 +55,9 @@ export interface BackupManifest {
   readonly contentVersion?: typeof CONTENT_VERSION;
   readonly databaseDigest?: string;
   readonly excludes?: readonly string[];
+  readonly successVersion?: string;
+  readonly backupKind?: 'manual'|'pre_restore'|'pre_migration';
+  readonly verificationKey?: string;
 }
 
 export interface CreateArchiveOptions {
@@ -62,6 +67,8 @@ export interface CreateArchiveOptions {
   readonly appVersion: string;
   readonly contractVersion: string;
   readonly now: string;
+  readonly success?: {readonly version:string;readonly publicKey:string};
+  readonly kind?: 'manual'|'pre_restore'|'pre_migration';
 }
 
 export interface CreatedArchive {
@@ -119,6 +126,8 @@ export function createBackupArchive(options: CreateArchiveOptions): CreatedArchi
     snapshotRevision: ledger.data_revision,
     files: [{ path: 'ledger.db', role: 'database', size: snapshotSize, sha256: snapshotHash }],
     warnings: [],
+    ...(options.kind?{backupKind:options.kind}:{}),
+    ...(options.success?{successVersion:options.success.version,verificationKey:options.success.publicKey}:{}),
   };
 
   let archive: SqliteDb | null = null;
@@ -159,9 +168,10 @@ export function createBackupArchive(options: CreateArchiveOptions): CreatedArchi
   }
   archive.close();
 
-  const finalPath = path.join(paths.backups, `${backupId}.bkdb`);
+  // A prepared self-success archive is private and never restorable until registration commits.
+  const finalPath = options.success ? temporary : path.join(paths.backups, `${backupId}.bkdb`);
   try {
-    renameSync(temporary, finalPath);
+    if(finalPath!==temporary)renameSync(temporary, finalPath);
   } catch (error) {
     try {
       if (existsSync(temporary)) unlinkSync(temporary);
@@ -186,6 +196,7 @@ export interface InspectedArchive {
   readonly ledgerId: string;
   readonly snapshotRevision: number;
   readonly byteSize: number;
+  readonly success: BackupSuccess|null;
 }
 
 export type ArchiveInspection =
@@ -217,6 +228,8 @@ function readManifest(db: SqliteDb): BackupManifest | null {
 export interface InspectArchiveOptions {
   readonly latestSchemaVersion: number;
   readonly contractVersion: string;
+  /** Internal pre-registration validation only; never used by import/preview/restore. */
+  readonly allowPrepared?: boolean;
 }
 
 /** 只读校验：格式/完整性/清单/schema 兼容性/业务不变量。任何失败都不触碰 active。 */
@@ -263,6 +276,7 @@ export function inspectBackupArchive(
     if (!ledger || ledger.id !== manifest.ledgerId || ledger.data_revision!==manifest.snapshotRevision || manifest.contractVersion!==meta.contractVersion) {
       return { ok: false, code: 'BACKUP_INVALID', reason: 'LEDGER_MISMATCH' };
     }
+    const success=verifyBackupSuccess(readFileSync(archivePath),manifest,options.allowPrepared);
     return {
       ok: true,
       archive: {
@@ -271,6 +285,7 @@ export function inspectBackupArchive(
         ledgerId: ledger.id,
         snapshotRevision: manifest.snapshotRevision,
         byteSize: size,
+        success,
       },
     };
   } catch {
@@ -289,6 +304,8 @@ export function stageArchiveDatabase(archivePath: string, destination: string): 
   mkdirSync(path.dirname(destination), { recursive: true });
   regularPath(destination,path.dirname(path.dirname(destination)),false);
   copyFileSync(archivePath, destination);
+  const bytes=readFileSync(destination),payloadSize=backupPayloadSize(bytes);
+  if(payloadSize!==bytes.length)truncateSync(destination,payloadSize);
   const staged=openSqlite(destination,{configure:false});
   try { const manifest=readManifest(staged); if(manifest?.contentVersion===CONTENT_VERSION) extractAttachments(staged,destination); else staged.exec('DROP TABLE IF EXISTS backup_manifest'); }
   finally { staged.close(); }

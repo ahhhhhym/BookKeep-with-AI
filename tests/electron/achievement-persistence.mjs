@@ -1,0 +1,37 @@
+/** B real preload/router/SQLite smoke. Synthetic data only; no product UI in this step. */
+import assert from 'node:assert/strict';
+import {createRequire} from 'node:module';
+import {mkdtempSync,mkdirSync,writeFileSync} from 'node:fs';
+import {tmpdir} from 'node:os';
+import path from 'node:path';
+import {ROOT,electronExecutable,electronSafeEnv} from '../../scripts/lib/paths.mjs';
+const {_electron}=createRequire(path.join(process.env.BOOKKEEP_QA_NODE_MODULES??path.join(ROOT,'node_modules'),'__qa__.cjs'))('playwright');
+const out=path.resolve(process.env.BOOKKEEP_QA_OUTPUT??path.join(ROOT,'.tmp/achievement-persistence'));mkdirSync(out,{recursive:true});
+const localAppData=mkdtempSync(path.join(tmpdir(),'BookKeep B 合成 '));
+const result={ok:false,synthetic:true,localAppData,checks:[],errors:[],externalHttp:0};let app,page;
+const check=(id,data)=>{result.checks.push({id,ok:true,data});console.log('PASS '+id);};
+const raw=(method,input,options)=>page.evaluate(({method,input,options})=>{const [g,m]=method.split('.');return window.bookkeep[g][m](input,options);},{method,input,options});
+const invoke=async(...args)=>{const r=await raw(...args);assert.equal(r.ok,true,JSON.stringify(r));return r.data;};
+async function launch(){app=await _electron.launch({executablePath:electronExecutable(),args:[ROOT],cwd:ROOT,env:electronSafeEnv({LOCALAPPDATA:localAppData}),timeout:30000});page=await app.firstWindow();page.on('pageerror',e=>result.errors.push(e.message));await page.locator('[data-ledger-total]').waitFor();await page.emulateMedia({colorScheme:null});await app.evaluate(({session})=>{globalThis.bHttp=0;globalThis.fetch=async()=>{globalThis.bHttp++;throw Error('external HTTP prohibited');};session.defaultSession.webRequest.onBeforeRequest({urls:['http://*/*','https://*/*']},(_d,cb)=>{globalThis.bHttp++;cb({cancel:true});});});}
+async function close(){result.externalHttp+=await app.evaluate(()=>globalThis.bHttp);await app.close();app=null;}
+async function sql(command){return app.evaluate(({app},command)=>{const require=process.getBuiltinModule('node:module').createRequire(app.getAppPath()+'/package.json'),fs=require('node:fs'),path=require('node:path'),DB=require('better-sqlite3');const root=path.join(process.env.LOCALAPPDATA,'BookKeepAI'),p=JSON.parse(fs.readFileSync(path.join(root,'data/active.json'),'utf8')),db=new DB(path.join(root,'data/generations',p.generationId,'ledger.db'));try{
+ if(command==='fault')db.exec("CREATE TRIGGER synthetic_achievement_fault BEFORE INSERT ON achievement_unlock BEGIN SELECT RAISE(ABORT,'synthetic'); END;");
+ if(command==='repair')db.exec('DROP TRIGGER synthetic_achievement_fault');
+ return {epoch:p.dataEpoch,schema:db.pragma('user_version',{simple:true}),transactions:db.prepare('SELECT count(*) n,sum(amount_fen) fen FROM "transaction"').get(),receipts:db.prepare("SELECT count(*) n FROM mutation_receipt WHERE operation='transaction.create'").get().n,postings:db.prepare('SELECT count(*) n FROM review_posting').get().n,unlocks:db.prepare('SELECT * FROM achievement_unlock').all(),facts:db.prepare('SELECT * FROM achievement_fact').all(),days:db.prepare('SELECT * FROM achievement_activity_day').all(),notices:db.prepare('SELECT * FROM achievement_notice').all(),diagnostics:db.prepare('SELECT * FROM achievement_diagnostic').all(),quick:db.pragma('quick_check',{simple:true}),fk:db.pragma('foreign_key_check')};
+ }finally{db.close();}},command);}
+try{
+ await launch();const empty=await invoke('achievement.list');assert.equal(empty.items.length,10);assert.equal(empty.progress.entries,0);assert.deepEqual(empty.notices,[]);check('actual-preload-router-empty-query-10-contracts',empty);
+ await invoke('skeleton.mockRecognition',{scenario:'two-expenses'});assert.equal((await invoke('achievement.list')).progress.entries,0);check('demo-recognition-no-reward');
+ await sql('fault');const mutationId=crypto.randomUUID(),input={amountFen:123,occurredDate:'2020-01-01',occurredTime:null,timePrecision:'date',name:'B synthetic',categoryId:'cat_food',merchant:null,note:null};
+ const created=await invoke('transaction.create',input,{mutationId});assert.equal(created.replayed,false);assert.equal((await invoke('transaction.create',input,{mutationId})).replayed,true);
+ const failed=await raw('achievement.list');assert.equal(failed.ok,false);assert.equal(failed.error.code,'INTEGRITY_ERROR');const before=await sql();assert.equal(before.transactions.n,1);assert.equal(before.receipts,1);assert.equal(before.postings,0);assert.equal(before.unlocks.length,0);assert.equal(before.diagnostics.length,1);check('postcommit-achievement-fault-keeps-one-transaction-and-receipt-query-is-error',before);
+ await sql('repair');const v=await invoke('achievement.list');assert.equal(v.progress.entries,1);assert.equal(v.progress.activityDays,1);assert.equal(v.items.find(i=>i.id==='entry_first').origin,'live');const notice=v.notices[0];assert.equal(notice.status,'pending');assert.equal((await invoke('achievement.list')).notices[0].status,'pending');check('recompute-repairs-without-new-business-and-read-does-not-consume',v);
+ const old=await raw('achievement.consume',{noticeId:notice.id,state:'shown'},{dataEpoch:crypto.randomUUID()});assert.equal(old.ok,false);assert.equal(old.error.code,'STALE_EPOCH');
+ for(const payload of [{noticeId:notice.id,state:'unlock'},{noticeId:notice.id,state:'shown',count:100},{noticeId:notice.id,state:'shown',ledgerId:crypto.randomUUID()},{noticeId:notice.id,state:'shown',path:'outside'},{noticeId:'invalid',state:'closed'}])assert.equal((await raw('achievement.consume',payload)).ok,false);
+ assert.equal((await invoke('achievement.list')).notices[0].status,'pending');check('restricted-consumption-rejects-grant-count-ledger-path-and-stale-epoch');
+ await invoke('achievement.consume',{noticeId:notice.id,state:'shown'});await invoke('achievement.consume',{noticeId:notice.id,state:'shown'});assert.equal((await invoke('achievement.list')).notices[0].status,'shown');
+ const denied=await app.evaluate(async({BrowserWindow,app})=>{const w=new BrowserWindow({show:false,webPreferences:{preload:app.getAppPath()+'/dist/preload/index.cjs',contextIsolation:true,sandbox:true,nodeIntegration:false}});try{await w.loadURL('bookkeep://app/');return await w.webContents.executeJavaScript('window.bookkeep.achievement.list()');}finally{w.destroy();}});assert.equal(denied.ok,false);assert.equal(denied.error.code,'PERMISSION_DENIED');check('second-window-sender-denied');
+ await close();await launch();assert.equal((await invoke('achievement.list')).notices[0].status,'shown');await invoke('achievement.consume',{noticeId:notice.id,state:'closed'});await invoke('achievement.consume',{noticeId:notice.id,state:'shown'});assert.equal((await invoke('achievement.list')).notices[0].status,'closed');
+ const final=await sql();assert.equal(final.schema,4);assert.deepEqual(final.transactions,{n:1,fen:123});assert.equal(final.receipts,1);assert.equal(final.unlocks.length,1);assert.equal(final.notices.length,1);assert.equal(final.quick,'ok');assert.deepEqual(final.fk,[]);assert.notEqual(final.days[0].day,'2020-01-01');check('restart-consumption-permanent-one-unlock-and-native-SQLite-integrity',final);
+ assert.deepEqual(result.errors,[]);await close();assert.equal(result.externalHttp,0);result.ok=true;
+}catch(e){result.failure=String(e.stack??e);process.exitCode=1;}finally{if(app)await app.close().catch(()=>{});writeFileSync(path.join(out,'result.json'),JSON.stringify(result,null,2));}

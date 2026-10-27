@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { createRateLimiter } from '../../src/main/ipc/rate-limit';
-import { NAV_IDS, NAV_ITEMS_META } from '../../src/shared/nav';
+import { NAV_IDS, NAV_ITEMS_META, isNavId, primaryNavId } from '../../src/shared/nav';
 import { isKnownIconKey } from '../../src/shared/icons';
 
 describe('密钥提交限流', () => {
@@ -30,12 +30,17 @@ describe('密钥提交限流', () => {
 });
 
 describe('主导航元数据', () => {
-  it('5 个一级入口，AI 子页归并、分类无可视入口', () => {
-    expect(NAV_IDS).toHaveLength(5);
+  it('6 个一级入口，成就和设置在底部，AI 子页归并、分类无可视入口', () => {
+    expect(NAV_IDS).toHaveLength(6);
     expect(NAV_ITEMS_META.map((item) => item.label)).toEqual([
-      '记账', '统计', 'AI记账', '数据管理', '设置',
+      '记账', '统计', 'AI记账', '数据管理', '成就', '设置',
     ]);
     expect(NAV_ITEMS_META.at(-1)?.id).toBe('settings');
+    expect(NAV_ITEMS_META.filter(item => item.group === 'bottom').map(item => item.id)).toEqual(['achievements', 'settings']);
+    expect(isNavId('achievements')).toBe(true);
+    expect(primaryNavId('achievements')).toBe('achievements');
+    expect(primaryNavId('review')).toBe('ai');
+    expect(isNavId('categories')).toBe(false);
   });
 
   it('每个导航图标都在本地白名单内且标签唯一', () => {

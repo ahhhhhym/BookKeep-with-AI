@@ -57,6 +57,7 @@ export const NAV_ICON_SLUGS: readonly string[] = [
   'clipboard-check',
   'layout-grid',
   'database',
+  'party-popper',
   NAV_SETTINGS_ICON_SLUG,
 ];
 

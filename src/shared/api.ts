@@ -45,6 +45,16 @@ export type ApiResult<T> = ({ ok: true; data: T } | { ok: false; error: AppError
 };
 
 export interface BookKeepApi {
+  readonly achievement: {
+    /** Background observer: same restricted list IPC, never advances the bridge's shared epoch. */
+    watch(): Promise<ApiResult<import('./achievements').AchievementList>>;
+    readPreferences(): Promise<ApiResult<import('./achievement-presentation').AchievementPreferences>>;
+    applyPreferences(input: import('./achievement-presentation').AchievementPreferences, options?: MutationOptions): Promise<ApiResult<import('./achievement-presentation').AchievementPreferences>>;
+    presentation(): Promise<ApiResult<import('./achievement-presentation').AchievementPresentation>>;
+    present(input: {noticeIds: readonly string[]}, options?: MutationOptions): Promise<ApiResult<boolean>>;
+    list(): Promise<ApiResult<import('./achievements').AchievementList>>;
+    consume(input: import('./achievements').NoticeConsumeInput, options?: MutationOptions): Promise<ApiResult<import('./achievements').AchievementNotice>>;
+  };
   readonly appearance: {
     read(): Promise<ApiResult<import('./appearance').ThemeSource>>;
     apply(source: import('./appearance').ThemeSource): Promise<ApiResult<import('./appearance').ThemeSource>>;

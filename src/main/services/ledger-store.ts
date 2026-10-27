@@ -75,7 +75,7 @@ import {
   copyBackupRecordToNewDatabase,
   createPreMigrationBackup,
   listBackupRows,
-  getBackupRow, backupRecordView,
+  getBackupRow, backupRecordView,reconcilePublishedBackupFacts,
   type BackupEnvironment,
   type StagedRestorePlan,
 } from './backup-service';
@@ -99,6 +99,10 @@ import {
 import { createTokenCodec, type TokenCodec } from './signed-token';
 import type { StatisticsInput, TopCategoriesInput, TopTransactionsInput } from '../../shared/statistics';
 import { statisticsSeries, statisticsSummary, statisticsTopCategories, statisticsTopTransactions } from './statistics-service';
+import { settleAchievements, readAchievements, consumeAchievementNotice } from './achievement-service';
+import type { NoticeConsumeInput } from '../../shared/achievements';
+import type { AchievementPreferences } from '../../shared/achievement-presentation';
+import { readAchievementPreferences, saveAchievementPreferences } from './achievement-preferences';
 
 export interface LedgerStoreOptions {
   readonly layout: StorageLayout;
@@ -387,6 +391,7 @@ export class LedgerStore {
     if (createdFresh) {
       store.appendStartupAudit();
     }
+    if (store.schemaVersion >= 4 && !store.recoveryReason) store.settleAchievementsAfterSuccess(store.currentEpoch);
     return store;
   }
 
@@ -409,7 +414,7 @@ export class LedgerStore {
   }
 
   private backupEnvironment(): BackupEnvironment {
-    return { db: this.db, paths: this.paths, appVersion: this.appVersion, clock: this.clock };
+    return { db: this.db, paths: this.paths, appVersion: this.appVersion, clock: this.clock, fault:this.fault };
   }
 
   private context(): LedgerServiceContext {
@@ -538,9 +543,87 @@ export class LedgerStore {
 
   /* ------------------------------- 交易 -------------------------------- */
 
+  private achievementContext() {
+    return { db: this.db, ledgerId: this.ledgerId, epoch: this.epoch, clock: this.clock, fault: this.fault };
+  }
+
+  /** Main only; an old callback must carry its captured epoch. No renderer settlement endpoint. */
+  settleAchievements(expectedEpoch: string): void {
+    this.assertWritable();
+    if(expectedEpoch!==this.currentEpoch)throw new AppError('STALE_EPOCH');
+    reconcilePublishedBackupFacts(this.backupEnvironment(),this.ledgerId,expectedEpoch);
+    settleAchievements(this.achievementContext(), expectedEpoch);
+    if (!this.achievementPreferences().enabled) this.suppressAchievementNotices();
+  }
+
+  achievementPreferences(): AchievementPreferences { return readAchievementPreferences(this.paths.root); }
+
+  private suppressAchievementNotices(): void {
+    this.db.prepare("UPDATE achievement_notice SET status='suppressed',state_at=? WHERE ledger_id=? AND status IN('pending','shown')")
+      .run(nowIso(this.clock), this.ledgerId);
+  }
+
+  applyAchievementPreferences(value: AchievementPreferences): AchievementPreferences {
+    this.assertWritable();
+    const previous = this.achievementPreferences();
+    // On re-enable, settle under the old disabled policy, then drain anything pending.
+    if (!previous.enabled && value.enabled) {
+      this.settleAchievements(this.currentEpoch);
+      this.suppressAchievementNotices();
+    }
+    const result = saveAchievementPreferences(this.paths.root, value);
+    if (!result.enabled) this.suppressAchievementNotices();
+    return result;
+  }
+
+  /** Atomic batch confirmation after rendered visibility, never an unlock endpoint. */
+  presentAchievementNotices(noticeIds: readonly string[], expectedEpoch: string): boolean {
+    this.assertWritable();
+    if (expectedEpoch !== this.currentEpoch) throw new AppError('STALE_EPOCH');
+    if (!this.achievementPreferences().enabled) return false;
+    return runInTransaction(this.db, () => {
+      const notices = readAchievements(this.achievementContext()).notices;
+      if (noticeIds.some(id => !notices.some(n => n.id === id && (n.status === 'pending' || n.status === 'shown')))) return false;
+      // A lost successful reply can be retried by the same visible card without shortening its timer.
+      for (const noticeId of noticeIds) consumeAchievementNotice(this.achievementContext(), {noticeId, state:'shown'}, expectedEpoch);
+      return true;
+    });
+  }
+
+  /** Business commits are authoritative. Never throw a derived-settlement failure back to a writer. */
+  settleAchievementsAfterSuccess(expectedEpoch: string): void {
+    if (this.schemaVersion < 4 || this.recoveryReason || this.closed || expectedEpoch !== this.epoch) return;
+    try {
+      this.settleAchievements(expectedEpoch);
+    } catch (error) {
+      console.warn('[bookkeep] achievement settlement deferred', error instanceof AppError ? error.code : 'INTERNAL_ERROR');
+      try {
+        this.assertWritable();
+        if (expectedEpoch !== this.epoch) return;
+        this.db.prepare(`INSERT INTO achievement_diagnostic VALUES(?,?,?) ON CONFLICT(ledger_id)
+          DO UPDATE SET error_code=excluded.error_code,failed_at=excluded.failed_at`)
+          .run(this.ledgerId, error instanceof AppError ? error.code : 'INTERNAL_ERROR', nowIso(this.clock));
+      } catch { /* storage failure: safe diagnostic above remains available; durable facts allow retry */ }
+    }
+  }
+
+  achievementsList() {
+    this.assertWritable();
+    this.settleAchievements(this.currentEpoch);
+    return readAchievements(this.achievementContext());
+  }
+
+  consumeAchievementNotice(input: NoticeConsumeInput, expectedEpoch: string) {
+    this.assertWritable();
+    return consumeAchievementNotice(this.achievementContext(), input, expectedEpoch);
+  }
+
   createTransaction(input: TransactionInput, mutationId: string | null): TransactionMutationResult {
     this.assertWritable();
-    return this.trackMutation(createManualTransaction(this.context(), input, mutationId));
+    const epoch = this.currentEpoch;
+    const result = this.trackMutation(createManualTransaction(this.context(), input, mutationId));
+    this.settleAchievementsAfterSuccess(epoch);
+    return result;
   }
 
   updateTransaction(
@@ -548,7 +631,9 @@ export class LedgerStore {
     mutationId: string | null,
   ): TransactionMutationResult {
     this.assertWritable();
-    return this.trackMutation(updateTransaction(this.context(), input, mutationId));
+    const result = this.trackMutation(updateTransaction(this.context(), input, mutationId));
+    this.settleAchievementsAfterSuccess(this.currentEpoch);
+    return result;
   }
 
   softDeleteTransaction(
@@ -556,7 +641,9 @@ export class LedgerStore {
     mutationId: string | null,
   ): TransactionMutationResult {
     this.assertWritable();
-    return this.trackMutation(softDeleteTransaction(this.context(), input, mutationId));
+    const result = this.trackMutation(softDeleteTransaction(this.context(), input, mutationId));
+    this.settleAchievementsAfterSuccess(this.currentEpoch);
+    return result;
   }
 
   restoreTransaction(
@@ -564,7 +651,9 @@ export class LedgerStore {
     mutationId: string | null,
   ): TransactionMutationResult {
     this.assertWritable();
-    return this.trackMutation(restoreTransaction(this.context(), input, mutationId));
+    const result = this.trackMutation(restoreTransaction(this.context(), input, mutationId));
+    this.settleAchievementsAfterSuccess(this.currentEpoch);
+    return result;
   }
 
   listTransactions(input: TransactionListInput): TransactionListResult {
@@ -596,7 +685,10 @@ export class LedgerStore {
 
   createBackup(input: BackupCreateInput, mutationId: string | null): BackupCreateResult {
     this.assertOpen();
-    return this.backupService.create(input, mutationId);
+    const epoch = this.currentEpoch;
+    const result = this.backupService.create(input, mutationId);
+    this.settleAchievementsAfterSuccess(epoch);
+    return result;
   }
 
   listBackups(page?: {limit:number;cursor:string|null}): BackupListResult {

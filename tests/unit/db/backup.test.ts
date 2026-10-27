@@ -109,7 +109,7 @@ describe('备份恢复：校验、切换、epoch 与失败保护', () => {
 
       const preview = store.previewRestore(backupId);
       expect(preview.archiveHash).toBe(archiveHash);
-      expect(preview.dbSchemaVersion).toBe(3);
+      expect(preview.dbSchemaVersion).toBe(4);
       expect(preview.schemaCompatibility).toBe('current');
       expect(preview.snapshotRevision).toBe(1);
       expect(preview.lastAppliedRestoreId).toBeNull();

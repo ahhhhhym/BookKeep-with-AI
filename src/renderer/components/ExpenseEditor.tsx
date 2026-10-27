@@ -137,7 +137,7 @@ export function ExpenseEditor({ original, categories, dataEpoch, onSaved, onClos
     </Modal>
     {leaveAction ? <Modal title="有未保存的修改" busy={busy} onClose={() => setLeaveAction(null)}>
       <p>{uncertain ? '原提交结果尚未核实，请先重试保存。放弃输入不会撤销可能已提交的交易。' : '选择保存后离开，或放弃本次修改。'}</p>
-      <div className="expense-actions"><button className="button" disabled={busy} onClick={() => setLeaveAction(null)}>继续编辑</button><button className="button" disabled={busy} onClick={() => { const leave = leaveAction; setLeaveAction(null); leave(); }}>放弃修改</button><button className="button button-primary" disabled={busy || epochChanged || conflict} onClick={() => { const leave = leaveAction; setLeaveAction(null); void save(leave); }}>保存并离开</button></div>
+      <div className="expense-actions"><button className="button" disabled={busy} onClick={() => setLeaveAction(null)}>继续编辑</button><button className="button" disabled={busy} onClick={() => { const leave = leaveAction; setLeaveAction(null); onClose(); if (leave !== onClose) leave(); }}>放弃修改</button><button className="button button-primary" disabled={busy || epochChanged || conflict} onClick={() => { const leave = leaveAction; setLeaveAction(null); void save(leave); }}>保存并离开</button></div>
     </Modal> : null}
   </>;
 }
