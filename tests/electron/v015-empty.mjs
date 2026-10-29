@@ -1,11 +1,12 @@
 import assert from 'node:assert/strict';
 import {createRequire} from 'node:module';
-import {mkdirSync,mkdtempSync,writeFileSync} from 'node:fs';
+import {mkdirSync,mkdtempSync,readFileSync,writeFileSync} from 'node:fs';
 import {tmpdir} from 'node:os';
 import path from 'node:path';
 import {ROOT,electronExecutable,electronSafeEnv} from '../../scripts/lib/paths.mjs';
 const modules=process.env.BOOKKEEP_QA_NODE_MODULES??'C:/Users/Administrator/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/node_modules';
 const {_electron}=createRequire(path.join(modules,'qa.cjs'))('playwright');
+const expectedVersion=JSON.parse(readFileSync(new URL('../../package.json',import.meta.url),'utf8')).version;
 const out=process.env.BOOKKEEP_QA_OUTPUT??'evidence/V0.1.5/empty-01';mkdirSync(out,{recursive:true});
 const localAppData=mkdtempSync(path.join(tmpdir(),'BookKeep 015 empties synthetic '));const report={ok:false,checks:[],errors:[],http:0,localAppData};let app,page;
 const check=(id,data)=>{report.checks.push({id,data});console.log('PASS '+id);};
@@ -28,7 +29,7 @@ try{
  await invoke('transaction.softDelete',{id:created.transaction.id,expectedVersion:created.transaction.version});await page.getByRole('button',{name:'已删除记录',exact:true}).click();await page.locator('[data-transaction-id]').waitFor();assert.equal(await page.getByText('已删除记录：此处金额不计入正式统计。',{exact:true}).count(),0);assert.equal(await page.locator('.ledger-empty-deleted').count(),0);check('deleted-with-data-no-removed-explanation-or-empty');
  await page.screenshot({path:path.join(out,'deleted-with-data.png')});
  // About field and actual native app version share the package source.
- await page.locator('[data-nav-item="settings"]').click();await page.getByRole('region',{name:'关于',exact:true}).waitFor();const about=await page.getByRole('region',{name:'关于',exact:true}).innerText();assert(about.includes('BookKeepAI 0.1.5'));assert(about.includes('发行者')&&about.includes('瀚宇铭'));assert.equal(await app.evaluate(({app})=>app.getVersion()),'0.1.5');check('about-publisher-and-actual-electron-version',about);
+ await page.locator('[data-nav-item="settings"]').click();await page.getByRole('region',{name:'关于',exact:true}).waitFor();const about=await page.getByRole('region',{name:'关于',exact:true}).innerText();assert(about.includes(`BookKeepAI ${expectedVersion}`));assert(about.includes('发行者')&&about.includes('瀚宇铭'));assert.equal(await app.evaluate(({app})=>app.getVersion()),expectedVersion);check('about-publisher-and-actual-electron-version',about);
  assert.deepEqual(report.errors,[]);report.ok=true;
 }catch(e){report.failure=e.stack;console.error(e);if(page)await page.screenshot({path:path.join(out,'failure.png')}).catch(()=>{});}
 finally{if(app){report.http=await app.evaluate(()=>globalThis.emptyQa.http);await app.close();}writeFileSync(path.join(out,'result.json'),JSON.stringify(report,null,2));}

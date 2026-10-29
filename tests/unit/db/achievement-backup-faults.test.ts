@@ -56,7 +56,7 @@ describe('C archive/registration/staging failures retain current data',()=>{
  it('success date follows completion over Shanghai midnight; auto snapshots never add facts',()=>{
   let ticking=false;const layout=createTestLayout();layouts.push(layout);const s=LedgerStore.open(storeOptions(layout,()=>{if(ticking)time+=1000;return time;}));stores.push(s);ticking=true;
   const b=backup(s);expect(b.record.createdAt).toBe('2026-10-27T15:59:59.000Z');
-  const checked=inspect(s.diagnostics().backupPathOf(b.record.id));expect(checked.ok).toBe(true);if(!checked.ok)throw Error('inspection');expect(checked.archive.success?.succeededAt).toBe('2026-10-27T16:00:00.000Z');
+  const checked=inspect(s.diagnostics().backupPathOf(b.record.id));expect(checked.ok).toBe(true);if(!checked.ok)throw Error('inspection');expect(checked.archive.success?.succeededAt).toBe('2026-10-27T16:00:01.000Z');expect(b.record.finishedAt).toBe(checked.archive.success?.succeededAt);
   restore(s,b.record.id);expect(s.achievementsList().progress).toMatchObject({backups:1,backupDays:1});
   openReadOnly(s.diagnostics().databasePath,db=>expect(db.prepare<{day:string}>("SELECT day FROM achievement_fact WHERE kind='manual_backup'").all()).toEqual([{day:'2026-10-28'}]));
  });

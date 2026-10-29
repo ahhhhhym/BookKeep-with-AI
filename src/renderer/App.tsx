@@ -1,4 +1,5 @@
-import { useCallback, useEffect, useRef, useState, type JSX } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useRef, useState, type CSSProperties, type JSX } from 'react';
+import { flushSync } from 'react-dom';
 import { NavShell } from './components/NavShell';
 import { AchievementNotice } from './components/AchievementNotice';
 import { achievementController } from './lib/achievement-controller';
@@ -20,6 +21,8 @@ import type { TransactionFilter } from '../shared/entities';
 import { todayInShanghai } from '../shared/date';
 import { SlidingSegments } from './components/SlidingSegments';
 import { useMainTransition } from './lib/use-main-transition';
+import { readNavMode, writeNavMode, type NavMode } from './lib/nav-preferences';
+import { AppIcon } from './lib/icon-registry';
 
 const AI_SEGMENTS = ([['import', '图片导入'], ['queue', '任务队列'], ['review', '候选审核']] as const).map(([value, label]) => ({ value, label, controls: `ai-${value}` }));
 
@@ -33,16 +36,48 @@ export function App(): JSX.Element {
   const [aiPage, setAiPage] = useState<AiPageId>('import');
   const [importVisited, setImportVisited] = useState(false);
   const [drawerOpen, setDrawerOpen] = useState(false);
+  const [navMode, setNavMode] = useState<NavMode>(() => { try { return readNavMode(window.localStorage); } catch { return 'detailed'; } });
+  const [sidebarWidth, setSidebarWidth] = useState(() => {
+    try { const value = Number(localStorage.getItem('bookkeep.sidebarWidth')); return Number.isFinite(value) && value >= 160 && value <= 280 ? value : 176; }
+    catch { return 176; }
+  });
+  const [narrow, setNarrow] = useState(() => window.matchMedia('(max-width: 899px)').matches);
   const [ai, setAi] = useState<AiSettingsView | null>(null);
   const [secret, setSecret] = useState<SecretStatusView | null>(null);
   const [capabilities, setCapabilities] = useState<ProviderCapabilitiesView[]>([]);
   const [, setLastError] = useState<string | null>(null);
   const [bridgeMissing] = useState(() => !bridgeAvailable());
   const menuButtonRef = useRef<HTMLButtonElement | null>(null);
+  const focusedElementRef = useRef<Element | null>(null);
   const leaveGuard = useRef<LeaveGuard>(null);
   const [newRequest, setNewRequest] = useState(0);
   const consumeNewRequest = useCallback(() => setNewRequest(0), []);
   const registerGuard = useCallback((guard: LeaveGuard): void => { leaveGuard.current = guard; }, []);
+  const closeDrawer = useCallback((): void => {
+    setDrawerOpen(false);
+    if (window.matchMedia('(max-width: 899px)').matches && !document.querySelector('dialog[open]')) menuButtonRef.current?.focus();
+  }, []);
+  useEffect(() => { try { writeNavMode(window.localStorage, navMode); } catch { /* The storage getter may itself be unavailable. */ } }, [navMode]);
+  useEffect(() => { try { localStorage.setItem('bookkeep.sidebarWidth', String(sidebarWidth)); } catch { /* Session-only width. */ } }, [sidebarWidth]);
+  useEffect(() => {
+    const media = window.matchMedia('(max-width: 899px)');
+    const rememberFocus = (event: FocusEvent): void => { if (event.target instanceof Element) focusedElementRef.current = event.target; };
+    const update = (): void => {
+      // CSS can blur the now-hidden button to body before the media event arrives.
+      // Keep that focus owner, but never replace another valid control's focus.
+      const active = document.activeElement === document.body ? focusedElementRef.current : document.activeElement;
+      const transfer = (media.matches && active?.closest('#main-nav')) || (!media.matches && active === menuButtonRef.current);
+      // Commit visibility/inert before focusing the destination in this same event.
+      // A later animation frame leaves a hidden-focus gap and can outlive a reversal.
+      flushSync(() => { setNarrow(media.matches); setDrawerOpen(false); });
+      if (transfer && !document.querySelector('dialog[open]')) {
+        (media.matches ? menuButtonRef.current : document.querySelector<HTMLButtonElement>('.nav-mode-toggle'))?.focus();
+      }
+    };
+    window.addEventListener('focusin', rememberFocus, true);
+    media.addEventListener('change', update);
+    return () => { media.removeEventListener('change', update); window.removeEventListener('focusin', rememberFocus, true); };
+  }, []);
   const resetRestoredViews = useCallback(() => {
     achievementController.reset();
     setDetailFilter(undefined);
@@ -107,18 +142,26 @@ export function App(): JSX.Element {
     return () => window.removeEventListener('keydown', handler);
   }, [navigate]);
 
-  useEffect(() => {
-    if (!drawerOpen) return undefined;
-    const firstItem = document.querySelector<HTMLButtonElement>('#main-nav .nav-item');
-    firstItem?.focus();
+  useLayoutEffect(() => {
+    if (!drawerOpen || !narrow) {
+      if (narrow && document.activeElement?.closest('#main-nav') && !document.querySelector('dialog[open]')) menuButtonRef.current?.focus();
+      return undefined;
+    }
+    const firstItem = document.querySelector<HTMLButtonElement>('#main-nav .nav-mode-toggle');
+    if (!document.querySelector('dialog[open]')) firstItem?.focus();
     const onKeyDown = (event: KeyboardEvent): void => {
-      if (event.key !== 'Escape') return;
-      setDrawerOpen(false);
-      menuButtonRef.current?.focus();
+      // Native modal dialogs own Esc and focus while a navigation guard is open.
+      if (document.querySelector('dialog[open]')) return;
+      if (event.key === 'Escape') { event.preventDefault(); setDrawerOpen(false); menuButtonRef.current?.focus(); }
+      if (event.key === 'Tab') {
+        const buttons = [...document.querySelectorAll<HTMLButtonElement>('#main-nav button')];
+        const next = event.shiftKey ? buttons.at(-1) : buttons[0];
+        if (document.activeElement === (event.shiftKey ? buttons[0] : buttons.at(-1))) { event.preventDefault(); next?.focus(); }
+      }
     };
     window.addEventListener('keydown', onKeyDown);
     return () => window.removeEventListener('keydown', onKeyDown);
-  }, [drawerOpen]);
+  }, [drawerOpen, narrow]);
 
   if (bridgeMissing) {
     return (
@@ -137,7 +180,7 @@ export function App(): JSX.Element {
   const primaryId = primaryNavId(navId);
 
   return (
-    <div className="app" data-app-shell="ready" data-nav={navId}>
+    <div className="app" data-app-shell="ready" data-nav={navId} data-nav-mode={navMode} style={{ '--nav-width': navMode === 'compact' ? '56px' : `${sidebarWidth}px`, '--nav-detail-width': `${sidebarWidth}px` } as CSSProperties}>
       <a className="skip-link" href="#main-content">
         跳到主内容
       </a>
@@ -147,18 +190,20 @@ export function App(): JSX.Element {
           ref={menuButtonRef}
           type="button"
           className="nav-toggle"
+          aria-label="菜单"
+          title="菜单"
           aria-expanded={drawerOpen}
           aria-controls="main-nav"
           onClick={() => setDrawerOpen((open) => !open)}
         >
-          菜单
+          <AppIcon iconKey="lucide:menu" size={23.28} />
         </button>
         <span className="window-brand"><span className="nav-brand-mark" aria-hidden="true">¥</span>BookKeepAI</span>
       </header>
 
-      <NavShell current={primaryNavId(targetNav)} onNavigate={navigate} open={drawerOpen} onClose={() => setDrawerOpen(false)} />
+      <NavShell current={primaryNavId(targetNav)} onNavigate={navigate} open={drawerOpen} onClose={closeDrawer} mode={navMode} onModeChange={setNavMode} width={sidebarWidth} onWidthChange={setSidebarWidth} narrow={narrow} />
 
-      <main id="main-content" className="main" tabIndex={-1}>
+      <main id="main-content" className="main" tabIndex={-1} inert={narrow && drawerOpen}>
         <div ref={transitionRef} className="main-content-transition" data-main-transition data-phase={phase} inert={phase === 'leaving'}>
         {navId === 'ledger' ? <LedgerPage initialFilter={detailFilter} registerGuard={registerGuard} newRequest={newRequest} onNewRequestHandled={consumeNewRequest} /> : null}
         {navId === 'statistics' ? <StatisticsPage input={statisticsInput} onInput={setStatisticsInput} onDetails={(filter) => { setDetailFilter(filter); navigate('ledger'); }} /> : null}

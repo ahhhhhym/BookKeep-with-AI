@@ -49,7 +49,7 @@ describe('B fault boundaries and source proof',()=>{
   const s=LedgerStore.open(storeOptions(layout,()=>{if(ticking)t+=1000;return t;}));stores.push(s);ticking=true;
   const result=s.createBackup({kind:'manual',containsPrivateDataAcknowledged:true},randomUUID());
   const fact=s.withImports(false,c=>c.db.prepare<{day:string;succeeded_at:string}>("SELECT day,succeeded_at FROM achievement_fact WHERE kind='manual_backup'").get()!);
-  expect(result.record.createdAt).toBe('2026-10-27T15:59:59.000Z');expect(fact.succeeded_at).toBe('2026-10-27T16:00:00.000Z');expect(fact.day).toBe('2026-10-28');
+  expect(result.record.createdAt).toBe('2026-10-27T15:59:59.000Z');expect(fact.succeeded_at).toBe('2026-10-27T16:00:01.000Z');expect(result.record.finishedAt).toBe(fact.succeeded_at);expect(fact.day).toBe('2026-10-28');
   rmSync(s.diagnostics().backupPathOf(result.record.id));expect(s.achievementsList().progress.backups).toBe(1);
  });
  it('N=0 history emits no summary and impossible future/invalid creation times never become days',()=>{

@@ -31,6 +31,7 @@ import {
   LayoutGrid,
   ListChecks,
   MessagesSquare,
+  Menu,
   Mic,
   NotebookPen,
   Package,
@@ -51,6 +52,7 @@ import { iconSlug } from '../../shared/icons';
 
 /** 与 src/shared/icons.ts 的 ICON_SLUGS 一一对应；单测会校验键集合完全相等。 */
 export const ICON_COMPONENTS: Readonly<Record<string, LucideIcon>> = {
+  menu: Menu,
   utensils: Utensils,
   'shopping-bag': ShoppingBag,
   toilet: Toilet,

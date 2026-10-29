@@ -40,6 +40,7 @@ import {
   removeBackupCatalogEntry,
   upsertBackupCatalogEntry,
   type BackupCatalogEntry,
+  projectBackupCompletion,
 } from '../storage/backup-catalog';
 import { backupArchivePath, backupArchiveRef, generationDatabasePath, type StoragePaths } from '../storage/layout';
 import { findLastCommittedRestore, readRestoreLog } from '../storage/restore-log';
@@ -49,6 +50,7 @@ import { hashPayload } from './canonical';
 import type { TokenCodec } from './signed-token';
 import {atomicFile} from './image-service';
 import {backupSigningKey,sealBackup,verifyBackupSuccess,SUCCESS_VERSION,type BackupSuccess} from '../storage/backup-success';
+import {PREPARED_VERSION,COMPLETION_VERSION,sealPreparedBackup,completionCertificate,persistCompletion,verifyPreparedBackup} from '../storage/backup-success';
 import {restoreAchievements,recordBackupSuccess} from './achievement-service';
 
 const RESTORE_TOKEN_TTL_MS = 5 * 60_000;
@@ -157,6 +159,69 @@ export interface CreatedBackup {
   readonly artifact: BackupArtifactView;
 }
 
+/** v2: all data-core work precedes the clock observation. The separate log is settlement only. */
+function createProtocolBackup(env:BackupEnvironment,registration:{mutationId:string;payloadHash:string}):CreatedBackup {
+ const ledger=getDefaultLedger(env.db)!,meta=readAppMeta(env.db)!,id=randomUUID(),startedAt=nowIso(env.clock),key=backupSigningKey();
+ env.fault?.('backup-before-archive');
+ const archive=createBackupArchive({db:env.db,paths:env.paths,backupId:id,appVersion:env.appVersion,contractVersion:CONTRACT_VERSION,now:startedAt,kind:'manual',success:{version:PREPARED_VERSION,publicKey:key.publicKey}});
+ const file=backupArchivePath(env.paths,id);let published=false;
+ try {
+  env.fault?.('backup-before-verify');
+  if(!inspectBackupArchive(archive.archivePath,{latestSchemaVersion:meta.dbSchemaVersion,contractVersion:CONTRACT_VERSION,allowPrepared:true}).ok)throw new AppError('BACKUP_FAILED');
+  const preparedAt=nowIso(env.clock),bytes=sealPreparedBackup(readFileSync(archive.archivePath),{backupId:id,ledgerId:ledger.id,mutationId:registration.mutationId,kind:'manual',preparedAt},key.privateKey),hash=hashBytes(bytes);
+  verifyPreparedBackup(bytes,archive.manifest);
+  const artifact:BackupArtifactView={artifactId:id,displayName:`BookKeepAI-backup-${startedAt.slice(0,10)}.bkdb`,sha256:hash,byteSize:bytes.length,recordCount:null,createdAt:startedAt};
+  upsertBackupCatalogEntry(env.paths,{id,ledgerId:ledger.id,kind:'manual',status:'processing',manifestVersion:BACKUP_MANIFEST_VERSION,dbSchemaVersion:meta.dbSchemaVersion,appVersion:env.appVersion,archiveHash:hash,archiveRef:archive.archiveRef,errorCode:null,finishedAt:null,version:1,createdAt:startedAt,updatedAt:preparedAt,origin:'created',integrity:'ok',conflictCode:null,conflictingHash:null},preparedAt);
+  env.fault?.('backup-after-catalog');
+  runInTransaction(env.db,()=>{
+   env.db.prepare(`INSERT INTO backup_record(id,ledger_id,kind,status,manifest_version,db_schema_version,app_version,archive_hash,archive_ref,error_code,finished_at,version,created_at,updated_at)
+    VALUES (?,?,'manual','processing','bk-backup.v1',?,?,?,?,NULL,NULL,1,?,?)`).run(id,ledger.id,meta.dbSchemaVersion,env.appVersion,hash,archive.archiveRef,startedAt,preparedAt);
+   env.fault?.('backup-before-register');
+   const row=getBackupRow(env.db,id)!;
+   insertReceipt(env.db,{ledgerId:ledger.id,operation:'backup.create',mutationId:registration.mutationId,payloadHash:registration.payloadHash,resultType:'backup',resultIds:[id],snapshot:{record:{...mapBackupRecord(row),artifact},artifact,replayed:false,successVersion:PREPARED_VERSION},revision:readDataRevision(env.db,ledger.id),now:preparedAt});
+  });
+  env.fault?.('backup-after-register');
+  env.fault?.('backup-before-publish');
+  atomicFile(file,bytes);published=true;
+  env.fault?.('backup-after-publish');
+  // Last necessary data-core I/O: verify the actual published immutable file, not a private buffer.
+  if(sha256File(file)!==hash||!inspectBackupArchive(file,{latestSchemaVersion:meta.dbSchemaVersion,contractVersion:CONTRACT_VERSION}).ok)throw new AppError('BACKUP_FAILED');
+  const succeededAt=nowIso(env.clock);
+  const certificate=completionCertificate(bytes,archive.manifest,succeededAt,key.privateKey);
+  env.fault?.('backup-before-completion-log');
+  persistCompletion(file,certificate);
+  env.fault?.('backup-after-completion-log');
+  projectCompletedBackup(env,id,hash,succeededAt);
+  env.fault?.('backup-after-completion-projection');
+  return {row:getBackupRow(env.db,id)!,artifact};
+ }catch(error){
+  // A completed data core survives settlement failure. Missing completion time is never reconstructed.
+  if(!published){try{env.db.prepare('DELETE FROM backup_record WHERE id=?').run(id);}catch{/* no reward */}try{removeBackupCatalogEntry(env.paths,id,startedAt);}catch{/* pending */}removeArchive(env.paths,id);}
+  throw error instanceof AppError?error:new AppError('BACKUP_FAILED',{details:{step:published?'completion-unverified':'publish'}});
+ }finally{try{rmSync(archive.archivePath,{force:true});}catch{/* nonessential private staging cleanup */}}
+}
+
+/** Replayable projections; neither this transaction nor catalog projection is part of the data core. */
+function projectCompletedBackup(env:BackupEnvironment,id:string,hash:string,succeededAt:string):void {
+ const row=getBackupRow(env.db,id);
+ if(!row||row.archive_hash!==hash||(row.finished_at!==null&&row.finished_at!==succeededAt))throw new AppError('BACKUP_INVALID');
+ env.fault?.('backup-before-completion-projection');
+ runInTransaction(env.db,()=>{env.db.prepare("UPDATE backup_record SET status='completed',finished_at=?,updated_at=? WHERE id=? AND archive_hash=? AND finished_at IS NULL").run(succeededAt,succeededAt,id,hash);});
+ projectBackupCompletion(env.paths,id,hash,succeededAt);
+}
+
+/** Imported completion may repair maintenance projections, but never imports achievement history. */
+export function reconcileBackupCompletionProjections(env:BackupEnvironment):void {
+ const pending=new Set(readBackupCatalog(env.paths).filter(e=>e.status==='processing').map(e=>e.id));
+ for(const row of listBackupRows(env.db)){
+  if(row.kind!=='manual'||(row.status!=='processing'&&!pending.has(row.id))||!row.archive_hash)continue;
+  const file=backupArchivePath(env.paths,row.id);if(!existsSync(file)||sha256File(file)!==row.archive_hash)continue;
+  const checked=inspectBackupArchive(file,{latestSchemaVersion:readAppMeta(env.db)!.dbSchemaVersion,contractVersion:CONTRACT_VERSION});
+  const fact=checked.ok?checked.archive.success:null;
+  if(fact?.version===COMPLETION_VERSION&&fact.backupId===row.id)projectCompletedBackup(env,row.id,row.archive_hash,fact.succeededAt);
+ }
+}
+
 /**
  * 生成档案并登记 BackupRecord。用于手工备份与 pre_restore/pre_migration 内部备份。
  * 文件已生成但登记失败时会删除档案，避免无记录孤儿。
@@ -167,6 +232,7 @@ export function createBackupFiles(env: BackupEnvironment, kind: BackupKind, regi
   if (!ledger || !meta) {
     throw new AppError('BACKUP_FAILED', { details: { step: 'read-meta' } });
   }
+  if(kind==='manual'&&meta.dbSchemaVersion>=4&&registration)return createProtocolBackup(env,registration);
   const backupId = randomUUID();
   const now = nowIso(env.clock);
   const signer=kind==='manual'&&meta.dbSchemaVersion>=4&&registration?backupSigningKey():null;
@@ -280,6 +346,19 @@ function removeArchive(paths: StoragePaths, backupId: string): void {
 
 /** Retry after a lost response/crash: registration alone is insufficient; require the exact published seal. */
 export function reconcilePublishedBackupFacts(env:BackupEnvironment,ledgerId:string,epoch:string):void {
+ const prepared=env.db.prepare<{id:string;archive_hash:string;mutation_id:string}>(`SELECT b.id,b.archive_hash,r.mutation_id FROM backup_record b JOIN mutation_receipt r
+  ON r.ledger_id=b.ledger_id AND r.operation='backup.create' AND json_extract(r.result_snapshot_json,'$.record.id')=b.id
+  WHERE b.ledger_id=? AND b.kind='manual' AND b.status IN('processing','completed') AND json_extract(r.result_snapshot_json,'$.successVersion')=?
+  AND NOT EXISTS(SELECT 1 FROM achievement_fact f WHERE f.ledger_id=b.ledger_id AND f.kind='manual_backup' AND f.source_id=b.id)`).all(ledgerId,PREPARED_VERSION);
+ for(const r of prepared){
+  const file=backupArchivePath(env.paths,r.id);if(!existsSync(file)||sha256File(file)!==r.archive_hash)continue;
+  const checked=inspectBackupArchive(file,{latestSchemaVersion:readAppMeta(env.db)!.dbSchemaVersion,contractVersion:CONTRACT_VERSION});
+  if(!checked.ok||!checked.archive.success)continue;
+  const fact=checked.archive.success;
+  if(fact.version!==COMPLETION_VERSION||fact.backupId!==r.id||fact.mutationId!==r.mutation_id||fact.ledgerId!==ledgerId)throw new AppError('BACKUP_INVALID');
+  projectCompletedBackup(env,r.id,r.archive_hash,fact.succeededAt);
+  runInTransaction(env.db,()=>{recordBackupSuccess({db:env.db,ledgerId,epoch,clock:env.clock},fact);env.fault?.('backup-before-achievement-commit');});
+ }
  const rows=env.db.prepare<{id:string;archive_hash:string;mutation_id:string;created_at:string}>(`SELECT b.id,b.archive_hash,r.mutation_id,r.created_at FROM backup_record b JOIN mutation_receipt r
  ON r.ledger_id=b.ledger_id AND r.operation='backup.create' AND json_extract(r.result_snapshot_json,'$.record.id')=b.id
  WHERE b.ledger_id=? AND b.kind='manual' AND b.status='completed' AND json_extract(r.result_snapshot_json,'$.successVersion')='bk-success.v1'
@@ -335,6 +414,16 @@ export class BackupService {
         throw new AppError('IDEMPOTENCY_CONFLICT', { details: { operation: 'backup.create' } });
       }
       const saved=JSON.parse(existing.result_snapshot_json) as BackupCreateResult&{successVersion?:string};
+      if(saved.successVersion===PREPARED_VERSION){
+        const file=backupArchivePath(env.paths,saved.record.id);
+        if(!existsSync(file)||sha256File(file)!==saved.artifact.sha256)throw new AppError('BACKUP_FAILED',{details:{step:'unpublished-registration'}});
+        const checked=inspectBackupArchive(file,{latestSchemaVersion:this.deps.latestSchemaVersion,contractVersion:CONTRACT_VERSION});
+        if(!checked.ok||!checked.archive.success)throw new AppError('BACKUP_FAILED',{details:{step:'completion-unverified'}});
+        const fact=checked.archive.success;
+        if(fact.version!==COMPLETION_VERSION||fact.backupId!==saved.record.id||fact.ledgerId!==this.deps.ledgerId()||fact.mutationId!==mutationId)throw new AppError('BACKUP_INVALID');
+        projectCompletedBackup(env,fact.backupId,saved.artifact.sha256,fact.succeededAt);
+        return {record:backupRecordView(env.paths,getBackupRow(env.db,fact.backupId)!),artifact:saved.artifact,replayed:true};
+      }
       if(saved.successVersion&&!env.db.prepare("SELECT source_id FROM achievement_fact WHERE ledger_id=? AND kind='manual_backup' AND source_id=?").get(this.deps.ledgerId(),saved.record.id)){
         const file=backupArchivePath(env.paths,saved.record.id);
         if(!existsSync(file)||sha256File(file)!==saved.artifact.sha256||!inspectBackupArchive(file,{latestSchemaVersion:this.deps.latestSchemaVersion,contractVersion:CONTRACT_VERSION}).ok)throw new AppError('BACKUP_FAILED',{details:{step:'unpublished-registration'}});
@@ -384,7 +473,7 @@ export class BackupService {
       });
     }
     const row = getBackupRow(env.db, backupId);
-    if (!row || row.status !== 'completed') {
+    if (!row || !['completed','processing'].includes(row.status)) {
       throw new AppError('NOT_FOUND', { details: { reason: 'BACKUP_RECORD' } });
     }
     if (catalogEntry && catalogEntry.archiveHash !== row.archive_hash) {
@@ -490,7 +579,7 @@ export class BackupService {
       });
     }
     const row = getBackupRow(env.db, payload.b);
-    if (!row || row.status !== 'completed' || row.archive_hash === null) {
+    if (!row || !['completed','processing'].includes(row.status) || row.archive_hash === null) {
       throw new AppError('NOT_FOUND', { details: { reason: 'BACKUP_RECORD' } });
     }
     if (row.archive_hash !== payload.h) {

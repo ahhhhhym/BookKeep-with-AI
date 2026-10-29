@@ -87,7 +87,7 @@ export function recordBackupSuccess(c:Context,success:BackupSuccess):void {
  const old=c.db.prepare<{succeeded_at:string;day:string}>("SELECT succeeded_at,day FROM achievement_fact WHERE ledger_id=? AND kind='manual_backup' AND source_id=?").get(c.ledgerId,success.backupId);
  const day=shanghaiDay(success.succeededAt);
  if(old&&(old.succeeded_at!==success.succeededAt||old.day!==day))throw new AppError('BACKUP_INVALID');
- c.db.prepare("INSERT OR IGNORE INTO achievement_fact VALUES(?,'manual_backup',?,?,?,?,?)").run(c.ledgerId,success.backupId,success.succeededAt,day,'archive/verified-bk-success.v1',new Date(c.clock()).toISOString());
+ c.db.prepare("INSERT OR IGNORE INTO achievement_fact VALUES(?,'manual_backup',?,?,?,?,?)").run(c.ledgerId,success.backupId,success.succeededAt,day,'archive/verified-'+success.version,new Date(c.clock()).toISOString());
 }
 /** All restored and derived notices are consumed in staging, before the active commit point. */
 export function restoreAchievements(c:Context,success:BackupSuccess|null):void {

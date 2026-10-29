@@ -13,6 +13,16 @@ import { LATEST_SCHEMA_VERSION } from '../db/migrations';
 import { CONTRACT_VERSION } from '../../shared/constants';
 import { hashPayload } from './canonical';
 import type { LedgerStore } from './ledger-store';
+import {portableBackupBytes,splitPortableBackup,persistCompletion,completionPath,COMPLETION_VERSION,readCompletion,verifyCompletionCertificate} from '../storage/backup-success';
+
+function transferBytes(file:string,bytes:Buffer):Buffer {
+  if(splitPortableBackup(bytes).certificate)return bytes;
+  const inspection=inspectBackupArchive(file,{latestSchemaVersion:LATEST_SCHEMA_VERSION,contractVersion:CONTRACT_VERSION});
+  if(!inspection.ok||inspection.archive.success?.version!==COMPLETION_VERSION)return bytes;
+  const certificate=readCompletion(file);
+  verifyCompletionCertificate(certificate,bytes,inspection.archive.manifest);
+  return portableBackupBytes(bytes,certificate);
+}
 
 export function csvCell(value:string):string {
   const safe=/^[\s\uFEFF]*[=+\-@]/u.test(value)||/^[\t\r\n]/.test(value)?"'"+value:value;
@@ -52,16 +62,19 @@ export class MaintenanceService {
     for(const t of rows)lines.push([t.occurredDate,t.occurredTime??'',t.timePrecision,t.name,categories.get(t.categoryId)??'',formatFenToYuan(t.amountFen),t.currency,t.merchant??'',t.note??'',t.source,t.id].map(csvCell).join(','));
     return this.artifact(Buffer.from('\uFEFF'+lines.join('\r\n')+'\r\n','utf8'),'BookKeepAI-正式交易.csv',rows.length).view;
   });}
-  backup(backupId:string){const record=this.store.backupRecord(backupId);if(!record?.archiveHash)throw new AppError('NOT_FOUND');this.store.previewRestore(backupId);const file=regularPath(this.store.diagnostics().backupPathOf(backupId),this.store.diagnostics().root);if(statSync(file).size>MAX_BACKUP_BYTES)throw new AppError('BACKUP_LIMIT');const bytes=readBoundedFile(file,MAX_BACKUP_BYTES);if(digest(bytes)!==record.archiveHash)throw new AppError('HASH_MISMATCH');return this.artifact(bytes,'BookKeepAI-'+backupId+'.bkdb',null).view;}
+  backup(backupId:string){const record=this.store.backupRecord(backupId);if(!record?.archiveHash)throw new AppError('NOT_FOUND');this.store.previewRestore(backupId);const file=regularPath(this.store.diagnostics().backupPathOf(backupId),this.store.diagnostics().root);if(statSync(file).size>MAX_BACKUP_BYTES)throw new AppError('BACKUP_LIMIT');const bytes=readBoundedFile(file,MAX_BACKUP_BYTES),transport=transferBytes(file,bytes);if(digest(bytes)!==record.archiveHash)throw new AppError('HASH_MISMATCH');return this.artifact(transport,'BookKeepAI-'+backupId+'.bkdb',null).view;}
   save(id:string,mutationId:string){return this.once(mutationId,{id},async()=>{const a=this.check(this.artifacts.get(id)),target=await this.dialogs.save(a.view.displayName);if(!target)return {saved:false};this.check(a);const root=this.store.diagnostics().root,absolute=path.resolve(target);const relative=path.relative(root,absolute);if(relative===''||(relative!=='..'&&!relative.startsWith('..'+path.sep)&&!path.isAbsolute(relative)))throw new AppError('PERMISSION_DENIED');regularPath(absolute,path.parse(absolute).root,false);atomicFile(absolute,a.bytes);return {saved:true};});}
-  async select(){this.clean();const epoch=this.store.currentEpoch,ledgerId=this.store.currentLedgerId,file=await this.dialogs.open();if(epoch!==this.store.currentEpoch||ledgerId!==this.store.currentLedgerId)throw new AppError('STALE_EPOCH');if(!file)return {selectionToken:null};regularPath(file,path.parse(file).root);if(statSync(file).size>MAX_BACKUP_BYTES)throw new AppError('BACKUP_LIMIT');const a=this.artifact(readBoundedFile(file,MAX_BACKUP_BYTES),'selected.bkdb',null);this.artifacts.delete(a.view.artifactId);this.selections.set(a.view.artifactId,a);return {selectionToken:a.view.artifactId};}
+  async select(){this.clean();const epoch=this.store.currentEpoch,ledgerId=this.store.currentLedgerId,file=await this.dialogs.open();if(epoch!==this.store.currentEpoch||ledgerId!==this.store.currentLedgerId)throw new AppError('STALE_EPOCH');if(!file)return {selectionToken:null};regularPath(file,path.parse(file).root);if(statSync(file).size>MAX_BACKUP_BYTES)throw new AppError('BACKUP_LIMIT');const bytes=readBoundedFile(file,MAX_BACKUP_BYTES),a=this.artifact(transferBytes(file,bytes),'selected.bkdb',null);this.artifacts.delete(a.view.artifactId);this.selections.set(a.view.artifactId,a);return {selectionToken:a.view.artifactId};}
   import(token:string,mutationId:string){return this.once(mutationId,{token},()=>{
     const a=this.check(this.selections.get(token)),root=this.store.diagnostics().root,temp=path.join(root,'temp',randomUUID()+'.bkdb');
-    try{regularPath(temp,root,false);atomicFile(temp,a.bytes);const inspection=inspectBackupArchive(temp,{latestSchemaVersion:LATEST_SCHEMA_VERSION,contractVersion:CONTRACT_VERSION});if(!inspection.ok)throw new AppError(inspection.code);
+    const core=splitPortableBackup(a.bytes),hash=digest(core.bytes);
+    try{regularPath(temp,root,false);atomicFile(temp,core.bytes);if(core.certificate)persistCompletion(temp,core.certificate);const inspection=inspectBackupArchive(temp,{latestSchemaVersion:LATEST_SCHEMA_VERSION,contractVersion:CONTRACT_VERSION});if(!inspection.ok)throw new AppError(inspection.code);if(core.certificate&&inspection.archive.success?.version!==COMPLETION_VERSION)throw new AppError('BACKUP_INVALID');
       const id=inspection.archive.manifest.backupId;if(!/^[a-f0-9]{8}-[a-f0-9]{4}-4[a-f0-9]{3}-[89ab][a-f0-9]{3}-[a-f0-9]{12}$/.test(id))throw new AppError('BACKUP_INVALID');
-      const known=this.store.backupRecord(id);if(known&&known.archiveHash!==a.view.sha256)throw new AppError('HASH_MISMATCH');
-      const target=regularPath(this.store.diagnostics().backupPathOf(id),root,false);if(existsSync(target)){if(digest(readFileSync(target))!==a.view.sha256)throw new AppError('HASH_MISMATCH');}else atomicFile(target,a.bytes);
-      this.store.refreshBackupCatalog();this.store.previewRestore(id);return {backupId:id};
-    }finally{if(existsSync(temp))unlinkSync(temp);}
+      const known=this.store.backupRecord(id);if(known&&known.archiveHash!==hash)throw new AppError('HASH_MISMATCH');
+      const target=regularPath(this.store.diagnostics().backupPathOf(id),root,false);if(existsSync(target)){if(digest(readFileSync(target))!==hash)throw new AppError('HASH_MISMATCH');}else atomicFile(target,core.bytes);
+      if(core.certificate)persistCompletion(target,core.certificate);
+      this.store.refreshBackupCatalog();
+      this.store.previewRestore(id);return {backupId:id};
+    }finally{if(existsSync(temp))unlinkSync(temp);if(existsSync(completionPath(temp)))unlinkSync(completionPath(temp));}
   });}
 }

@@ -15,7 +15,7 @@ const appRoot = path.resolve(process.env.BOOKKEEP_QA_APP_ROOT ?? ROOT);
 mkdirSync(output,{recursive:true});
 const localAppData = mkdtempSync(path.join(tmpdir(),'BookKeep 014 A synthetic '));
 const ids = ['ledger','statistics','ai','data','achievements','settings'];
-const names = ['记账','统计','AI记账','数据管理','成就','设置'];
+const names = ['账本','统计','AI记账','数据管理','成就','设置'];
 const report = {ok:false,localAppData,checks:[],rows:[],screens:[],windows:[],errors:[],console:[],http:0,
   kind:'Step A implementation self-test; logical viewports, not native DPI or human/reader acceptance',
   browser:'Browser plugin not available; existing project Playwright Electron workflow'};
@@ -63,7 +63,7 @@ async function screen(name){
   report.screens.push({name,...c,logical:await page.evaluate(()=>({width:innerWidth,height:innerHeight}))});
 }
 async function reachable(button){
-  const r=await button.evaluate(el=>{const b=el.getBoundingClientRect(),n=el.closest('nav').getBoundingClientRect(),s=getComputedStyle(el);return {name:el.getAttribute('aria-label'),focus:document.activeElement===el,top:b.top,bottom:b.bottom,left:b.left,right:b.right,nav:n.toJSON(),outline:s.outlineStyle,hit:el.contains(document.elementFromPoint(b.x+b.width/2,b.y+b.height/2))};});
+  const r=await button.evaluate(el=>{const b=el.getBoundingClientRect(),n=el.closest('nav').getBoundingClientRect(),s=getComputedStyle(el);return {name:el.getAttribute('aria-label'),focus:document.activeElement===el,top:b.top,bottom:b.bottom,left:b.left,right:b.right,nav:n.toJSON(),outline:getComputedStyle(el.querySelector('.nav-visual')).outlineStyle,hit:el.contains(document.elementFromPoint(b.x+b.width/2,b.y+b.height/2))};});
   assert(r.focus,JSON.stringify(r));assert(r.top>=r.nav.top-1&&r.bottom<=r.nav.bottom+1,JSON.stringify(r));
   assert(r.left>=r.nav.left&&r.right<=r.nav.right+1,JSON.stringify(r));assert(r.hit,JSON.stringify(r));assert.notEqual(r.outline,'none');return r;
 }
@@ -71,16 +71,16 @@ async function menu(label){
   await openDrawer(true);await page.locator('#main-nav').evaluate(el=>{el.scrollTop=0;});await settle();
   const g=await page.locator('#main-nav').evaluate(n=>{
     const a=[...n.querySelectorAll('.nav-item')],rects=a.map(e=>e.getBoundingClientRect()),box=n.getBoundingClientRect(),s=getComputedStyle(n);
-    return {viewport:[innerWidth,innerHeight],nav:box.toJSON(),scrollHeight:n.scrollHeight,clientHeight:n.clientHeight,top:rects[0].top-box.top-parseFloat(s.paddingTop),bottom:box.bottom-rects.at(-1).bottom-parseFloat(s.paddingBottom),
+    return {viewport:[innerWidth,innerHeight],nav:box.toJSON(),scrollHeight:n.scrollHeight,clientHeight:n.clientHeight,top:rects[0].top-n.querySelector('.nav-mode-toggle').getBoundingClientRect().bottom-10,bottom:box.bottom-rects.at(-1).bottom-parseFloat(s.paddingBottom),
       gaps:rects.slice(1).map((r,i)=>r.top-rects[i].bottom),ids:a.map(e=>e.dataset.navItem),bottomIds:[...n.querySelectorAll('.nav-bottom .nav-item')].map(e=>e.dataset.navItem),
-      styles:a.map(e=>{const b=e.getBoundingClientRect(),svg=e.querySelector('svg'),i=svg.getBoundingClientRect(),l=e.querySelector('.nav-label'),t=l.getBoundingClientRect(),show=getComputedStyle(l).display!=='none';return {font:getComputedStyle(e).fontSize,labelFont:getComputedStyle(l).fontSize,icon:[i.width,i.height],slug:svg.dataset.iconSlug,center:Math.abs(((show?Math.min(i.left,t.left):i.left)+(show?Math.max(i.right,t.right):i.right)-b.left-b.right)/2),labelClipped:show&&l.scrollWidth>l.clientWidth};})};
+      styles:a.map(e=>{const b=e.getBoundingClientRect(),svg=e.querySelector('svg'),i=svg.getBoundingClientRect(),l=e.querySelector('.nav-label'),t=l.getBoundingClientRect(),show=getComputedStyle(l).display!=='none'&&Number(getComputedStyle(l).opacity)>0;return {font:getComputedStyle(e).fontSize,labelFont:getComputedStyle(l).fontSize,icon:[i.width,i.height],slug:svg.dataset.iconSlug,center:Math.abs(((show?Math.min(i.left,t.left):i.left)+(show?Math.max(i.right,t.right):i.right)-b.left-b.right)/2),labelClipped:show&&l.scrollWidth>l.clientWidth};})};
   });
   report.rows.push({label,...g});save('geometry.json',report.rows);
   assert.deepEqual(g.ids,ids);assert.deepEqual(g.bottomIds,['achievements','settings']);
   assert(Math.abs(g.top)<=1,JSON.stringify(g));
   assert(g.gaps.every((x,i)=>i===3?x>=9:Math.abs(x-10)<=1),JSON.stringify(g));
   if(g.scrollHeight<=g.clientHeight+1)assert(Math.abs(g.bottom)<=1,JSON.stringify(g));
-  for(const s of g.styles){assert.equal(s.font,'17px');assert.equal(s.labelFont,'17px');assert.deepEqual(s.icon,[24,24]);assert(s.center<=1,JSON.stringify(s));assert(!s.labelClipped);}
+  for(const s of g.styles){assert.equal(s.font,'16.49px');assert.equal(s.labelFont,'16.49px');assert(s.icon.every(x=>Math.abs(x-23.28)<.1));assert(s.center<=1,JSON.stringify(s));assert(!s.labelClipped);}
   assert.equal(g.styles[4].slug,'party-popper');
   const focus=[];await page.locator('[data-nav-item="ledger"]').focus();
   // Establish keyboard modality; programmatic focus after a mouse click is not :focus-visible.
@@ -136,15 +136,15 @@ try{
       await menu(theme+'-expanded-'+width);assert(Math.abs((await page.locator('#main-nav').boundingBox()).width-width)<=1);
     }
     await screen(theme+'-expanded');
-    await viewport(1000,650);await menu(theme+'-rail');
-    assert.equal(await page.locator('.nav-label').first().isVisible(),false);await screen(theme+'-rail');
+    await viewport(1000,650);await page.locator('.nav-mode-toggle').click();await settle();await menu(theme+'-compact');
+    assert.equal(await page.locator('.nav-label').first().evaluate(e=>getComputedStyle(e).opacity),'0');await page.locator('.nav-mode-toggle').click();await settle();await screen(theme+'-rail');
     await viewport(680,650);await menu(theme+'-drawer');
     assert.equal(await page.locator('#main-nav').getAttribute('data-open'),'false');await openDrawer();await screen(theme+'-drawer');
     await page.keyboard.press('Escape');assert.equal(await page.getByRole('button',{name:'菜单',exact:true}).evaluate(el=>document.activeElement===el),true);
     await page.keyboard.press('Tab');assert.equal(await page.evaluate(()=>!!document.activeElement.closest('#main-nav')),false);check(theme+'-closed-drawer-inert-and-Escape-focus');
     await viewport(640,480);await menu(theme+'-original-minimum');await screen(theme+'-minimum');
     await viewport(640,480,2);await menu(theme+'-minimum-zoom200');await openDrawer();await screen(theme+'-minimum-zoom200');
-    for(let n=0;n<5;n++)await page.keyboard.press('Tab');
+    await page.locator('[data-nav-item="ledger"]').focus();for(let n=0;n<5;n++)await page.keyboard.press('Tab');
     assert.equal(await page.evaluate(()=>document.activeElement?.getAttribute('data-nav-item')),'settings');
     await screen(theme+'-minimum-zoom200-bottom');await nav('achievements');
     const p=await page.locator('[data-achievements-stage]').evaluate(e=>({font:getComputedStyle(e).fontSize,color:getComputedStyle(e).color,bg:getComputedStyle(document.querySelector('.main')).backgroundColor,overflow:e.scrollWidth>e.clientWidth}));
@@ -164,9 +164,9 @@ try{
   const candidate=await fixture();const before=await sql();save('sql-before-guard.json',before);
   for(const [width,height,label] of [[1450,900,'expanded'],[1000,650,'rail'],[640,480,'drawer-minimum']]){
     await viewport(width,height);await nav('ai');await page.getByRole('group',{name:'AI记账子页'}).getByRole('button',{name:'候选审核',exact:true}).click();
-    const card=page.locator(`[data-candidate-id="${candidate}"]`),field=card.getByLabel('购买物或服务名称',{exact:true});await field.fill('未保存-'+label);
+    const card=page.locator(`[data-candidate-id="${candidate}"]`),field=card.getByLabel('购买物或服务名称',{exact:true});await field.fill('未保存-'+label);if(width>=900){const element=await field.elementHandle();for(let n=0;n<2;n++){await page.locator('.nav-mode-toggle').click();await settle();assert.equal(await field.inputValue(),'未保存-'+label);assert(await field.evaluate((e,original)=>e===original,element));}check(label+'-mode-switch-preserves-review-draft');}
     await nav('achievements');const guard=page.getByRole('dialog',{name:'还有未保存的补填',exact:true});await guard.waitFor();assert.equal(await page.locator('.app').getAttribute('data-nav'),'review');
-    await guard.getByRole('button',{name:'继续补填',exact:true}).click();assert.equal(await field.inputValue(),'未保存-'+label);
+    if(width<900){await page.keyboard.press('Escape');assert.equal(await guard.count(),0,'Esc should cancel the guard before closing its drawer');assert.equal(await page.locator('#main-nav').getAttribute('data-open'),'true');assert.equal(await field.inputValue(),'未保存-'+label);await nav('achievements');await guard.waitFor();check('drawer-guard-Escape-retains-draft-and-open-drawer');}await guard.getByRole('button',{name:'继续补填',exact:true}).click();assert.equal(await field.inputValue(),'未保存-'+label);
     await nav('achievements');await guard.getByRole('button',{name:'放弃未保存修改并离开',exact:true}).click();await page.locator('[data-nav="achievements"]').waitFor();check(label+'-review-cancel-retains-draft-discard-enters-achievements');
   }
   const after=await sql();save('sql-after-guard.json',after);assert.deepEqual(after,before);assert.equal(after.formal,0);assert.equal(after.postings,0);assert(after.attempts.every(j=>j.total_attempts===0));assert.deepEqual(after.fk,[]);check('synthetic-fixture-no-save-no-approval-no-recognition');
