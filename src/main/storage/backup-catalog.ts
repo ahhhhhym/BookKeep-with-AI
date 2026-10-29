@@ -25,6 +25,8 @@ import {
   sha256File,
 } from './backup-archive';
 import { backupArchivePath, backupArchiveRef, type StoragePaths } from './layout';
+import {PREPARED_VERSION,verifyPreparedBackup,readVerifiedCompletion} from './backup-success';
+import {AppError} from '../../shared/errors';
 
 export const BACKUP_CATALOG_VERSION = 'bk-backup-catalog.v1';
 
@@ -288,9 +290,18 @@ export function removeBackupCatalogEntry(paths: StoragePaths, id: string, now: s
   writeBackupCatalog(paths, entries, now);
 }
 
+/** Only the new protocol's verified completion can advance its mutable maintenance projection. */
+export function projectBackupCompletion(paths:StoragePaths,id:string,archiveHash:string,finishedAt:string):void {
+ const entries=readBackupCatalog(paths),entry=entries.find(e=>e.id===id);
+ if(!entry||entry.archiveHash!==archiveHash||entry.integrity!=='ok'||(entry.finishedAt!==null&&entry.finishedAt!==finishedAt))throw new AppError('BACKUP_INVALID');
+ if(entry.status==='completed'&&entry.finishedAt===finishedAt)return;
+ writeBackupCatalog(paths,entries.map(e=>e.id===id?{...e,status:'completed',finishedAt,updatedAt:finishedAt,errorCode:null}:e),finishedAt);
+}
+
 export function catalogEntryFromRow(row: BackupRecordRow): BackupCatalogEntry | null {
   if (row.archive_hash === null || row.archive_ref === null) return null;
-  const completed = row.status === 'completed';
+  // A v2 pending completion is a valid data-core registration, not a hash conflict.
+  const completed = row.status === 'completed' || row.status === 'processing';
   return {
     id: row.id,
     ledgerId: row.ledger_id,
@@ -321,6 +332,9 @@ interface RawManifest {
   appVersion?: unknown;
   createdAt?: unknown;
   backupKind?: unknown;
+  successVersion?: string;
+  backupId?:string;
+  verificationKey?:string;
 }
 
 /** 从无创建记录的独立档案读取内嵌 manifest；当前 hash 仅作为该档案的发现基准。 */
@@ -349,18 +363,24 @@ function discoverEntry(paths: StoragePaths, id: string): BackupCatalogEntry | nu
       return null;
     }
     const hash = sha256File(archivePath);
+    let finalTime:string|null=manifest.createdAt;
+    if(manifest.successVersion===PREPARED_VERSION){
+      const bytes=readFileSync(archivePath),m=manifest as {successVersion:string;backupKind:string;backupId:string;ledgerId:string;createdAt:string;verificationKey:string};
+      verifyPreparedBackup(bytes,m);
+      finalTime=readVerifiedCompletion(archivePath,bytes,m)?.succeededAt??null;
+    }
     return {
       id,
       ledgerId: manifest.ledgerId,
       kind: manifest.backupKind==='pre_restore'||manifest.backupKind==='pre_migration'?manifest.backupKind:'manual',
-      status: 'completed',
+      status: finalTime===null?'processing':'completed',
       manifestVersion: BACKUP_MANIFEST_VERSION,
       dbSchemaVersion: manifest.dbSchemaVersion,
       appVersion: manifest.appVersion,
       archiveHash: hash,
       archiveRef: backupArchiveRef(id),
       errorCode: null,
-      finishedAt: manifest.createdAt,
+      finishedAt: finalTime,
       version: 1,
       createdAt: manifest.createdAt,
       updatedAt: manifest.createdAt,

@@ -286,14 +286,18 @@ export function DataPage({ onDataRestored }: { onDataRestored?: () => void }): J
                         : '校验失败/不可恢复'
                       : record.status === 'failed'
                         ? '校验冲突/失败'
-                        : record.status}
+                        : record.status === 'processing'
+                          ? record.artifact
+                            ? '完成时间未知；待校验'
+                            : '文件缺失/校验冲突'
+                          : record.status}
                   </td>
                   <td title={record.archiveHash ?? ''}>{record.archiveHash?.slice(0, 12) ?? '—'}…</td>
                   <td>
                     <button
                       type="button"
                       className="button button-small"
-                      disabled={pending || record.status !== 'completed' || record.artifact === null}
+                      disabled={pending || !['completed', 'processing'].includes(record.status) || record.artifact === null}
                       title={record.artifact === null ? '备份文件缺失或校验冲突，无法恢复' : undefined}
                       onClick={() => void previewRestore(record)}
                     >

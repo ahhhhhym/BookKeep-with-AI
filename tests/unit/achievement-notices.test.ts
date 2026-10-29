@@ -6,6 +6,12 @@ const list=(n:number,kind:'unlock'|'history_summary'='unlock'):AchievementList=>
  items:ACHIEVEMENTS.map(d=>({...d,conditionVersion:1,progress:d.target,unlocked:true,unlockedAt:null,origin:'history',evaluatedAt:null,evidence:null})),
  notices:kind==='history_summary'?[{id:'h',kind,status:'pending',createdAt:'',stateAt:'',achievementIds:ACHIEVEMENTS.slice(0,n).map(d=>d.id)}]:ACHIEVEMENTS.slice(0,n).map((d,i)=>({id:String(i),kind,status:'pending',createdAt:'',stateAt:'',achievementIds:[d.id]}))});
 describe('notice presentation grouping and effective timer',()=>{
+ it('entry waiting and repeated pause/resume keep the original five-second budget',()=>{
+  const t=new VisibleCountdown();t.advance(0,false);t.advance(260,false);expect(t.remaining).toBe(5000);
+  t.advance(300,true);t.advance(1300,false);expect(t.remaining).toBe(4000);
+  t.freeze();t.advance(9000,false);t.advance(10000,true);t.advance(11000,false);expect(t.remaining).toBe(3000);
+  t.advance(12000,true);expect(t.advance(15000,true)).toBe(true);
+ });
  it.each([1,2,3])('%i normal notices remain sequential',n=>expect(noticeCards(list(n),new Set())).toHaveLength(n));
  it('more than three group atomically; history is always one summary, zero is silent',()=>{
   expect(noticeCards(list(4),new Set())).toMatchObject([{title:'解锁 4 项成就',noticeIds:['0','1','2','3']}]);

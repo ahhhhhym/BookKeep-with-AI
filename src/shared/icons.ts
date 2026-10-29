@@ -50,6 +50,7 @@ export const NAV_SETTINGS_ICON_SLUG = 'settings';
 
 /** 主导航图标（本地 Lucide 资源；与分类图标同源、同许可）。 */
 export const NAV_ICON_SLUGS: readonly string[] = [
+  'menu',
   'notebook-pen',
   'chart-line',
   'image-plus',

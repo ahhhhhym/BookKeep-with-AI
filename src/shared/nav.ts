@@ -26,7 +26,7 @@ export interface NavMeta {
 }
 
 export const NAV_ITEMS_META: readonly NavMeta[] = [
-  { id: 'ledger', label: '记账', iconKey: 'lucide:notebook-pen', description: '日期分组的支出列表', group: 'main' },
+  { id: 'ledger', label: '账本', iconKey: 'lucide:notebook-pen', description: '日期分组的支出列表', group: 'main' },
   { id: 'statistics', label: '统计', iconKey: 'lucide:chart-line', description: '周/月/年趋势与排行', group: 'main' },
   { id: 'ai', label: 'AI记账', iconKey: 'lucide:image-plus', description: '图片导入、任务队列与候选审核', group: 'main' },
   { id: 'data', label: '数据管理', iconKey: 'lucide:database', description: 'CSV 导出、备份与恢复', group: 'main' },

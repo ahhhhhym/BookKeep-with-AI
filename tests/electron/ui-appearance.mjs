@@ -35,7 +35,7 @@ const anchoredMenu = async label => {
   const geometry=await page.locator('#main-nav').evaluate(nav=>{
     const group=nav.querySelector('.nav-items'),n=nav.getBoundingClientRect(),g=group.getBoundingClientRect();
     const buttons=[...group.querySelectorAll('.nav-item')],rects=buttons.map(el=>el.getBoundingClientRect()),style=getComputedStyle(nav);
-    return {top:rects[0].top-n.top-paddingValue(style.paddingTop),bottom:n.bottom-rects.at(-1).bottom-paddingValue(style.paddingBottom),gaps:rects.slice(1,4).map((r,i)=>r.top-rects[i].bottom),horizontal:Math.abs((g.left+g.right-n.left-n.right)/2),items:buttons.map(item=>{
+    return {top:rects[0].top-nav.querySelector('.nav-mode-toggle').getBoundingClientRect().bottom-10,bottom:n.bottom-rects.at(-1).bottom-paddingValue(style.paddingBottom),gaps:rects.slice(1,4).map((r,i)=>r.top-rects[i].bottom),horizontal:Math.abs((g.left+g.right-n.left-n.right)/2),items:buttons.map(item=>{
       const r=item.getBoundingClientRect(),parts=[...item.children].filter(el=>getComputedStyle(el).display!=='none').map(el=>el.getBoundingClientRect());
       return Math.abs((Math.min(...parts.map(r=>r.left))+Math.max(...parts.map(r=>r.right))-r.left-r.right)/2);
     })};
@@ -97,7 +97,7 @@ try {
   for(const id of ['ledger','statistics','ai','data','achievements','settings']){await nav(id);await settle();assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth),false);await page.screenshot({path:path.join(output,id+'-dark.png')});}
   check('six-pages-dark-without-horizontal-overflow');
   await theme().selectOption('light');await nav('ledger');await page.getByRole('button',{name:'记一笔',exact:true}).click();await page.screenshot({path:path.join(output,'ledger-dialog-light.png')});await page.keyboard.press('Escape');check('light-dialog');
-  await app.evaluate(({BrowserWindow})=>BrowserWindow.getAllWindows()[0].setContentSize(1000,700));await settle();assert.equal(await page.getByRole('separator',{name:'调整侧栏宽度'}).isVisible(),false);check('medium-window-icon-rail');
+  await app.evaluate(({BrowserWindow})=>BrowserWindow.getAllWindows()[0].setContentSize(1000,700));await settle();assert.equal(await page.getByRole('separator',{name:'调整侧栏宽度'}).isVisible(),true);check('medium-window-detailed-resizable');await page.locator('.nav-mode-toggle').click();await settle();
   await anchoredMenu('icon rail');check('menu-anchors-icon-rail');
   await app.evaluate(({BrowserWindow})=>BrowserWindow.getAllWindows()[0].setContentSize(680,650));await settle();await page.getByRole('button',{name:'菜单',exact:true}).click();await settle();assert.equal(await page.locator('#main-nav').getAttribute('data-open'),'true');await anchoredMenu('narrow drawer');await page.screenshot({path:path.join(output,'menu-narrow-anchored.png')});check('menu-anchors-narrow-drawer');await nav('settings');await settle();assert.equal(await page.locator('#main-nav').getAttribute('data-open'),'false');assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth),false);await page.screenshot({path:path.join(output,'settings-narrow.png')});check('narrow-drawer-and-layout');
   assert.equal(await page.locator('vite-error-overlay').count(),0);assert.deepEqual(report.errors,[]);assert.deepEqual(report.console,[]);check('console-and-page-health');report.ok=true;

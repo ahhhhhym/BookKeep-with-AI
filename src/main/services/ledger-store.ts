@@ -75,7 +75,7 @@ import {
   copyBackupRecordToNewDatabase,
   createPreMigrationBackup,
   listBackupRows,
-  getBackupRow, backupRecordView,reconcilePublishedBackupFacts,
+  getBackupRow, backupRecordView,reconcilePublishedBackupFacts,reconcileBackupCompletionProjections,
   type BackupEnvironment,
   type StagedRestorePlan,
 } from './backup-service';
@@ -382,6 +382,7 @@ export class LedgerStore {
       upsertBackupCatalogEntries(paths, databaseEntries, nowIso(clock));
       reconcileBackupCatalog(paths, nowIso(clock));
       mergeCatalogIntoDatabase(db, ledger.id, readBackupCatalog(paths), nowIso(clock));
+      if(!store.recoveryReason)reconcileBackupCompletionProjections(store.backupEnvironment());
     } catch (error) {
       console.warn(
         '[bookkeep] backup catalog reconciliation skipped',
@@ -700,6 +701,7 @@ export class LedgerStore {
   refreshBackupCatalog():void {
     reconcileBackupCatalog(this.paths,nowIso(this.clock));
     mergeCatalogIntoDatabase(this.db,this.ledgerId,readBackupCatalog(this.paths),nowIso(this.clock));
+    reconcileBackupCompletionProjections(this.backupEnvironment());
   }
   backupStatus(restoreId:string):RestoreStatus {
     const receipt=this.db.prepare<{result_snapshot_json:string}>("SELECT result_snapshot_json FROM mutation_receipt WHERE operation='backup.restore' AND mutation_id=?").get(restoreId);

@@ -27,7 +27,7 @@ import { collectIntegrityViolations, openSqlite, type SqliteDb } from '../db/sql
 import { generationDatabasePath, type StoragePaths } from './layout';
 import { CONTENT_VERSION, CONTENT_LIMIT, databaseDigest, embedAttachments, verifyAttachments, extractAttachments } from './backup-content';
 import { regularPath } from './safe-file';
-import {verifyBackupSuccess,backupPayloadSize,type BackupSuccess} from './backup-success';
+import {verifyBackupSuccess,backupPayloadSize,type BackupSuccess,PREPARED_VERSION,readVerifiedCompletion} from './backup-success';
 
 export const BACKUP_MANIFEST_VERSION = 'bk-backup.v1';
 export const BACKUP_MANIFEST_TABLE = 'backup_manifest';
@@ -276,7 +276,9 @@ export function inspectBackupArchive(
     if (!ledger || ledger.id !== manifest.ledgerId || ledger.data_revision!==manifest.snapshotRevision || manifest.contractVersion!==meta.contractVersion) {
       return { ok: false, code: 'BACKUP_INVALID', reason: 'LEDGER_MISMATCH' };
     }
-    const success=verifyBackupSuccess(readFileSync(archivePath),manifest,options.allowPrepared);
+    const bytes=readFileSync(archivePath);
+    let success=verifyBackupSuccess(bytes,manifest,options.allowPrepared);
+    if(manifest.successVersion===PREPARED_VERSION)success=readVerifiedCompletion(archivePath,bytes,manifest);
     return {
       ok: true,
       archive: {

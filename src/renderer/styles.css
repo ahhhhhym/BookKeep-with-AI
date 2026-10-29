@@ -90,9 +90,14 @@
 .achievement-card progress { width: 100%; height: 7px; margin: 12px 0 8px; accent-color: var(--warn); }
 .achievement-progress { display: flex; flex-wrap: wrap; gap: 8px; justify-content: space-between; }
 .achievement-preference { display: flex; gap: 8px; align-items: center; margin-bottom: 16px; }
-.achievement-notice-layer { position: fixed; top: 44px; right: 0; bottom: 0; left: var(--nav-width); z-index: 35; display: flex; align-items: center; justify-content: center; padding: 12px; pointer-events: none; }
-.achievement-notice-layer[data-position="bottom-right"] { align-items: flex-end; justify-content: flex-end; }
-.achievement-notice { position: relative; display: flex; align-items: flex-start; gap: 12px; width: min(420px, 100%); max-height: 100%; overflow: auto; border: 1px solid var(--warn-border); border-radius: 14px; background: var(--surface); color: var(--text); box-shadow: var(--shadow); padding: 18px; pointer-events: auto; animation: achievement-appear 160ms ease-out; }
+.achievement-notice-layer { position: fixed; inset: 0; z-index: 35; display: grid; grid-template-rows: minmax(56px,1fr) auto minmax(12px,1fr); justify-items: center; padding-inline: 12px; pointer-events: none; }
+.achievement-notice-layer[data-visible="false"] { visibility: hidden; }
+.achievement-notice-layer[data-position="bottom-right"] { left: var(--nav-width); grid-template-rows: minmax(56px,1fr) auto 12px; justify-items: end; }
+.achievement-notice { grid-row: 2; position: relative; display: flex; align-items: flex-start; gap: 12px; width: min(460px, 100%); min-width: 0; max-height: calc(100dvh - 68px); overflow: auto; border: 1px solid var(--warn-border); border-radius: 14px; background: var(--surface); color: var(--text); box-shadow: var(--shadow); padding: 20px; pointer-events: auto; }
+.achievement-notice-layer[data-position="bottom-right"] .achievement-notice { width: min(420px,100%); padding: 18px; }
+.achievement-notice[data-phase="entering"] { animation: achievement-appear var(--notice-enter) ease-out both; }
+.achievement-notice[data-phase="exiting"] { animation: achievement-disappear var(--notice-exit) ease-out both; pointer-events: none; }
+.achievement-notice-layer[data-visible="false"] .achievement-notice { pointer-events: none; }
 .achievement-notice-symbol { color: var(--warn); flex: 0 0 auto; padding-top: 4px; }
 .achievement-notice-link { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 8px; border: 0; padding: 2px; background: transparent; color: inherit; text-align: left; font: inherit; cursor: pointer; overflow-wrap: anywhere; }
 .achievement-notice-link strong { font-size: 16px; }
@@ -102,10 +107,14 @@
 .achievement-notice:has(.achievement-notice-error) { flex-wrap: wrap; }
 .achievement-notice-error { position: relative; flex-basis: 100%; min-width: 0; overflow-wrap: anywhere; font-size: 12px; color: var(--danger); }
 @keyframes achievement-appear { from { opacity: 0; transform: scale(.97); } to { opacity: 1; transform: scale(1); } }
-@media (max-width: 1199px) and (min-width: 900px) { .achievement-notice-layer { left: var(--nav-rail); } }
-@media (max-width: 899px) { .achievement-notice-layer { left: 0; } }
-@media (max-width: 480px) { .achievement-summary { grid-template-columns: 1fr; gap: 8px; } .achievement-summary > div { padding: 12px; } .achievement-notice { padding: 12px; gap: 8px; } }
-@media (prefers-reduced-motion: reduce) { .achievement-notice { animation: achievement-fade 120ms ease-out; } }
+@keyframes achievement-disappear { from { opacity: 1; } to { opacity: 0; } }
+
+@media (max-width: 899px) { .achievement-notice-layer[data-position="bottom-right"] { left: 0; } }
+@media (max-width: 480px) { .achievement-summary { grid-template-columns: 1fr; gap: 8px; } .achievement-summary > div { padding: 12px; } }
+@media (prefers-reduced-motion: reduce) {
+  .achievement-notice[data-phase="entering"] { animation: achievement-fade var(--notice-reduced) ease-out both; }
+  .achievement-notice[data-phase="exiting"] { animation-duration: var(--notice-reduced); }
+}
 @keyframes achievement-fade { from { opacity: 0; } to { opacity: 1; } }
 
 [hidden] { display: none !important; }
@@ -187,6 +196,7 @@ a {
 .app {
   display: grid;
   grid-template-columns: var(--nav-width) minmax(0, 1fr);
+  transition: grid-template-columns 260ms cubic-bezier(.4, 0, .2, 1);
   grid-template-rows: 44px minmax(0, 1fr);
   height: 100%;
   background-color: var(--bg);
@@ -226,8 +236,10 @@ a {
   grid-row: 2;
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 10px;
+  min-height: 0;
   padding: 16px 10px;
+  transition: padding 260ms cubic-bezier(.4, 0, .2, 1), transform 260ms cubic-bezier(.4, 0, .2, 1);
   background: var(--surface);
   border-right: 1px solid var(--border-soft);
   overflow-y: auto;
@@ -256,77 +268,40 @@ a {
   font-size: 15px;
 }
 
-.nav-item {
-  display: flex;
-  font-size: 17px;
-  align-items: center;
-  justify-content: center;
-  gap: 10px;
-  width: 100%;
-  min-height: 44px;
-  padding: 8px 10px;
-  border: 1px solid transparent;
-  border-radius: 8px;
-  background: transparent;
-  color: var(--text-secondary);
-  text-align: left;
-  cursor: pointer;
-}
 
-.nav-item:hover {
-  background: var(--surface-hover);
-  color: var(--text);
+/* The button owns a >=44px hit area; only the inner contour is 97%. */
+.nav-item, .nav-mode-toggle {
+  position: relative; z-index: 1; display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0; width: 100%; min-width: 44px; height: 44px; min-height: 44px;
+  padding: 0; border: 0; border-radius: 0; background: transparent; color: var(--text-secondary);
+  font-size: 16.49px; font-family: inherit; cursor: pointer; outline: none;
 }
-
-.nav-item[aria-current="page"] {
-  background: transparent;
-  border-color: transparent;
-  color: var(--primary-strong);
-  font-weight: 600;
+.nav-visual {
+  display: flex; align-items: center; justify-content: center; gap: 9.7px;
+  width: 97%; height: 42.68px; padding: 7.76px 9.7px; border: 1px solid transparent; border-radius: 8px;
+  transition: width 260ms cubic-bezier(.4, 0, .2, 1), border-radius 260ms cubic-bezier(.4, 0, .2, 1), padding 260ms cubic-bezier(.4, 0, .2, 1), gap 260ms cubic-bezier(.4, 0, .2, 1), background-color 180ms ease;
 }
-
-.nav-label {
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.nav-badge {
-  margin-left: auto;
-  min-width: 20px;
-  padding: 0 6px;
-  border-radius: 999px;
-  background: var(--primary-weak);
-  color: var(--primary-strong);
-  font-size: 11px;
-  line-height: 18px;
-  text-align: center;
-}
-
+.nav-item svg, .nav-mode-toggle svg { width: 23.28px; height: 23.28px; flex-shrink: 0; }
+.nav-label { max-width: 100px; white-space: nowrap; overflow: hidden; opacity: 1; transition: max-width 260ms cubic-bezier(.4, 0, .2, 1), opacity 260ms ease; }
+.nav-item:hover, .nav-mode-toggle:hover { color: var(--text); }
+.nav-item:hover .nav-visual, .nav-mode-toggle:hover .nav-visual { background: var(--surface-hover); }
+.nav-item[aria-current="page"] { color: var(--primary-strong); font-weight: 600; }
+.nav-item[aria-current="page"] .nav-visual { background: transparent; }
+.nav-item:focus-visible .nav-visual, .nav-mode-toggle:focus-visible .nav-visual { outline: 2px solid var(--primary); outline-offset: -2px; }
 .nav-items { position: relative; display: flex; flex-direction: column; gap: 10px; width: 100%; flex: 1 0 auto; }
 .nav-bottom { display: flex; flex-direction: column; gap: 10px; margin-top: auto; flex-shrink: 0; }
-.nav-item { position: relative; z-index: 1; flex-shrink: 0; transition: color 180ms ease, background-color 180ms ease; }
-.nav-item svg { flex-shrink: 0; }
-.nav-indicator { position: absolute; inset: 0 0 auto; pointer-events: none; background: var(--primary-weak); border: 1px solid var(--primary-border); border-radius: 8px; transition: transform 240ms cubic-bezier(.22, 1, .36, 1), height 240ms ease; }
-.nav-item[aria-current="page"]:hover { background: transparent; }
+.nav-indicator { position: absolute; top: 0; left: 50%; width: 97%; pointer-events: none; background: var(--primary-weak); border: 1px solid var(--primary-border); border-radius: 8px; transition: transform 240ms cubic-bezier(.22, 1, .36, 1), height 240ms ease, width 260ms cubic-bezier(.4, 0, .2, 1), border-radius 260ms cubic-bezier(.4, 0, .2, 1); }
+.nav[data-mode="compact"] { padding-inline: 5px; scrollbar-width: none; }
+.nav[data-mode="compact"] .nav-visual, .nav[data-mode="compact"] .nav-indicator { width: 42.68px; border-radius: 50%; }
+.nav[data-mode="compact"] .nav-visual { padding-inline: 0; gap: 0; }
+.nav[data-mode="compact"] .nav-label { max-width: 0; opacity: 0; }
 .nav-resizer { position: absolute; right: 0; top: 0; bottom: 0; width: 7px; z-index: 2; cursor: col-resize; touch-action: none; }
+.nav-resizer[hidden] { display: none; }
 .nav-resizer:hover, .nav-resizer:focus-visible, .nav[data-resizing="true"] .nav-resizer { background: var(--primary-border); }
 .nav[data-resizing="true"] { user-select: none; }
-@media (max-width: 1199px) { .nav-resizer { display: none; } }
+.app:has(.nav[data-resizing="true"]) { transition: none; }
+.nav-toggle { display: none; align-items: center; justify-content: center; width: 44px; min-width: 44px; height: 44px; padding: 0; border: 0; border-radius: 8px; background: transparent; color: var(--text); cursor: pointer; }
 @media (prefers-color-scheme: dark) { .button-primary:hover:not(:disabled) { background: #2563eb; } }
-
-.nav-toggle {
-  display: none;
-  align-items: center;
-  gap: 8px;
-  min-height: 36px;
-  padding: 6px 10px;
-  border: 1px solid var(--border);
-  border-radius: 8px;
-  background: var(--surface);
-  color: var(--text);
-  cursor: pointer;
-}
 
 .backdrop {
   display: none;
@@ -812,31 +787,6 @@ a {
 
 /* ---------- 响应式（docs/UX.md §2） ---------- */
 
-@media (max-width: 1199px) {
-  .app {
-    grid-template-columns: var(--nav-rail) minmax(0, 1fr);
-  }
-
-  .nav {
-    padding: 12px 6px;
-  }
-
-  .nav-brand span.nav-label,
-  .nav-item .nav-label {
-    display: none;
-  }
-
-  .nav-item {
-    justify-content: center;
-    padding: 8px 0;
-  }
-
-  .nav-brand {
-    justify-content: center;
-    padding: 4px 0 12px;
-  }
-}
-
 @media (max-width: 899px) {
   .app {
     grid-template-columns: minmax(0, 1fr);
@@ -865,27 +815,18 @@ a {
     bottom: 0;
     left: 0;
     z-index: 20;
-    width: 236px;
+    width: min(var(--nav-detail-width), calc(100vw - 24px));
     padding: 16px 10px;
     border-right: 1px solid var(--border);
     transform: translateX(-102%);
-    transition: transform 0.16s ease;
+    transition: transform 260ms cubic-bezier(.4, 0, .2, 1);
   }
 
   .nav[data-open="true"] {
     transform: none;
   }
 
-  .nav[data-open="true"] .nav-label {
-    display: inline;
-  }
-
-  .nav[data-open="true"] .nav-item {
-    justify-content: center;
-    padding: 8px 10px;
-  }
-
-  .backdrop[data-open="true"] {
+.backdrop[data-open="true"] {
     display: block;
     position: fixed;
     inset: 44px 0 0;
