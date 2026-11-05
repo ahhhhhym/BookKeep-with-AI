@@ -63,10 +63,10 @@ export async function buildRenderer() {
 export async function buildAll({ clean = true } = {}) {
   if (clean && existsSync(DIST)) rmSync(DIST, { recursive: true, force: true });
 
-  const icons = await verifyIcons();
-  if (!icons.ok) throw new Error('图标核验失败');
   cleanLicenses();
   collectLicenses();
+  const icons = await verifyIcons();
+  if (!icons.ok) throw new Error('图标核验失败');
 
   await buildMainProcesses();
   await buildRenderer();

@@ -1,0 +1,11 @@
+/** Pure implementation regression runner: no package/install/release tasks. */
+import {spawnSync} from 'node:child_process';import {mkdirSync,mkdtempSync,existsSync,readFileSync,writeFileSync} from 'node:fs';import {tmpdir} from 'node:os';import path from 'node:path';
+const out=process.env.BOOKKEEP_QA_OUTPUT;if(!out||existsSync(path.join(out,'summary.json')))throw Error('new explicit output required');mkdirSync(out,{recursive:true});
+const cases=process.argv.slice(2);const defaults=['financial-regression','review-approval','recognition-queue','security-recovery','restore-reconciliation','recovery-crash','dataset-workflow','dataset-crash','ui-privacy','ui-appearance','v016-nav-focus','v016-navigation','v016-backup-recovery','v016-achievement-notice','achievement-backup','achievement-lifecycle'];
+const report={ok:false,startedAt:new Date().toISOString(),cases:[]};
+for(const name of cases.length?cases:defaults){const dir=path.join(out,name);if(existsSync(dir))throw Error('case output exists');mkdirSync(dir);const local=mkdtempSync(path.join(tmpdir(),'BookKeep V020 regression '));const env={...process.env,LOCALAPPDATA:local,BOOKKEEP_QA_OUTPUT:dir};delete env.NODE_OPTIONS;delete env.ELECTRON_RUN_AS_NODE;
+ const start=new Date().toISOString(),result=spawnSync(process.execPath,['tests/electron/'+name+'.mjs'],{env,encoding:'utf8',timeout:240000,maxBuffer:10*1024*1024});writeFileSync(path.join(dir,'command.log'),(result.stdout??'')+'\n'+(result.stderr??''));
+ const filename=['result.json','review-ui.json','desktop-selftest.json'].map(n=>path.join(dir,n)).find(existsSync);let structured=null;if(filename)try{structured=JSON.parse(readFileSync(filename,'utf8'));}catch{}
+ const entry={name,start,end:new Date().toISOString(),command:'node tests/electron/'+name+'.mjs',exit:result.status,error:result.error?.message,localAppData:local,report:filename??null,ok:result.status===0&&structured?.ok===true,checks:structured?.checks?.length??null};report.cases.push(entry);report.ok=report.cases.every(c=>c.ok);writeFileSync(path.join(out,'summary.json'),JSON.stringify(report,null,2));console.log((entry.ok?'PASS ':'FAIL ')+name+' exit='+result.status+' checks='+entry.checks);
+}
+report.finishedAt=new Date().toISOString();writeFileSync(path.join(out,'summary.json'),JSON.stringify(report,null,2));process.exitCode=report.ok?0:1;

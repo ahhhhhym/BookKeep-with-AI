@@ -128,7 +128,8 @@ export interface Candidate extends NormalizedCandidate {
     jobId: string;
     imageAssetId: string;
     preparedHash: string;
-    reviewState: 'pending_review' | 'rejected' | 'approved';
+    reviewState: import('./candidate-state').CandidateReviewState;
+    deletedAt: string | null;
     postedTransactionId: string | null;
     duplicateMatches: {
         targetType: 'transaction' | 'candidate' | 'job';

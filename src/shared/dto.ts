@@ -13,6 +13,7 @@ export type StructuredOutputStatus = 'unverified' | 'verified' | 'unsupported';
 
 /** settings.ai 输出（docs/CONTRACTS.md §6）。 */
 export interface AiSettingsView {
+  billingTarget:{endpoint:string;model:string};
   provider: 'deepseek';
   model: string;
   promptVersion: string;

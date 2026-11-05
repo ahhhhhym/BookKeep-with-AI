@@ -7,6 +7,7 @@
  *  - 变更通道必须携带 mutationId，读取通道不要求；dataEpoch 仅启动读取类允许 null。
  */
 
+import {WINDOW_CHANNELS,WINDOW_SPECS} from './window-lifecycle';
 import { MAINTENANCE_CHANNELS, MAINTENANCE_SPECS } from './maintenance';
 import { IMPORT_CHANNELS } from './imports';
 import { IMPORT_SPECS } from './import-specs';
@@ -37,6 +38,7 @@ import type { NoticeConsumeInput } from './achievements';
 import { isAchievementPreferences, type AchievementPreferences } from './achievement-presentation';
 
 export const IPC = {
+  ...WINDOW_CHANNELS,
   achievementList: 'achievement.list',
   achievementPreferencesRead: 'achievement.preferences.read',
   achievementPreferencesApply: 'achievement.preferences.apply',
@@ -499,7 +501,7 @@ export const CHANNEL_SPECS: {
   readonly backupCreate: ChannelSpec<BackupCreateInput>;
   readonly backupList: ChannelSpec<BackupListInput>;
   readonly backupRestore: ChannelSpec<BackupRestoreInput>;
-} & typeof IMPORT_SPECS & typeof REVIEW_SPECS & typeof DATASET_SPECS & typeof MAINTENANCE_SPECS = {
+} & typeof WINDOW_SPECS & typeof IMPORT_SPECS & typeof REVIEW_SPECS & typeof DATASET_SPECS & typeof MAINTENANCE_SPECS = {
   achievementList: { channel: IPC.achievementList, permission: 'R', skeletonOnly: false, request: READ_EPOCH_SPEC },
   achievementPreferencesRead: { channel: IPC.achievementPreferencesRead, permission: 'R', skeletonOnly: false, request: READ_EPOCH_SPEC },
   achievementPreferencesApply: { channel: IPC.achievementPreferencesApply, permission: 'W', skeletonOnly: false, request: {
@@ -526,6 +528,7 @@ export const CHANNEL_SPECS: {
     validatePayload: payload => isThemeSource(payload.source) ? [] : [{path:'payload.source',code:'EXPECTED_THEME_SOURCE'}],
     cast: payload => payload as unknown as {source:ThemeSource},
   } },
+  ...WINDOW_SPECS,
   ...MAINTENANCE_SPECS,
   ...DATASET_SPECS,
   ...REVIEW_SPECS,
@@ -762,6 +765,7 @@ export const BUSINESS_CHANNELS: readonly IpcChannel[] = [
   IPC.achievementConsume,
   IPC.appearanceRead,
   IPC.appearanceApply,
+  ...Object.values(WINDOW_CHANNELS),
   ...Object.values(MAINTENANCE_CHANNELS),
   ...Object.values(DATASET_CHANNELS),
   ...Object.values(REVIEW_CHANNELS),

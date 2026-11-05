@@ -181,7 +181,7 @@ export async function runSelfTest(deps: SelfTestDependencies): Promise<SelfTestR
       'preload.bridgeSurface',
       isolation.bridgeType === 'object' &&
         isolation.bridgeKeys.join(',') ===
-          'achievement,appearance,backup,candidate,category,contractVersion,dataset,image,ledger,maintenance,provider,recognition,settings,skeleton,skeletonStage,statistics,transaction' &&
+          'achievement,appearance,backup,candidate,category,contractVersion,dataset,image,ledger,maintenance,privacy,provider,recognition,settings,skeleton,skeletonStage,statistics,transaction,windowLifecycle' &&
         isolation.statisticsKeys.join(',') === 'series,summary,topCategories,topTransactions' &&
         isolation.datasetKeys.join(',') === 'command,read,save' &&
         isolation.achievementKeys.join(',') === 'applyPreferences,consume,list,present,presentation,readPreferences,watch',

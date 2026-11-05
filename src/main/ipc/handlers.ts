@@ -1,7 +1,8 @@
 /** 通道处理器：参数编排 + 调用主进程账本服务；业务事务与校验在 services/仓储层。 */
 
 import { normalizeCandidateOutput } from '../../shared/candidate';
-import { BrowserWindow } from 'electron';
+import { BrowserWindow,clipboard } from 'electron';
+import {privacyText,PRIVACY_VERSION} from '../../shared/privacy';
 import { ForegroundClock } from '../services/foreground-clock';
 import { readAppearance, applyAppearance } from '../appearance';
 import { CANDIDATE_SCHEMA_VERSION, PROMPT_VERSION } from '../../shared/constants';
@@ -21,6 +22,8 @@ import { ReviewService } from '../services/review-service';
 import type { DatasetService } from '../services/dataset/store';
 
 export interface HandlerDependencies {
+  readonly closeGuard?:import('../services/window-close-guard').CloseHandshake;
+  readonly openBillingDocs?:()=>Promise<void>;
   readonly maintenance: import('../services/maintenance-service').MaintenanceService;
   readonly activity: import('../services/review-activity').ReviewActivityService;
   readonly store: LedgerStore;
@@ -36,6 +39,10 @@ export interface HandlerDependencies {
 }
 
 export function registerIpcHandlers(router: IpcRouter, deps: HandlerDependencies): void {
+  router.handle(CHANNEL_SPECS.privacyCopy,()=>{clipboard.writeText(privacyText());return {copied:true as const,version:PRIVACY_VERSION};});
+  router.handle(CHANNEL_SPECS.windowCloseReady,r=>{deps.closeGuard?.setReady(r.payload.ready);return null;});
+  router.handle(CHANNEL_SPECS.windowResolveClose,r=>{if(!deps.closeGuard)throw new AppError('STATE_CONFLICT');deps.closeGuard.resolve(r.payload.requestId,r.dataEpoch!,r.payload.decision);return null;});
+  router.handle(CHANNEL_SPECS.windowBillingDocs,async()=>{await deps.openBillingDocs?.();return null;});
   const foregroundClock = new ForegroundClock();
   let observedWindow: BrowserWindow | null = null;
   const foreground = (): boolean => {
@@ -90,6 +97,8 @@ export function registerIpcHandlers(router: IpcRouter, deps: HandlerDependencies
   router.handle(CHANNEL_SPECS.recognitionResume, r => deps.recognition.retry(r.payload,r.mutationId!,true));
   router.handle(CHANNEL_SPECS.candidateList, r => review.list(r.payload,deps.recognition));
   router.handle(CHANNEL_SPECS.candidateUpdate, r => review.update(r.payload,r.mutationId!));
+  router.handle(CHANNEL_SPECS.candidateDelete,r=>review.deleteCandidate(r.payload,r.mutationId!));
+  router.handle(CHANNEL_SPECS.candidateRestore,r=>review.restoreCandidate(r.payload,r.mutationId!));
   router.handle(CHANNEL_SPECS.candidateReject, r => review.reject(r.payload,r.mutationId!));
   router.handle(CHANNEL_SPECS.candidateApprove, r => review.approve(r.payload,r.mutationId));
   const secretLimiter = createRateLimiter(

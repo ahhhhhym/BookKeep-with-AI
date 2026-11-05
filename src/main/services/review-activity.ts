@@ -49,7 +49,7 @@ export class ReviewActivityService {
       const sessions=jobs.map(job=>{
         const completion=c.db.prepare<{seq:number;created_at:string;diff_json:string}>("SELECT rowid seq,created_at,diff_json FROM audit_event WHERE entity_id=? AND action='review.completed' ORDER BY rowid").all(job.id).find(r=>(JSON.parse(r.diff_json) as {field:string;after:unknown}[]).some(d=>d.field==='epoch'&&d.after===c.epoch));
         const a=activity.filter(a=>a.jobId===job.id&&(!completion||a.seq<completion.seq)),first=a[0];
-        const rows=c.db.prepare<{id:string;review_state:string}>('SELECT id,review_state FROM candidate WHERE job_id=? ORDER BY ordinal').all(job.id);
+        const rows=c.db.prepare<{id:string;review_state:string;deleted_at?:string|null}>('SELECT * FROM candidate WHERE job_id=? ORDER BY ordinal').all(job.id);
         const events=c.db.prepare<{seq:number;action:string;before_json:string;after_json:string;created_at:string}>(`SELECT e.rowid seq,e.action,e.before_json,e.after_json,e.created_at FROM review_event e JOIN candidate c ON c.id=e.candidate_id WHERE c.job_id=? ORDER BY e.rowid`).all(job.id).filter(e=>first&&e.seq>first.reviewEventStart&&(!completion||e.seq<=Number((JSON.parse(completion.diff_json) as {field:string;after:unknown}[]).find(d=>d.field==='reviewEventEnd')?.after??0)));
         let edits=0,fills=0,rejected=0,reopened=0;
         const byField:Record<string,number>={};
@@ -58,7 +58,7 @@ export class ReviewActivityService {
           for(const field of ['amountFen','occurredDate','occurredTime','timePrecision','name','categoryId','merchant','transactionKind','amountBasis','groupKey'])if(JSON.stringify(before?.[field])!==JSON.stringify(after?.[field])){edits++;byField[field]=(byField[field]??0)+1;if(before?.[field]===null&&after?.[field]!==null)fills++;}
         }
         const completed=!!completion;
-        return {jobId:job.id,collected:!!first,sessionId:first?.sessionId??null,completed,activeMs:first?a.reduce((n,e)=>n+e.activeMs,0):null,substantiveEdits:first?edits:null,missingFills:first?fills:null,byField:first?byField:null,rejected:first?rejected:null,reopened:first?reopened:null,cancelled:first?a.filter(e=>e.event==='cancel').length:null,unprocessed:rows.filter(r=>r.review_state==='pending_review').length};
+        return {jobId:job.id,collected:!!first,sessionId:first?.sessionId??null,completed,activeMs:first?a.reduce((n,e)=>n+e.activeMs,0):null,substantiveEdits:first?edits:null,missingFills:first?fills:null,byField:first?byField:null,rejected:first?rejected:null,reopened:first?reopened:null,cancelled:first?a.filter(e=>e.event==='cancel').length:null,unprocessed:rows.filter(r=>r.review_state==='pending_review').length,deletedCount:rows.filter(r=>!!r.deleted_at).length};
       });
       const collected=sessions.filter(s=>s.collected),complete=collected.filter(s=>s.completed);
       return {collected:collected.length>0,completedSessions:complete.length,incompleteSessions:collected.length-complete.length,uncollectedJobs:sessions.length-collected.length,

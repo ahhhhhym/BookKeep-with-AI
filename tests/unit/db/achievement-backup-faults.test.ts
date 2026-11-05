@@ -12,7 +12,7 @@ let time=Date.parse('2026-10-27T15:59:58.000Z');
 function setup(extra:Parameters<typeof storeOptions>[2]={}){const layout=createTestLayout();layouts.push(layout);const options=storeOptions(layout,()=>time,extra),s=LedgerStore.open(options);stores.push(s);return{s,layout,options};}
 const backup=(s:LedgerStore,id=randomUUID())=>s.createBackup({kind:'manual',containsPrivateDataAcknowledged:true},id);
 const restore=(s:LedgerStore,id:string)=>s.restoreBackup({mode:'commit',restoreToken:s.previewRestore(id).restoreToken,currentDataWillBeReplaced:true},randomUUID());
-const inspect=(f:string)=>inspectBackupArchive(f,{latestSchemaVersion:4,contractVersion:CONTRACT_VERSION});
+const inspect=(f:string)=>inspectBackupArchive(f,{latestSchemaVersion:5,contractVersion:CONTRACT_VERSION});
 afterEach(()=>{for(const s of stores.splice(0))s.close();for(const l of layouts.splice(0))cleanupLayout(l);time=Date.parse('2026-10-27T15:59:58.000Z');});
 describe('C archive/registration/staging failures retain current data',()=>{
  it('discovered automatic pre_migration archive keeps its origin and never grants a manual backup',()=>{

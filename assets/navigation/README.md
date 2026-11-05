@@ -1,0 +1,1 @@
+Navigation paths in src/renderer/lib/navigation-icon-registry.tsx are original BookKeepAI vectors, with paired outline and solid silhouettes. They are separate from the Lucide category icon registry and its persistent iconKey identifiers. No external SVG resources are loaded.

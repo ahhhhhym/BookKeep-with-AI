@@ -1,6 +1,8 @@
 /** 主进程入口：单实例、硬化、受限 IPC、账本存储启动、窗口与自检。 */
 
-import { app, BrowserWindow, dialog, safeStorage, session } from 'electron';
+import { app, BrowserWindow, dialog, safeStorage, session, powerMonitor, shell } from 'electron';
+import {randomUUID} from 'node:crypto';
+import {CloseHandshake} from './services/window-close-guard';
 import { DEV_SERVER_ORIGIN } from '../shared/csp';
 import { APP_DISPLAY_NAME, APP_ORIGIN } from '../shared/constants';
 import { AppError } from '../shared/errors';
@@ -183,7 +185,18 @@ async function bootstrap(): Promise<void> {
     open:async()=>{const r=await dialog.showOpenDialog(mainWindow!,{title:'选择BookKeepAI备份（不含数据集）',properties:['openFile'],filters:[{name:'BookKeepAI备份',extensions:['bkdb']}]});return r.canceled?null:r.filePaths[0]??null;},
   },()=>mainWindow?.webContents.id??null);
   const activity=new ReviewActivityService(store);
+  let closePermit=false, fallbackOpen=false;
+  const closeGuard=new CloseHandshake(()=>store!.currentEpoch,r=>{mainWindow?.webContents.send('window.closeRequested',r);setTimeout(()=>{if(closeGuard.currentRequest?.requestId===r.requestId&&closeGuard.awaitingResponse)void fallbackClose(r.requestId);},10000);},()=>{closePermit=true;setImmediate(()=>mainWindow?.close());},randomUUID);
+  async function fallbackClose(requestId:string|null=null){
+    if(requestId&&closeGuard.currentRequest?.requestId!==requestId)return;
+    if(fallbackOpen||!mainWindow||mainWindow.isDestroyed())return;fallbackOpen=true;
+    try{const r=await dialog.showMessageBox(mainWindow,{type:'warning',message:'窗口尚未完成保存检查',detail:'强制关闭可能丢失未保存的修改。',buttons:['继续等待','取消关闭','强制关闭'],defaultId:0,cancelId:1});
+      if(requestId&&closeGuard.currentRequest?.requestId!==requestId)return;
+      if(r.response===2){closePermit=true;mainWindow.close();}else if(r.response===1){const request=closeGuard.currentRequest;closeGuard.reset();mainWindow.webContents.send('window.closeCancelled',{requestId:request?.requestId??null,dataEpoch:store!.currentEpoch});}else setTimeout(()=>void fallbackClose(requestId),10000);
+    }finally{fallbackOpen=false;}
+  }
   registerIpcHandlers(router, {
+    closeGuard,openBillingDocs:()=>shell.openExternal('https://api-docs.deepseek.com/zh-cn/quick_start/pricing/'),
     maintenance,activity,
     dataset:dataset??undefined,
     saveDataset:async artifactId=>{
@@ -201,7 +214,7 @@ async function bootstrap(): Promise<void> {
     store,
     reviewOwner:()=>mainWindow?.webContents.id??null,
     secrets, probe, images, get recognition(){return recognition!;},
-    onRestored:()=>{recognition?.shutdown();try{dataset?.resetEpoch();}catch{console.warn('[bookkeep] dataset epoch reset requires recovery');}recognition=new RecognitionService(store!,images,secrets!);},
+    onRestored:()=>{const oldClose=closeGuard.currentRequest;closeGuard.reset();if(oldClose)mainWindow?.webContents.send('window.closeCancelled',oldClose);recognition?.shutdown();try{dataset?.resetEpoch();}catch{console.warn('[bookkeep] dataset epoch reset requires recovery');}recognition=new RecognitionService(store!,images,secrets!);},
     selectImages: async()=>{ const result=await dialog.showOpenDialog(mainWindow!,{title:"选择消费图片",properties:["openFile","multiSelections"],filters:[{name:"JPEG / PNG / WebP",extensions:["jpg","jpeg","png","webp"]}]}); return result.canceled?[]:result.filePaths; },
   });
 
@@ -214,6 +227,11 @@ async function bootstrap(): Promise<void> {
   mainWindow = created.window;
 
   const window = created.window;
+  window.on('close',event=>{if(selfTestMode||captureDir||closePermit)return;event.preventDefault();if(!closeGuard.request())void fallbackClose();});
+  window.webContents.on('will-prevent-unload',event=>{if(closePermit)event.preventDefault();});
+  const resumed=()=>{if(!window.isDestroyed())window.webContents.send('window.runtimeResumed');};powerMonitor.on('resume',resumed);
+  window.once('closed',()=>powerMonitor.removeListener('resume',resumed));
+  window.webContents.on('render-process-gone',()=>closeGuard.setReady(false));
   const loaded = await waitForRenderer(window);
 
   if (captureDir) {

@@ -29,6 +29,7 @@ export function ExpenseEditor({ original, categories, dataEpoch, onSaved, onClos
   const [futureConfirmed, setFutureConfirmed] = useState(false);
   const attempt = useRef(new MutationAttempt());
   const form = useRef<HTMLFormElement>(null);
+  useEffect(()=>{const cancel=()=>setLeaveAction(null);window.addEventListener('bookkeep:close-cancelled',cancel);return()=>window.removeEventListener('bookkeep:close-cancelled',cancel);},[]);
   const dirty = JSON.stringify(draft) !== initial.current || uncertain;
 
   function requestLeave(leave: () => void): void {
@@ -105,13 +106,12 @@ export function ExpenseEditor({ original, categories, dataEpoch, onSaved, onClos
   const attrs = (key: keyof ExpenseDraft) => ({ name: key, id: `expense-${key}`, 'aria-label': labels[key], 'aria-invalid': !!errors[key], 'aria-describedby': errors[key] ? `expense-${key}-error` : undefined });
 
   return <>
-    <Modal title={base ? '编辑支出' : '记一笔'} onClose={() => requestLeave(onClose)} busy={busy}>
+    <Modal motion="expense" title={base ? '编辑支出' : '记一笔'} onClose={() => requestLeave(onClose)} busy={busy}>
       <form ref={form} noValidate onSubmit={(event) => { event.preventDefault(); void save(); }} onKeyDown={(event) => {
         if (event.nativeEvent.isComposing || event.keyCode === 229) return;
         if (event.key === 'Enter' && event.ctrlKey) { event.preventDefault(); void save(); }
         else if (event.key === 'Enter' && event.target instanceof HTMLInputElement) event.preventDefault();
       }}>
-        <p className="muted">默认账本 · 人民币 · 上海时间</p>
         {base ? <p className="tiny">来源：{base.source === 'manual' ? '手工记账' : 'AI审核入账'}{base.sourceCandidateId ? ` · 候选 ${base.sourceCandidateId}` : ''}</p> : null}
         <fieldset disabled={busy || uncertain || epochChanged || conflict} className="expense-fields">
           <label className="field" htmlFor="expense-amount">金额（元，必填）<input {...attrs('amount')} type="text" inputMode="decimal" autoFocus value={draft.amount} onChange={(event) => change('amount', event.target.value)} placeholder="0.00" />{fieldError('amount')}</label>
@@ -135,9 +135,9 @@ export function ExpenseEditor({ original, categories, dataEpoch, onSaved, onClos
         <div className="expense-actions"><button className="button" type="button" disabled={busy} onClick={() => requestLeave(onClose)}>取消</button><button className="button button-primary" type="submit" disabled={busy || epochChanged || conflict}>{busy ? '正在保存…' : uncertain ? '重试保存' : '保存支出'}</button></div>
       </form>
     </Modal>
-    {leaveAction ? <Modal title="有未保存的修改" busy={busy} onClose={() => setLeaveAction(null)}>
+    {leaveAction ? <Modal title="有未保存的修改" busy={busy} onClose={() => {setLeaveAction(null);window.dispatchEvent(new Event("bookkeep:leave-cancel"));}}>
       <p>{uncertain ? '原提交结果尚未核实，请先重试保存。放弃输入不会撤销可能已提交的交易。' : '选择保存后离开，或放弃本次修改。'}</p>
-      <div className="expense-actions"><button className="button" disabled={busy} onClick={() => setLeaveAction(null)}>继续编辑</button><button className="button" disabled={busy} onClick={() => { const leave = leaveAction; setLeaveAction(null); onClose(); if (leave !== onClose) leave(); }}>放弃修改</button><button className="button button-primary" disabled={busy || epochChanged || conflict} onClick={() => { const leave = leaveAction; setLeaveAction(null); void save(leave); }}>保存并离开</button></div>
+      <div className="expense-actions"><button className="button" disabled={busy} onClick={() => {setLeaveAction(null);window.dispatchEvent(new Event("bookkeep:leave-cancel"));}}>继续编辑</button><button className="button" disabled={busy} onClick={() => { const leave = leaveAction; setLeaveAction(null); onClose(); if (leave !== onClose) leave(); }}>放弃修改</button><button className="button button-primary" disabled={busy || epochChanged || conflict} onClick={() => { const leave = leaveAction; setLeaveAction(null); void save(leave); }}>保存并离开</button></div>
     </Modal> : null}
   </>;
 }

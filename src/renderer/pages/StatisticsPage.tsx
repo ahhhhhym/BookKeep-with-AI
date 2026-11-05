@@ -88,7 +88,7 @@ export function StatisticsPage({ input, onInput, onDetails }: {
   const close = (): void => { detailId.current++; setSelected(null); setDetail(null); };
   const detailReady = detail?.scopeId === scope?.scopeId && detail?.key === point?.pointKey;
   return <div className="page statistics-page">
-    <PageHeader title="统计" subtitle={`默认账本 · 人民币 · 上海今天 ${today}`} actions={<SlidingSegments value={input.period} items={PERIODS} label="统计周期" onChange={period => { if (period !== input.period) onInput({ ...input, period, snapshotRevision: null }); }} />} />
+    <PageHeader title="统计" actions={<SlidingSegments value={input.period} items={PERIODS} label="统计周期" onChange={period => { if (period !== input.period) onInput({ ...input, period, snapshotRevision: null }); }} />} />
     <form className="statistics-controls" onSubmit={(event) => { event.preventDefault(); chooseAnchor(anchor); }}>
       <button type="button" className="button" disabled={!range || range.start <= '1900-01-01'} onClick={() => range && chooseAnchor(calendarShift(range.start, -1))}>上一{LABEL[input.period]}</button>
       <label className="field">选择周期日期<input type="date" min="1900-01-01" max={today} value={anchor} onChange={(event) => setAnchor(event.target.value)} /></label>

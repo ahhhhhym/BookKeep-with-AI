@@ -277,12 +277,13 @@ a {
   font-size: 16.49px; font-family: inherit; cursor: pointer; outline: none;
 }
 .nav-visual {
-  display: flex; align-items: center; justify-content: center; gap: 9.7px;
+  display: grid; place-items: center;
   width: 97%; height: 42.68px; padding: 7.76px 9.7px; border: 1px solid transparent; border-radius: 8px;
   transition: width 260ms cubic-bezier(.4, 0, .2, 1), border-radius 260ms cubic-bezier(.4, 0, .2, 1), padding 260ms cubic-bezier(.4, 0, .2, 1), gap 260ms cubic-bezier(.4, 0, .2, 1), background-color 180ms ease;
 }
 .nav-item svg, .nav-mode-toggle svg { width: 23.28px; height: 23.28px; flex-shrink: 0; }
-.nav-label { max-width: 100px; white-space: nowrap; overflow: hidden; opacity: 1; transition: max-width 260ms cubic-bezier(.4, 0, .2, 1), opacity 260ms ease; }
+.nav-content { display: inline-flex; align-items: center; justify-content: center; gap: 9.7px; height: 100%; max-width: 100%; min-width: 0; transition: gap 260ms cubic-bezier(.4, 0, .2, 1); }
+.nav-label { line-height: 1.2; max-width: 100px; white-space: nowrap; overflow: hidden; opacity: 1; transition: max-width 260ms cubic-bezier(.4, 0, .2, 1), opacity 260ms ease; }
 .nav-item:hover, .nav-mode-toggle:hover { color: var(--text); }
 .nav-item:hover .nav-visual, .nav-mode-toggle:hover .nav-visual { background: var(--surface-hover); }
 .nav-item[aria-current="page"] { color: var(--primary-strong); font-weight: 600; }
@@ -294,6 +295,7 @@ a {
 .nav[data-mode="compact"] { padding-inline: 5px; scrollbar-width: none; }
 .nav[data-mode="compact"] .nav-visual, .nav[data-mode="compact"] .nav-indicator { width: 42.68px; border-radius: 50%; }
 .nav[data-mode="compact"] .nav-visual { padding-inline: 0; gap: 0; }
+.nav[data-mode="compact"] .nav-content { gap: 0; }
 .nav[data-mode="compact"] .nav-label { max-width: 0; opacity: 0; }
 .nav-resizer { position: absolute; right: 0; top: 0; bottom: 0; width: 7px; z-index: 2; cursor: col-resize; touch-action: none; }
 .nav-resizer[hidden] { display: none; }
@@ -1076,3 +1078,15 @@ select, textarea { font: inherit; color: inherit; }
 }
 [data-dataset-panel] textarea { max-width: 100%; font-family: var(--mono); }
 [data-dataset-panel] .result-table { display: block; overflow-x: auto; }
+
+[aria-invalid="true"] {border:2px solid var(--danger,#dc3545)!important;}
+.field-error {color:var(--danger,#c52b3e);display:block;font-size:.875rem;}
+
+.navigation-icon{flex:none;vertical-align:middle}.ai-switcher button{display:inline-flex;align-items:center;justify-content:center;gap:8px}
+
+/* Expense entry animates only composited properties; native dialog focus stays synchronous. */
+.expense-dialog[data-motion="expense"][open] { animation: expense-dialog-enter 200ms cubic-bezier(.16, 1, .3, 1) both; }
+.expense-dialog[data-motion="expense"]::backdrop { animation: expense-backdrop-enter 200ms ease-out both; }
+@keyframes expense-dialog-enter { from { opacity: 0; transform: translate3d(0, 10px, 0) scale(.985); } to { opacity: 1; transform: translate3d(0, 0, 0) scale(1); } }
+@keyframes expense-backdrop-enter { from { opacity: 0; } to { opacity: 1; } }
+@media (prefers-reduced-motion: reduce) { .expense-dialog[data-motion="expense"][open], .expense-dialog[data-motion="expense"]::backdrop { animation: none; } }

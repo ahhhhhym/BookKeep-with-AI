@@ -12,6 +12,7 @@ export type ReviewUpdate = { id: string; expectedVersion: number; reason: string
   { action: 'resolve_warning'; warningCode: string; field: string|null; reviewDigest: string }
 );
 export interface ReviewCandidate extends Candidate {
+  fieldErrors:import('./review-validation').ReviewFieldError[];
   reviewDigest: string; blockingReasons: string[]; highRisk: boolean;
   resolvedWarnings: string[]; duplicateResolution: 'distinct'|'duplicate'|null;
   duplicateDetails: {targetId:string;name:string|null;amountFen:number|null;date:string|null;merchant:string|null;state:string}[];
@@ -28,3 +29,6 @@ export interface ApprovalPreview {
 }
 export type ReviewList = ListResult<ReviewCandidate> & {counts:Record<Candidate['reviewState'],number>};
 export type ReviewQuery = CandidateQuery;
+
+export interface CandidateLifecycleInput {id:string;expectedVersion:number}
+export interface CandidateLifecycleResult {candidate:ReviewCandidate;replayed:boolean;committedRevision:number}

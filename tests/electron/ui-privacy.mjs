@@ -83,6 +83,7 @@ try {
   await toggle.evaluate(el=>{for(let i=0;i<11;i++)el.click();});await frames();
   assert.equal(await toggle.getAttribute('aria-expanded'),'true');
   await until(async()=>(await page.locator('#ledger-filter-content').evaluate(el=>getComputedStyle(el).opacity))==='1');
+  await until(async()=>page.locator('#ledger-filter-content').evaluate(el=>el.getBoundingClientRect().height>=el.firstElementChild.scrollHeight-1));
   const metrics=await page.locator('#ledger-filter-content').evaluate(el=>({height:el.getBoundingClientRect().height,innerHeight:el.firstElementChild.scrollHeight,transition:getComputedStyle(el).transitionDuration}));
   assert(metrics.height>=metrics.innerHeight-1);check('interruptible-natural-height-transition',metrics);
   await page.emulateMedia({reducedMotion:'reduce'});
@@ -109,14 +110,14 @@ try {
   const imageFile=path.join(localAppData,'synthetic.png');writeFileSync(imageFile,await sharp({create:{width:360,height:240,channels:3,background:'#dbeafe'}}).png().toBuffer());
   await app.evaluate(({dialog},file)=>{dialog.showOpenDialog=async()=>({canceled:false,filePaths:[file]});},imageFile);
   await page.getByRole('button',{name:'选择图片',exact:true}).click();
-  await page.getByRole('button',{name:'保存预处理（仅本地）',exact:true}).click();
+  await page.getByRole('button',{name:'保存处理（仅本地）',exact:true}).click();
   await page.getByRole('button',{name:'开始识别（1张处理图）',exact:true}).waitFor();
   await aiTab('任务队列');await aiTab('图片导入');
   assert.equal(await page.getByRole('button',{name:'开始识别（1张处理图）',exact:true}).count(),1);
   check('import-prepared-batch-survives-subpage-switch');
+  await page.getByLabel('当前识别接口',{exact:true}).selectOption('mock');
   await page.getByRole('button',{name:'开始识别（1张处理图）',exact:true}).click();
   const upload=page.getByRole('dialog',{name:'确认本次识别',exact:true});
-  await upload.getByRole('combobox').selectOption('mock');
   await upload.getByRole('checkbox',{name:'我同意以上处理图用于本次识别，了解可能产生费用',exact:true}).check();
   await upload.getByRole('button',{name:'生成本地模拟草稿',exact:true}).click();
   await until(async()=>await page.getByRole('dialog').count()===0);
@@ -155,7 +156,7 @@ try {
   await page.getByRole('button',{name:'确认覆盖当前数据并恢复',exact:true}).click();
   await page.getByText(/恢复完成：已切换数据世代/).waitFor();
   await primary('ai');await page.locator('[data-nav="import"]').waitFor();
-  assert.equal(await page.getByRole('button',{name:/开始识别（/}).count(),0);
+  assert.equal(await page.getByRole('button',{name:'开始识别（0张处理图）',exact:true}).isDisabled(),true);assert.equal(await page.locator('.import-assets > div').count(),0);
   assert.equal((await invoke('transaction.list',{filter:{dateStart:null,dateEnd:null,nameQuery:null,categoryIds:[],deleted:'active'},page:{limit:100,cursor:null}})).totalCount,2);
   report.windowAfterCdpConfirm=await app.evaluate(({BrowserWindow})=>({enabled:BrowserWindow.getAllWindows()[0].isEnabled()}));
   report.nativeConfirmLimitation='CDP dialog.accept leaves native window disabled on both frozen 0.1.2 and 0.1.3; actual native confirmation requires desktop validation. No production workaround applied.';
@@ -164,11 +165,11 @@ try {
     await primary(id);await page.locator(`[data-nav="${route}"]`).waitFor();const g=await geometry();assert(Math.abs(g.left-g.right)<=2);assert(!g.overflow&&!g.mainOverflow);check('centered-'+id,g);
   }
   assert((await page.locator('.storage-location').innerText()).includes('%LOCALAPPDATA%'));
-  assert((await page.getByRole('region',{name:'关于',exact:true}).innerText()).includes('0.1.5'));
+  assert((await page.getByRole('region',{name:'关于',exact:true}).innerText()).includes('0.2.0'));
   const policy=page.getByRole('button',{name:'隐私政策',exact:true});await policy.scrollIntoViewIfNeeded();
   const scrollBefore=await page.locator('.main').evaluate(el=>el.scrollTop);
   await page.context().setOffline(true);await policy.click();
-  const privacy=page.getByRole('dialog',{name:'隐私政策',exact:true});await privacy.waitFor();
+  const privacy=page.getByRole('dialog',{name:'BookKeepAI 0.2.0 隐私政策',exact:true});await privacy.waitFor();
   const text=await page.getByLabel('隐私政策正文',{exact:true}).innerText();
   for(const word of ['safeStorage','最多尝试3次','软删除','运营主体为瀚宇铭','不支持提交模型训练','github.com/ahhhhhym/BookKeep-with-AI/issues'])assert(text.includes(word));
   assert.equal(await page.locator('.privacy-body').evaluate(el=>getComputedStyle(el).userSelect),'text');

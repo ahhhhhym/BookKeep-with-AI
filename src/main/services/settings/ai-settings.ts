@@ -4,6 +4,7 @@ import path from 'node:path';
 import { readBoundedFile, regularPath } from '../../storage/safe-file';
 import { randomUUID } from 'node:crypto';
 import { CANDIDATE_SCHEMA_VERSION, DEEPSEEK_MODEL, PROMPT_VERSION } from '../../../shared/constants';
+import {ENDPOINT} from '../providers/transport';
 import { AppError } from '../../../shared/errors';
 import type { AiSettingsView, SecretSaveResult, SecretStatusView } from '../../../shared/dto';
 import type { SaveSecretInput } from '../../../shared/ipc';
@@ -96,7 +97,7 @@ export function validateSecret(value: unknown): asserts value is string {
 }
 export function readAiSettings(secret: SecretStore, ledgerId: string | null, verified = false): AiSettingsView {
   const status = secret.status();
-  return { provider: 'deepseek', model: DEEPSEEK_MODEL, promptVersion: PROMPT_VERSION,
+  return { billingTarget:{endpoint:ENDPOINT,model:DEEPSEEK_MODEL}, provider: 'deepseek', model: DEEPSEEK_MODEL, promptVersion: PROMPT_VERSION,
     schemaVersion: CANDIDATE_SCHEMA_VERSION, readiness: verified ? 'ready' : 'needs_probe',
     secretMode: status.mode, configured: status.configured, settingsVersion: status.version, ledgerId };
 }

@@ -81,7 +81,18 @@ export interface BookKeepApi {
     retry(input:RetryInput,options?:MutationOptions):Promise<ApiResult<Job>>;
     resume(input:RetryInput,options?:MutationOptions):Promise<ApiResult<Job>>;
   };
+  readonly privacy:{copy():Promise<ApiResult<{copied:true;version:string}>>};
+  readonly windowLifecycle: {
+    ready(input:{ready:boolean}):Promise<ApiResult<null>>;
+    resolveClose(input:{requestId:string;decision:'allow'|'cancel'}):Promise<ApiResult<null>>;
+    openBillingDocs():Promise<ApiResult<null>>;
+    onCloseRequested(listener:(request:{requestId:string;dataEpoch:string})=>void):()=>void;
+    onCloseCancelled(listener:(request:{requestId:string|null;dataEpoch:string})=>void):()=>void;
+    onRuntimeResumed(listener:()=>void):()=>void;
+  };
   readonly candidate: {
+    delete(input:import('./review').CandidateLifecycleInput,options?:MutationOptions):Promise<ApiResult<import('./review').CandidateLifecycleResult>>;
+    restore(input:import('./review').CandidateLifecycleInput,options?:MutationOptions):Promise<ApiResult<import('./review').CandidateLifecycleResult>>;
     list(input:CandidateQuery):Promise<ApiResult<ReviewList>>;
     update(input:ReviewUpdate,options?:MutationOptions):Promise<ApiResult<ReviewCandidate>>;
     reject(input:{id:string;expectedVersion:number;reason:string},options?:MutationOptions):Promise<ApiResult<ReviewCandidate>>;

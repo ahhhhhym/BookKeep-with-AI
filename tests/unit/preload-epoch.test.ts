@@ -1,12 +1,12 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { BookKeepApi } from '../../src/shared/api';
 import { reconcileRestore } from '../../src/renderer/lib/restore-status';
-const transport = vi.hoisted(() => ({ invoke: vi.fn(), expose: vi.fn() }));
-vi.mock('electron', () => ({ ipcRenderer: { invoke: transport.invoke }, contextBridge: { exposeInMainWorld: transport.expose }, webUtils: {} }));
+const transport = vi.hoisted(() => ({ invoke: vi.fn(), expose: vi.fn(), on:vi.fn(),removeListener:vi.fn() }));
+vi.mock('electron', () => ({ ipcRenderer: { invoke: transport.invoke,on:transport.on,removeListener:transport.removeListener }, contextBridge: { exposeInMainWorld: transport.expose }, webUtils: {} }));
 const envelope = (epoch: string, data: unknown = {}) => ({ ok: true, data, dataEpoch: epoch, dataRevision: 1 });
 let api: BookKeepApi;
 beforeEach(async () => {
-  vi.resetModules(); transport.invoke.mockReset(); transport.expose.mockReset();
+  vi.resetModules(); transport.invoke.mockReset(); transport.expose.mockReset();transport.on.mockReset();transport.removeListener.mockReset();
   await import('../../src/preload/index');
   api = transport.expose.mock.calls[0]![1] as BookKeepApi;
   transport.invoke.mockResolvedValue(envelope('old'));
@@ -97,4 +97,12 @@ describe('restore reconciliation through the actual preload', () => {
     transport.invoke.mockResolvedValue(envelope('old', status));
     await expect(reconcileRestore(api, crypto.randomUUID())).rejects.toMatchObject({ code: 'INTEGRITY_ERROR' });
   });
+});
+
+it('close event verifies current epoch via read-only settings after unobserved restore; old events stay fenced',async()=>{
+ const callback=vi.fn(),requestId=crypto.randomUUID();api.windowLifecycle.onCloseRequested(callback);
+ const handler=transport.on.mock.calls.find(c=>c[0]==='window.closeRequested')![1];
+ transport.invoke.mockResolvedValue(envelope('new'));await handler({}, {requestId,dataEpoch:'new'});
+ expect(callback).toHaveBeenCalledWith({requestId,dataEpoch:'new'});expect(transport.invoke.mock.calls.at(-1)![0]).toBe('settings.ai');
+ await handler({}, {requestId:crypto.randomUUID(),dataEpoch:'old'});expect(callback).toHaveBeenCalledTimes(1);
 });

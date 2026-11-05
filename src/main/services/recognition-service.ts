@@ -1,3 +1,4 @@
+import {candidateReviewState,type StoredCandidateState} from '../../shared/candidate-state';
 import { randomBytes, randomUUID } from 'node:crypto';
 import { AppError, type ErrorCode } from '../../shared/errors';
 import { CANDIDATE_SCHEMA_VERSION, DEEPSEEK_MODEL, MOCK_MODEL, PROMPT_VERSION } from '../../shared/constants';
@@ -54,12 +55,12 @@ type CandidateRow = {
     duplicates_json: string;
     blocking: number;
     excluded_by_default: number;
-    review_state: Candidate['reviewState'];
+    review_state: StoredCandidateState; deleted_at:string|null;
     posted_transaction_id: string | null;
     created_at: string;
 };
 const jobDto = (r: JobRow): Job => ({ id: r.id, version: r.version, imageAssetId: r.image_asset_id, preparedHash: r.prepared_hash, status: r.status, generation: r.generation, attempt: r.attempt, totalAttempts: r.total_attempts, provider: r.provider, model: r.model, actualModel: r.actual_model, promptVersion: r.prompt_version, schemaVersion: r.schema_version, errorCode: r.error_code, startedAt: r.started_at, finishedAt: r.finished_at, nextAttemptAt: r.next_attempt_at, candidateCount: r.candidate_count, createdAt: r.created_at, needsConsent: r.needs_consent === 1, warnings: JSON.parse(r.warnings_json) });
-const candidateDto = (r: CandidateRow): Candidate => ({ id: r.id, version: r.version, jobId: r.job_id, imageAssetId: r.image_asset_id, preparedHash: r.prepared_hash, ordinal: r.ordinal, proposal: JSON.parse(r.proposal_json), current: JSON.parse(r.current_json), missingFields: JSON.parse(r.missing_json), warnings: JSON.parse(r.warnings_json), blocking: r.blocking === 1, excludedByDefault: r.excluded_by_default === 1, duplicateMatches: JSON.parse(r.duplicates_json), reviewState: r.review_state, postedTransactionId: r.posted_transaction_id, createdAt: r.created_at });
+const candidateDto = (r: CandidateRow): Candidate => ({ id: r.id, version: r.version, jobId: r.job_id, imageAssetId: r.image_asset_id, preparedHash: r.prepared_hash, ordinal: r.ordinal, proposal: JSON.parse(r.proposal_json), current: JSON.parse(r.current_json), missingFields: JSON.parse(r.missing_json), warnings: JSON.parse(r.warnings_json), blocking: r.blocking === 1, excludedByDefault: r.excluded_by_default === 1, duplicateMatches: JSON.parse(r.duplicates_json), reviewState: candidateReviewState(r.review_state,r.deleted_at), deletedAt:r.deleted_at??null, postedTransactionId: r.posted_transaction_id, createdAt: r.created_at });
 export interface RecognitionOptions {
     /** Tests inject only transport, retaining real production SQLite/scheduler. */
     execute?: (request: ReceiptRequest) => Promise<CandidateOutput>;
@@ -218,8 +219,8 @@ export class RecognitionService {
         });
     }
     candidates(query: CandidateQuery): ListResult<Candidate> {
-        const states=query.reviewStates??[];
-        const where=(query.jobId?'AND job_id=? ':'')+(states.length?`AND review_state IN (${states.map(()=>'?').join(',')})`:'');
+        const states=[...new Set(query.reviewStates??[])].sort();
+        const where=(query.jobId?'AND job_id=? ':'')+(states.length?`AND (CASE WHEN deleted_at IS NOT NULL THEN 'deleted' ELSE review_state END) IN (${states.map(()=>'?').join(',')})`:'');
         return this.store.withImports(false, c => this.page(c, 'candidate', where, [...(query.jobId?[query.jobId]:[]),...states], query.page, { jobId: query.jobId,reviewStates:states }, candidateDto));
     }
     private pump(): void {
@@ -371,7 +372,7 @@ export class RecognitionService {
                 for (const t of txs)
                     if ((current.merchant && t.merchant === current.merchant) || (current.name && t.name === current.name))
                         duplicateMatches.push({ targetType: 'transaction', targetId: t.id, targetVersion: t.version, basis: current.merchant && t.merchant === current.merchant ? 'amount_date_merchant' : 'amount_date_name' });
-                const rows = c.db.prepare<CandidateRow>('SELECT * FROM candidate WHERE ledger_id=?').all(c.ledgerId);
+                const rows = c.db.prepare<CandidateRow>("SELECT * FROM candidate WHERE ledger_id=? AND review_state='pending_review'").all(c.ledgerId).filter(row=>!row.deleted_at);
                 for (const row of rows) {
                     const other = candidateDto(row);
                     const p = other.current;

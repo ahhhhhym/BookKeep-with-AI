@@ -21,6 +21,13 @@ export async function verifyIcons({ write = true } = {}) {
   if (!existsSync(manifestPath)) throw new Error('缺少 lucide-static，请先运行 npm install');
   const lucide = JSON.parse(readFileSync(manifestPath, 'utf8'));
 
+  const navigation = await loadSharedModule('src/shared/navigation-icons.ts');
+  const navigationRows=[];
+  for(const key of navigation.NAVIGATION_ICON_KEYS){const pair=navigation.NAVIGATION_PATHS[key];
+    if(!pair||!pair.outline||!pair.solid||pair.outline===pair.solid||/[<>]/.test(pair.outline+pair.solid))throw Error('Invalid navigation icon pair: '+key);
+    for(const variant of ['outline','solid'])navigationRows.push(sha256(Buffer.from(pair[variant]))+'  '+key+'.'+variant);
+  }
+  if(navigationRows.length!==18)throw Error('Expected nine navigation pairs');
   const shared = await loadSharedModule('src/shared/icons.ts');
   const slugs = [...shared.ICON_SLUGS];
   const categorySlugs = [...shared.CATEGORY_ICON_SLUGS];
@@ -39,6 +46,7 @@ export async function verifyIcons({ write = true } = {}) {
 
   const duplicates = slugs.filter((slug, index) => slugs.indexOf(slug) !== index);
   const report = {
+    navigationVariants:navigationRows,
     lucideVersion: lucide.version,
     totalSlugs: slugs.length,
     categorySlugs: categorySlugs.length,
@@ -53,6 +61,7 @@ export async function verifyIcons({ write = true } = {}) {
   }
 
   if (write) {
+    const navDir=path.join(RESOURCES_LICENSES,'navigation');mkdirSync(navDir,{recursive:true});writeFileSync(path.join(navDir,'ICON-VARIANTS.sha256'),'# Original BookKeepAI navigation vectors\n'+navigationRows.join('\n')+'\n','utf8');
     const targetDir = path.join(RESOURCES_LICENSES, 'lucide');
     mkdirSync(targetDir, { recursive: true });
     const header = [

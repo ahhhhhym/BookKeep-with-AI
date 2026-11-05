@@ -24,8 +24,10 @@ function patch(v:unknown):boolean {
 function spec<T>(channel:ChannelSpec['channel'],required:string[],optional:string[],valid:(v:Record<string,unknown>)=>boolean,mutation:boolean):ChannelSpec<T>{
  return {channel,permission:'W',skeletonOnly:false,request:{required,optional,allowNullEpoch:false,requireMutationId:mutation,validatePayload:v=>valid(v)?[]:[{path:'payload',code:'INVALID_REVIEW_INPUT'}],cast:v=>v as T}};
 }
-export const REVIEW_CHANNELS={candidateUpdate:'candidate.update',candidateReject:'candidate.reject',candidateApprove:'candidate.approve'} as const;
+export const REVIEW_CHANNELS={candidateDelete:'candidate.delete',candidateRestore:'candidate.restore',candidateUpdate:'candidate.update',candidateReject:'candidate.reject',candidateApprove:'candidate.approve'} as const;
 export const REVIEW_SPECS={
+ candidateDelete:spec<import('./review').CandidateLifecycleInput>(REVIEW_CHANNELS.candidateDelete,['id','expectedVersion'],[],v=>isUuidV4(v.id)&&version(v.expectedVersion),true),
+ candidateRestore:spec<import('./review').CandidateLifecycleInput>(REVIEW_CHANNELS.candidateRestore,['id','expectedVersion'],[],v=>isUuidV4(v.id)&&version(v.expectedVersion),true),
  candidateUpdate:spec<ReviewUpdate>(REVIEW_CHANNELS.candidateUpdate,['id','expectedVersion','action','reason'],['patch','duplicateResolution','reviewDigest','warningCode','field'],v=>{
   if(!isUuidV4(v.id)||!version(v.expectedVersion)||!reason(v.reason))return false;
   const base=['id','expectedVersion','action','reason'];
