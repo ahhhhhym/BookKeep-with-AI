@@ -34,7 +34,7 @@ function verify(s:LedgerStore,b:ReturnType<typeof backup>,at:string,day:string){
   const receipt=db.prepare<{result_snapshot_json:string;created_at:string}>("SELECT result_snapshot_json,created_at FROM mutation_receipt WHERE operation='backup.create' AND json_extract(result_snapshot_json,'$.record.id')=?").get(b.record.id)!;
   const prepared=JSON.parse(receipt.result_snapshot_json);expect(prepared).toMatchObject({successVersion:PREPARED_VERSION,record:{status:'processing',finishedAt:null}});
  });
- const checked=inspectBackupArchive(file,{latestSchemaVersion:4,contractVersion:CONTRACT_VERSION});expect(checked.ok).toBe(true);if(!checked.ok)throw Error('archive');expect(checked.archive.success).toMatchObject({succeededAt:at,payloadHash:b.artifact.sha256,backupId:b.record.id});
+ const checked=inspectBackupArchive(file,{latestSchemaVersion:5,contractVersion:CONTRACT_VERSION});expect(checked.ok).toBe(true);if(!checked.ok)throw Error('archive');expect(checked.archive.success).toMatchObject({succeededAt:at,payloadHash:b.artifact.sha256,backupId:b.record.id});
  expect(s.achievementsList().progress).toMatchObject({backups:1,backupDays:1});
 }
 afterEach(()=>{vi.restoreAllMocks();for(const s of stores.splice(0))s.close();for(const l of layouts.splice(0))cleanupLayout(l);now=Date.parse('2026-10-27T15:59:59.000Z');});
@@ -115,7 +115,7 @@ describe('backup final completion protocol',()=>{
   const rows=openReadOnly(s.diagnostics().databasePath,db=>({backups:db.prepare('SELECT * FROM backup_record').all(),receipts:db.prepare("SELECT * FROM mutation_receipt WHERE operation='backup.create'").all(),facts:db.prepare("SELECT * FROM achievement_fact WHERE kind='manual_backup'").all(),meta:readAppMeta(db)}));
   for(const f of archives){expect(sha256File(path.join(layout.backups,f))).toBe(interruptedHashes[f]);const registration=rows.backups.find((r:unknown)=>(r as {id:string}).id===path.basename(f,'.bkdb')) as {archive_hash:string;finished_at:string|null};expect(registration.archive_hash).toBe(interruptedHashes[f]);expect(registration.finished_at).toBe(hasTime?'2026-10-27T15:59:59.000Z':null);}
   if(hasCore&&!hasTime){
-   const file=s.diagnostics().backupPathOf(archives[0]!.slice(0,-5));const checked=inspectBackupArchive(file,{latestSchemaVersion:4,contractVersion:CONTRACT_VERSION});expect(checked.ok).toBe(true);if(checked.ok)expect(checked.archive.success).toBeNull();
+   const file=s.diagnostics().backupPathOf(archives[0]!.slice(0,-5));const checked=inspectBackupArchive(file,{latestSchemaVersion:5,contractVersion:CONTRACT_VERSION});expect(checked.ok).toBe(true);if(checked.ok)expect(checked.archive.success).toBeNull();
    if(step==='completion-log-torn'){const backupId=path.basename(file,'.bkdb');s.restoreBackup({mode:'commit',restoreToken:s.previewRestore(backupId).restoreToken,currentDataWillBeReplaced:true},randomUUID());expect(s.achievementsList().progress.backups).toBe(0);expect(sha256File(file)).toBe(interruptedHashes[archives[0]!]);}
   }
   if(evidence){const dir=path.join(evidence,step+'-'+id);writeFileSync(path.join(dir,'restart.json'),JSON.stringify({step,child:{status:child.status,signal:child.signal,stderr:child.stderr},interruptedHashes,interruptedCatalog,rows,progress:s.achievementsList().progress,tornCoreRestored:step==='completion-log-torn'},null,2));s.close();cpSync(layout.root,path.join(dir,'restarted'),{recursive:true});}
@@ -144,7 +144,7 @@ describe('backup final completion protocol',()=>{
  it('torn_settlement_log_does_not_destroy_verified_data_core_restore',()=>{
   const source=setup(),b=backup(source.s),target=setup(),file=target.s.diagnostics().backupPathOf(b.record.id);copyFileSync(source.s.diagnostics().backupPathOf(b.record.id),file);writeFileSync(completionPath(file),'{"fact":');target.s.refreshBackupCatalog();
   expect(target.s.backupRecord(b.record.id)).toMatchObject({status:'processing',finishedAt:null});
-  const checked=inspectBackupArchive(file,{latestSchemaVersion:4,contractVersion:CONTRACT_VERSION});expect(checked.ok).toBe(true);if(checked.ok)expect(checked.archive.success).toBeNull();
+  const checked=inspectBackupArchive(file,{latestSchemaVersion:5,contractVersion:CONTRACT_VERSION});expect(checked.ok).toBe(true);if(checked.ok)expect(checked.archive.success).toBeNull();
   target.s.restoreBackup({mode:'commit',restoreToken:target.s.previewRestore(b.record.id).restoreToken,currentDataWillBeReplaced:true},randomUUID());expect(target.s.achievementsList().progress.backups).toBe(0);
  });
  it('later_imported_completion_upgrades_existing_pending_projection_without_merging_target_achievements',async()=>{

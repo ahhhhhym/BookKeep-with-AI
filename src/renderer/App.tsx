@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useLayoutEffect, useRef, useState, type CSSProperties, type JSX } from 'react';
 import { flushSync } from 'react-dom';
+import {DeepSeekBillingNotice} from './components/DeepSeekBillingNotice';
 import { NavShell } from './components/NavShell';
 import { AchievementNotice } from './components/AchievementNotice';
 import { achievementController } from './lib/achievement-controller';
@@ -24,7 +25,7 @@ import { useMainTransition } from './lib/use-main-transition';
 import { readNavMode, writeNavMode, type NavMode } from './lib/nav-preferences';
 import { AppIcon } from './lib/icon-registry';
 
-const AI_SEGMENTS = ([['import', '图片导入'], ['queue', '任务队列'], ['review', '候选审核']] as const).map(([value, label]) => ({ value, label, controls: `ai-${value}` }));
+const AI_SEGMENTS = ([['import', '图片导入'], ['queue', '任务队列'], ['review', '候选审核']] as const).map(([value, label]) => ({ value, label, icon:value, controls: `ai-${value}` }));
 
 export function App(): JSX.Element {
   const [statisticsInput, setStatisticsInput] = useState<StatisticsInput>(() => ({ period: 'month', anchorDate: todayInShanghai(), categoryIds: [], snapshotRevision: null }));
@@ -33,6 +34,7 @@ export function App(): JSX.Element {
   const { shown: navId, phase, ref: transitionRef } = useMainTransition(targetNav);
   const [subMotion, setSubMotion] = useState(false);
   const navigationTarget = useRef<NavId>('ledger');
+  const [recognitionProvider,setRecognitionProvider]=useState<'deepseek'|'mock'>('deepseek');
   const [aiPage, setAiPage] = useState<AiPageId>('import');
   const [importVisited, setImportVisited] = useState(false);
   const [drawerOpen, setDrawerOpen] = useState(false);
@@ -50,6 +52,22 @@ export function App(): JSX.Element {
   const menuButtonRef = useRef<HTMLButtonElement | null>(null);
   const focusedElementRef = useRef<Element | null>(null);
   const leaveGuard = useRef<LeaveGuard>(null);
+  const imageGuard=useRef<LeaveGuard>(null);
+  const registerImageGuard=useCallback((guard:LeaveGuard)=>{imageGuard.current=guard;},[]);
+  const closeRequest=useRef<string|null>(null);
+  useEffect(()=>{
+    const api=window.bookkeep;if(!api)return;
+    const cancel=()=>{const requestId=closeRequest.current;closeRequest.current=null;if(requestId)void api.windowLifecycle.resolveClose({requestId,decision:'cancel'});};
+    const stop=api.windowLifecycle.onCloseRequested(r=>{
+      if(closeRequest.current)return;closeRequest.current=r.requestId;void api.windowLifecycle.ready({ready:true});
+      const allow=()=>{const requestId=closeRequest.current;closeRequest.current=null;if(requestId)void api.windowLifecycle.resolveClose({requestId,decision:'allow'});};
+      const page=()=>{if(leaveGuard.current)leaveGuard.current(allow);else allow();};
+      if(imageGuard.current)imageGuard.current(page);else page();
+    });
+    const stopCancel=api.windowLifecycle.onCloseCancelled(r=>{if(closeRequest.current&&(!r.requestId||r.requestId===closeRequest.current)){closeRequest.current=null;window.dispatchEvent(new Event('bookkeep:close-cancelled'));}});
+    void api.windowLifecycle.ready({ready:true});window.addEventListener('bookkeep:leave-cancel',cancel);
+    return()=>{stop();stopCancel();window.removeEventListener('bookkeep:leave-cancel',cancel);void api.windowLifecycle.ready({ready:false});};
+  },[]);
   const [newRequest, setNewRequest] = useState(0);
   const consumeNewRequest = useCallback(() => setNewRequest(0), []);
   const registerGuard = useCallback((guard: LeaveGuard): void => { leaveGuard.current = guard; }, []);
@@ -82,6 +100,7 @@ export function App(): JSX.Element {
     achievementController.reset();
     setDetailFilter(undefined);
     setImportVisited(false);
+    imageGuard.current=null;leaveGuard.current=null;closeRequest.current=null;void window.bookkeep?.windowLifecycle.ready({ready:true});
     setAiPage('import');
     setStatisticsInput(value => ({ ...value, snapshotRevision: null }));
   }, []);
@@ -127,7 +146,8 @@ export function App(): JSX.Element {
     };
     // Once the displayed page has approved departure it is inert; a rapid retarget
     // must not ask that same abandoned draft again before it unmounts.
-    if (leaveGuard.current && navigationTarget.current === navId) leaveGuard.current(leave);
+    if (navigationTarget.current==='import'&&imageGuard.current)imageGuard.current(leave);
+    else if (leaveGuard.current && navigationTarget.current === navId) leaveGuard.current(leave);
     else leave();
   }, [aiPage, navId]);
 
@@ -208,8 +228,9 @@ export function App(): JSX.Element {
         {navId === 'ledger' ? <LedgerPage initialFilter={detailFilter} registerGuard={registerGuard} newRequest={newRequest} onNewRequestHandled={consumeNewRequest} /> : null}
         {navId === 'statistics' ? <StatisticsPage input={statisticsInput} onInput={setStatisticsInput} onDetails={(filter) => { setDetailFilter(filter); navigate('ledger'); }} /> : null}
         <div className="page ai-page" hidden={primaryId !== 'ai'}>
+          <DeepSeekBillingNotice active={primaryId==='ai'} target={{provider:recognitionProvider,endpoint:ai?.billingTarget?.endpoint??null,model:ai?.billingTarget?.model??null}}/>
           <SlidingSegments className="ai-switcher" value={aiPage} items={AI_SEGMENTS} label="AI记账子页" onChange={navigate} />
-          <section id="ai-import" className={subMotion ? 'ai-sub-fade' : undefined} hidden={navId !== 'import'} aria-label="图片导入">{importVisited ? <ImportPage onError={setLastError} /> : null}</section>
+          <section id="ai-import" className={subMotion ? 'ai-sub-fade' : undefined} hidden={navId !== 'import'} aria-label="图片导入">{importVisited ? <ImportPage onError={setLastError} registerGuard={registerImageGuard} provider={recognitionProvider} onProviderChange={setRecognitionProvider} /> : null}</section>
           <section id="ai-queue" className={subMotion ? 'ai-sub-fade' : undefined} hidden={navId !== 'queue'} aria-label="任务队列">{navId === 'queue' ? <QueuePage /> : null}</section>
           <section id="ai-review" className={subMotion ? 'ai-sub-fade' : undefined} hidden={navId !== 'review'} aria-label="候选审核">{navId === 'review' ? <ReviewPage registerGuard={registerGuard} /> : null}</section>
         </div>

@@ -1,3 +1,6 @@
+import {reviewFieldErrors} from '../../shared/review-validation';
+import { candidateReviewState, type StoredCandidateState } from '../../shared/candidate-state';
+import type { CandidateLifecycleInput, CandidateLifecycleResult } from '../../shared/review';
 import { randomBytes, randomUUID } from 'node:crypto';
 import { AppError } from '../../shared/errors';
 import type { Candidate, CandidateQuery } from '../../shared/imports';
@@ -21,7 +24,7 @@ import { validateTransactionInput } from './ledger-service';
 import { completeReviewSessions } from './review-activity';
 
 type Resolution = { warnings?: Record<string,string>; duplicate?: { decision:'distinct'|'duplicate'; digest:string } };
-interface Row { id:string; ledger_id:string; version:number; job_id:string; image_asset_id:string; prepared_hash:string; ordinal:number; proposal_json:string; current_json:string; missing_json:string; warnings_json:string; review_state:Candidate['reviewState']; posted_transaction_id:string|null; resolution_json:string; created_at:string }
+interface Row { id:string; ledger_id:string; version:number; job_id:string; image_asset_id:string; prepared_hash:string; ordinal:number; proposal_json:string; current_json:string; missing_json:string; warnings_json:string; review_state:StoredCandidateState; deleted_at:string|null; posted_transaction_id:string|null; resolution_json:string; created_at:string }
 const warningKey = (code:string,field:string|null) => `${code}:${field ?? ''}`;
 const highCodes = new Set(['NON_EXPENSE','TOTAL_DETAIL_AMBIGUOUS','BLURRY','INSTRUCTION_IN_IMAGE','OTHER','AMOUNT_AMBIGUOUS','EVIDENCE_MISSING','DATE_UNCERTAIN','NAME_UNKNOWN']);
 
@@ -37,7 +40,7 @@ export class ReviewService {
     if(!r)throw new AppError('NOT_FOUND'); return r;
   }
   private group(c:ImportContext,r:Row,p:Proposal) {
-    return c.db.prepare<Row>('SELECT * FROM candidate WHERE job_id=? AND id<>? ORDER BY id').all(r.job_id,r.id)
+    return c.db.prepare<Row>('SELECT * FROM candidate WHERE job_id=? AND id<>? AND deleted_at IS NULL ORDER BY id').all(r.job_id,r.id)
       .filter(o=>{const q=JSON.parse(o.current_json) as Proposal; return !p.groupKey || !q.groupKey || q.groupKey===p.groupKey;});
   }
   private duplicates(c:ImportContext,r:Row,p:Proposal):Candidate['duplicateMatches'] {
@@ -50,7 +53,7 @@ export class ReviewService {
       if(t.source_candidate_id===r.id)continue;
       if(same({amountFen:t.amount_fen,occurredDate:t.occurred_date,name:t.name,merchant:t.merchant})) matches.push({targetType:'transaction',targetId:t.id,targetVersion:t.version,basis:'amount_date_name_or_merchant'});
     }
-    for(const o of c.db.prepare<Row>("SELECT * FROM candidate WHERE ledger_id=? AND id<>? AND review_state='pending_review' ORDER BY id").all(c.ledgerId,r.id))
+    for(const o of c.db.prepare<Row>("SELECT * FROM candidate WHERE ledger_id=? AND id<>? AND review_state='pending_review' AND deleted_at IS NULL ORDER BY id").all(c.ledgerId,r.id))
       if(same(JSON.parse(o.current_json) as Proposal))matches.push({targetType:'candidate',targetId:o.id,targetVersion:o.version,basis:'amount_date_name_or_merchant'});
     return matches;
   }
@@ -63,6 +66,7 @@ export class ReviewService {
     const contextDigest=hashPayload({p,group:group.map(g=>({id:g.id,version:g.version,state:g.review_state,p:JSON.parse(g.current_json)}))});
     const duplicates=this.duplicates(c,r,p), duplicateDigest=hashPayload(duplicates);
     const missing=(['amountFen','occurredDate','name','categoryId'] as const).filter(f=>p[f]===null || (typeof p[f]==='string' && !String(p[f]).trim()));
+    const fieldErrors=reviewFieldErrors(p,c.db.prepare<{id:string;enabled:number}>('SELECT id,enabled FROM category WHERE ledger_id=?').all(c.ledgerId).map(c=>({...c,enabled:c.enabled===1})));
     const reasons:string[]=[];
     if(missing.length)reasons.push('REVIEW_INCOMPLETE');
     try { validateTransactionInput(c.db,c.ledgerId,this.transactionInput(p)); } catch(e) {reasons.push(e instanceof AppError ? e.code : 'FIELD_INVALID');}
@@ -85,8 +89,8 @@ export class ReviewService {
       return {targetId:m.targetId,name:null,amountFen:null,date:null,merchant:null,state:'相同来源图片的识别任务'};
     });
     return {id:r.id,version:r.version,jobId:r.job_id,imageAssetId:r.image_asset_id,preparedHash:r.prepared_hash,ordinal:r.ordinal,proposal,current:p,missingFields:missing,warnings,duplicateDetails,
-      duplicateMatches:duplicates,reviewState:r.review_state,postedTransactionId:r.posted_transaction_id,excludedByDefault:p.transactionKind!=='expense',createdAt:r.created_at,
-      blocking:blockingReasons.length>0,blockingReasons,resolvedWarnings,duplicateResolution,
+      duplicateMatches:duplicates,reviewState:candidateReviewState(r.review_state,r.deleted_at),deletedAt:r.deleted_at??null,postedTransactionId:r.posted_transaction_id,excludedByDefault:p.transactionKind!=='expense',createdAt:r.created_at,
+      fieldErrors,blocking:blockingReasons.length>0,blockingReasons,resolvedWarnings,duplicateResolution,
       highRisk:proposal.transactionKind!=='expense' || proposal.amountFen===null || proposal.occurredDate===null || proposal.name===null || warnings.some(w=>highCodes.has(w.code)),
       reviewDigest:hashPayload({id:r.id,version:r.version,p,category,blockingReasons,duplicates,resolution,contextDigest})};
   }
@@ -94,8 +98,8 @@ export class ReviewService {
   list(query:CandidateQuery,recognition:RecognitionService) {
     const page=recognition.candidates(query);
     return this.store.withImports(false,c=>{
-      const counts:Record<Candidate['reviewState'],number>={pending_review:0,rejected:0,approved:0};
-      for(const r of c.db.prepare<{review_state:Candidate['reviewState'];n:number}>(`SELECT review_state,count(*) n FROM candidate WHERE ledger_id=? ${query.jobId?'AND job_id=?':''} GROUP BY review_state`).all(c.ledgerId,...(query.jobId?[query.jobId]:[])))counts[r.review_state]=r.n;
+      const counts:Record<Candidate['reviewState'],number>={pending_review:0,rejected:0,approved:0,deleted:0};
+      for(const r of c.db.prepare<{review_state:Candidate['reviewState'];n:number}>(`SELECT CASE WHEN deleted_at IS NOT NULL THEN 'deleted' ELSE review_state END review_state,count(*) n FROM candidate WHERE ledger_id=? ${query.jobId?'AND job_id=?':''} GROUP BY CASE WHEN deleted_at IS NOT NULL THEN 'deleted' ELSE review_state END`).all(c.ledgerId,...(query.jobId?[query.jobId]:[])))counts[r.review_state]=r.n;
       return {...page,counts,items:page.items.map(i=>this.view(c,this.row(c,i.id)))};
     });
   }
@@ -127,8 +131,9 @@ export class ReviewService {
       const r=this.row(c,input.id);this.version(r,input.expectedVersion);
       const reason=checkRequiredText(input.reason,500);if(!reason.ok)throw new AppError('FIELD_INVALID');
       const p=JSON.parse(r.current_json) as Proposal, resolution=JSON.parse(r.resolution_json) as Resolution;
+      if(r.deleted_at)throw new AppError('STATE_CONFLICT');
       if(input.action==='reopen'){if(r.review_state!=='rejected')throw new AppError('STATE_CONFLICT');}
-      else if(r.review_state!=='pending_review')throw new AppError('STATE_CONFLICT');
+      else if(r.review_state!=='pending_review'||r.deleted_at)throw new AppError('STATE_CONFLICT');
       if(input.action==='edit') {
         Object.assign(p,input.patch);
         // Drafts can retain unknown fields but cannot save malformed known values.
@@ -163,12 +168,28 @@ export class ReviewService {
       c.db.prepare("UPDATE candidate SET review_state='rejected',resolution_json='{}',version=version+1,updated_at=? WHERE id=? AND version=?").run(new Date(this.clock()).toISOString(),r.id,r.version);
       this.event(c,r,'reject',{state:'rejected'},reason.value,mutationId);return this.view(c,this.row(c,r.id));});
   }
+  private lifecycle(input:CandidateLifecycleInput,mutationId:string,action:'delete'|'restore'):CandidateLifecycleResult {
+    return this.mutate('candidate.'+action,input,mutationId,c=>{
+      const r=this.row(c,input.id);this.version(r,input.expectedVersion);
+      if(r.review_state!=='pending_review'||r.posted_transaction_id||!!r.deleted_at!==(action==='restore'))throw new AppError('STATE_CONFLICT');
+      const now=new Date(this.clock()).toISOString();
+      const result=c.db.prepare("UPDATE candidate SET deleted_at=?,resolution_json='{}',version=version+1,updated_at=? WHERE ledger_id=? AND id=? AND version=? AND review_state='pending_review' AND posted_transaction_id IS NULL AND deleted_at IS ?")
+        .run(action==='delete'?now:null,now,c.ledgerId,r.id,r.version,r.deleted_at??null);
+      if(result.changes!==1)throw new AppError('VERSION_CONFLICT');
+      c.db.prepare('INSERT INTO candidate_lifecycle_event(id,ledger_id,candidate_id,action,mutation_id,before_version,after_version,created_at) VALUES(?,?,?,?,?,?,?,?)')
+        .run(randomUUID(),c.ledgerId,r.id,action,mutationId,r.version,r.version+1,now);
+      return {candidate:this.view(c,this.row(c,r.id)),replayed:false,committedRevision:c.revision+1};
+    });
+  }
+  deleteCandidate(input:CandidateLifecycleInput,mutationId:string){return this.lifecycle(input,mutationId,'delete');}
+  restoreCandidate(input:CandidateLifecycleInput,mutationId:string){return this.lifecycle(input,mutationId,'restore');}
   private eligible(c:ImportContext,item:ApprovalItem,batch:boolean):ReviewCandidate {
     const r=this.row(c,item.id);this.version(r,item.expectedVersion);const v=this.view(c,r),cf=item.confirmation;
     if(v.reviewState!=='pending_review')throw new AppError('STATE_CONFLICT');
-    if(cf.confirmedVersion!==v.version || cf.reviewDigest!==v.reviewDigest)throw new AppError('REVIEW_STALE');
+    if(cf.confirmedVersion!==v.version || cf.reviewDigest!==v.reviewDigest)throw new AppError('REVIEW_STALE',{fieldErrors:v.fieldErrors.map(e=>({path:'payload.'+e.field,code:e.code})),details:{affectedIds:[r.id]}});
     if(!cf.amount||!cf.date||!cf.name||!cf.category)throw new AppError('REVIEW_INCOMPLETE');
     if(batch && v.highRisk)throw new AppError('REVIEW_INCOMPLETE');
+    if(v.fieldErrors.length)throw new AppError('REVIEW_INCOMPLETE',{fieldErrors:v.fieldErrors.map(e=>({path:'payload.'+e.field,code:e.code}))});
     if(v.blocking)throw new AppError(v.blockingReasons.includes('NON_EXPENSE')?'NON_EXPENSE':v.blockingReasons.includes('DUPLICATE_UNRESOLVED')?'DUPLICATE_UNRESOLVED':'REVIEW_INCOMPLETE');
     // Hash check reads real attachment bytes, not a successful placeholder preview.
     this.images.readPrepared(v.imageAssetId,v.preparedHash);return v;
@@ -210,7 +231,7 @@ export class ReviewService {
         c.db.prepare(`INSERT INTO "transaction"(id,ledger_id,amount_fen,currency,occurred_date,occurred_time,time_precision,name,category_id,merchant,note,source,source_candidate_id,review_candidate_id,deleted_at,version,created_at,updated_at)
           VALUES(?,?,?,'CNY',?,?,?,?,?,?,NULL,'ai',?,?,NULL,1,?,?)`).run(id,c.ledgerId,fields.amountFen,fields.occurredDate,fields.occurredTime,fields.timePrecision,fields.name,fields.categoryId,fields.merchant,r.id,r.id,now,now);
         this.event(c,r,'approve',{state:'approved',transactionId:id,confirmation:items.find(i=>i.id===r.id)!.confirmation},'用户逐项核对并确认入账',mutationId!,id);
-        const result=c.db.prepare("UPDATE candidate SET review_state='approved',posted_transaction_id=?,version=version+1,updated_at=? WHERE id=? AND version=? AND review_state='pending_review'").run(id,now,r.id,r.version);
+        const result=c.db.prepare("UPDATE candidate SET review_state='approved',posted_transaction_id=?,version=version+1,updated_at=? WHERE id=? AND version=? AND review_state='pending_review' AND deleted_at IS NULL").run(id,now,r.id,r.version);
         if(result.changes!==1)throw new AppError('VERSION_CONFLICT');
         c.db.prepare('INSERT INTO review_posting(candidate_id,transaction_id) VALUES(?,?)').run(r.id,id);
         return mapTransaction(getTransactionById(c.db,id)!);

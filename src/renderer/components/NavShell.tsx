@@ -1,6 +1,7 @@
 import { useLayoutEffect, useRef, useState, type JSX } from 'react';
 import { NAV_ITEMS, type NavItem } from '../navigation';
 import type { NavId } from '../../shared/nav';
+import { NavIcon } from '../lib/navigation-icon-registry';
 import { AppIcon } from '../lib/icon-registry';
 import type { NavMode } from '../lib/nav-preferences';
 
@@ -43,8 +44,8 @@ export function NavShell({ current, onNavigate, open, onClose, mode, onModeChang
       aria-current={current === item.id ? 'page' : undefined} aria-label={item.label} title={item.label}
       onClick={() => onNavigate(item.id)}>
       <span className="nav-visual">
-        <AppIcon iconKey={item.iconKey} size={23.28} />
-        <span className="nav-label">{item.label}</span>
+        <span className="nav-content"><NavIcon name={item.id as import('../../shared/navigation-icons').NavigationIconKey} variant={current===item.id?'solid':'outline'} />
+        <span className="nav-label">{item.label}</span></span>
       </span>
     </button>
   );

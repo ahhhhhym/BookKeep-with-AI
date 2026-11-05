@@ -182,7 +182,18 @@ const api: BookKeepApi = {
     retry:(input,options)=>invoke(IPC.recognitionRetry,input,mutationOptions(options)),
     resume:(input,options)=>invoke(IPC.recognitionResume,input,mutationOptions(options)),
   },
+  privacy:{copy:()=>invoke(IPC.privacyCopy,{},{mutation:false})},
+  windowLifecycle:{
+    ready:input=>invoke(IPC.windowCloseReady,input,{mutation:false}),
+    resolveClose:input=>invoke(IPC.windowResolveClose,input,{mutation:false}),
+    openBillingDocs:()=>invoke(IPC.windowBillingDocs,{},{mutation:false}),
+    onCloseRequested:listener=>{const handler=async(_e:unknown,r:{requestId:string;dataEpoch:string})=>{if(!r||!isUuidV4(r.requestId))return;if(r.dataEpoch!==currentEpoch)await invoke(IPC.settingsReadAi,{},{mutation:false});if(r.dataEpoch===currentEpoch)listener(r);};ipcRenderer.on('window.closeRequested',handler);return()=>ipcRenderer.removeListener('window.closeRequested',handler);},
+    onCloseCancelled:listener=>{const handler=(_e:unknown,r:{requestId:string|null;dataEpoch:string})=>{if(r&&(r.requestId===null||isUuidV4(r.requestId))&&r.dataEpoch===currentEpoch)listener(r);};ipcRenderer.on('window.closeCancelled',handler);return()=>ipcRenderer.removeListener('window.closeCancelled',handler);},
+    onRuntimeResumed:listener=>{const handler=()=>listener();ipcRenderer.on('window.runtimeResumed',handler);return()=>ipcRenderer.removeListener('window.runtimeResumed',handler);},
+  },
   candidate:{
+    delete:(input,options)=>invoke(IPC.candidateDelete,input,mutationOptions(options)),
+    restore:(input,options)=>invoke(IPC.candidateRestore,input,mutationOptions(options)),
     list:input=>invoke(IPC.candidateList,input,{mutation:false}),
     update:(input,options)=>invoke(IPC.candidateUpdate,input,mutationOptions(options)),
     reject:(input,options)=>invoke(IPC.candidateReject,input,mutationOptions(options)),

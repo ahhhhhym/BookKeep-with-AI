@@ -104,6 +104,15 @@ export function collectBusinessViolations(db: SqliteDb): string[] {
   if (badPrecision > 0) violations.push(`TRANSACTION_PRECISION:${badPrecision}`);
 
   if (tableExists(db,'import_job') && tableExists(db,'candidate') && tableExists(db,'image_asset')) {
+    if(tableExists(db,'candidate_lifecycle_event')) {
+      const bad=db.prepare<{n:number}>(`SELECT count(*) n FROM candidate c WHERE deleted_at IS NOT NULL AND (review_state<>'pending_review' OR posted_transaction_id IS NOT NULL OR EXISTS(SELECT 1 FROM "transaction" t WHERE t.source_candidate_id=c.id))`).get()!.n;
+      if(bad)violations.push('DELETED_CANDIDATE_LINK');
+      const lifecycle=db.prepare<{n:number}>(`SELECT count(*) n FROM candidate c WHERE
+        (c.deleted_at IS NOT NULL AND NOT EXISTS(SELECT 1 FROM candidate_lifecycle_event e WHERE e.candidate_id=c.id AND e.action='delete' AND e.after_version=(SELECT max(after_version) FROM candidate_lifecycle_event WHERE candidate_id=c.id)))
+        OR (c.deleted_at IS NULL AND EXISTS(SELECT 1 FROM candidate_lifecycle_event e WHERE e.candidate_id=c.id AND e.action='delete' AND e.after_version=(SELECT max(after_version) FROM candidate_lifecycle_event WHERE candidate_id=c.id)))
+        OR EXISTS(SELECT 1 FROM candidate_lifecycle_event e WHERE e.candidate_id=c.id AND (e.after_version>c.version OR e.ledger_id<>c.ledger_id))`).get()!.n;
+      if(lifecycle)violations.push('CANDIDATE_LIFECYCLE_STATE');
+    }
     if(tableExists(db,'review_posting')) {
       const links=db.prepare<{n:number}>(`SELECT count(*) n FROM "transaction" t WHERE t.source='ai' AND NOT EXISTS(
         SELECT 1 FROM candidate c JOIN review_posting p ON p.candidate_id=c.id

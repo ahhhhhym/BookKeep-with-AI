@@ -9,6 +9,7 @@
  */
 
 import { createHash, randomUUID } from 'node:crypto';
+import { CANDIDATE_DELETION_SQL } from './candidate-deletion-schema';
 import { IMPORT_SQL } from './import-schema';
 import { REVIEW_SQL } from './review-schema';
 import { ACHIEVEMENT_SQL } from './achievement-schema';
@@ -212,6 +213,7 @@ export const MIGRATIONS: readonly Migration[] = [
   { version: 2, name: 'image-job-candidate', sql: IMPORT_SQL },
   { version: 3, name: 'atomic-candidate-review', sql: REVIEW_SQL },
   { version: 4, name: 'ledger-achievements-v1', sql: ACHIEVEMENT_SQL },
+  { version: 5, name: 'candidate-recoverable-deletion', sql: CANDIDATE_DELETION_SQL },
 ];
 
 export const LATEST_SCHEMA_VERSION = MIGRATIONS[MIGRATIONS.length - 1].version;

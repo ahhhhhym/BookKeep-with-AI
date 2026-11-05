@@ -66,7 +66,7 @@ describe('B achievements persistent rules (isolated SQLite, injected clock)',()=
   const {store:s,options}=setup({migrations:MIGRATIONS.slice(0,3)});
   const tx=s.createTransaction(transactionInput(),randomUUID());s.softDeleteTransaction({id:tx!.transaction.id,expectedVersion:1},randomUUID());time+=86400000;s.createTransaction(transactionInput(),randomUUID());
   s.withImports(true,c=>c.db.prepare('UPDATE "transaction" SET created_at=? WHERE deleted_at IS NULL').run('unknown'));s.close();
-  const u=reopen({...options,migrations:MIGRATIONS});expect(u.snapshot().dbSchemaVersion).toBe(4);const v=list(u);
+  const u=reopen({...options,migrations:MIGRATIONS});expect(u.snapshot().dbSchemaVersion).toBe(5);const v=list(u);
   expect(v.progress).toMatchObject({entries:1,activityDays:1});expect(v.items.find((x)=>x.id==='entry_first')).toMatchObject({unlocked:true,unlockedAt:null,origin:'history'});
   expect(v.notices).toHaveLength(1);expect(v.notices[0]).toMatchObject({kind:'history_summary',achievementIds:['entry_first'],status:'pending'});
   u.close();const again=reopen({...options,migrations:MIGRATIONS});expect(list(again).notices).toHaveLength(1);expect(count(again,'achievement_unlock')).toBe(1);
