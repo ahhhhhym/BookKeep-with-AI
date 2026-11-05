@@ -1,6 +1,12 @@
 ; Never install into user data, an ancestor/child of it, or a redirected directory.
 !include LogicLib.nsh
 !include FileFunc.nsh
+!include "${PROJECT_DIR}\scripts\installer-path.nsh"
+
+!ifndef BUILD_UNINSTALLER
+  ; Root selections are normalized before any installation or ownership checks.
+  AllowRootDirInstall true
+!endif
 
 Var bkDirectorySafe
 !ifndef BUILD_UNINSTALLER
@@ -8,76 +14,51 @@ Var bkDirectorySafe
   Var bkStartMenuOption
   Var bkDesktopCheckbox
   Var bkStartMenuCheckbox
+  Var bkPathPreview
 !endif
 
-!macro bkCheckOverlap LOCALROOT
-  GetFullPathName $1 "${LOCALROOT}\BookKeepAI"
-  StrCpy $1 "$1\"
-  StrLen $2 $0
-  StrCpy $3 $1 $2
-  ${If} $3 == $0
-    StrCpy $bkDirectorySafe "0"
-  ${EndIf}
-  StrLen $2 $1
-  StrCpy $3 $0 $2
-  ${If} $3 == $1
-    StrCpy $bkDirectorySafe "0"
-  ${EndIf}
-!macroend
-
-!macro bkDirectoryFunction PREFIX
-  Function ${PREFIX}bkValidateDirectory
-    Push $0
-    Push $1
-    Push $2
-    Push $3
-    StrCpy $bkDirectorySafe "1"
-    GetFullPathName $0 "$INSTDIR"
-    StrCpy $0 "$0\"
-    ReadEnvStr $1 LOCALAPPDATA
-    !insertmacro bkCheckOverlap "$1"
-    !insertmacro bkCheckOverlap "$LOCALAPPDATA"
-    GetFullPathName $0 "$INSTDIR"
-    bk_parent_loop:
-      System::Call 'kernel32::GetFileAttributesW(w r0) i .r2'
-      ${If} $2 != -1
-        IntOp $2 $2 & 0x400
-        ${If} $2 != 0
-          StrCpy $bkDirectorySafe "0"
-        ${EndIf}
-      ${EndIf}
-      ${GetParent} "$0" $1
-      StrCmp $1 "" bk_parent_done
-      StrCmp $0 $1 bk_parent_done
-      StrCpy $0 $1
-      Goto bk_parent_loop
-    bk_parent_done:
-    Pop $3
-    Pop $2
-    Pop $1
-    Pop $0
-  FunctionEnd
-!macroend
+!include "${PROJECT_DIR}\scripts\installer-directory.nsh"
 
 !macro customHeader
+  BrandingText "BookKeepAI  |  本地记账 · 逐笔确认"
+  SetFont "Microsoft YaHei UI" 9
   !ifdef BUILD_UNINSTALLER
     !insertmacro bkDirectoryFunction "un."
   !else
     !insertmacro bkDirectoryFunction ""
     Function bkOptionsPage
-      !insertmacro MUI_HEADER_TEXT "快捷方式" "选择需要创建的快捷方式。"
+      Call bkNormalizeInstallDirectory
+      !insertmacro MUI_HEADER_TEXT "确认安装选项" "确认程序位置，再选择需要的快捷方式。"
       nsDialogs::Create 1018
       Pop $0
       ${If} $0 == error
         Abort
       ${EndIf}
-      ${NSD_CreateCheckbox} 0 12u 100% 14u "创建桌面快捷方式"
+      ${NSD_CreateLabel} 0 0 100% 12u "程序将安装到"
+      Pop $0
+      ${NSD_CreateText} 0 16u 100% 26u "$INSTDIR"
+      Pop $bkPathPreview
+      SendMessage $bkPathPreview ${EM_SETREADONLY} 1 0
+      SetCtlColors $bkPathPreview "163B96" "F3F6FC"
+      ${NSD_CreateCheckbox} 0 54u 100% 14u "创建桌面快捷方式"
       Pop $bkDesktopCheckbox
       ${NSD_SetState} $bkDesktopCheckbox $bkDesktopOption
-      ${NSD_CreateCheckbox} 0 38u 100% 14u "创建开始菜单快捷方式"
+      ${NSD_CreateCheckbox} 0 77u 100% 14u "创建开始菜单快捷方式"
       Pop $bkStartMenuCheckbox
       ${NSD_SetState} $bkStartMenuCheckbox $bkStartMenuOption
+      ${NSD_CreateLabel} 0 107u 100% 26u "程序文件夹会自动创建。账本与程序分开保存，卸载时保留。"
+      Pop $0
+      SetCtlColors $0 "64748B" "FFFFFF"
       nsDialogs::Show
+    FunctionEnd
+
+    Function bkInstFilesPre
+      ; The confirmation page already shows the selected final directory.
+      ; The upstream hook only adjusts INSTDIR; preserve our explicit final selection.
+      Call bkNormalizeInstallDirectory
+      Push $INSTDIR
+      Call instFilesPre
+      Pop $INSTDIR
     FunctionEnd
 
     Function bkOptionsLeave
@@ -86,6 +67,7 @@ Var bkDirectorySafe
     FunctionEnd
 
     Function .onVerifyInstDir
+      Call bkNormalizeInstallDirectory
       Call bkValidateDirectory
       ${If} $bkDirectorySafe != "1"
         Abort
@@ -94,6 +76,7 @@ Var bkDirectorySafe
 
     ; Runs before the normal installation section, including silent /D installs.
     Section "-BookKeep directory protection"
+      Call bkNormalizeInstallDirectory
       Call bkValidateDirectory
       ${If} $bkDirectorySafe != "1"
         IfSilent +2
@@ -139,9 +122,14 @@ Var bkDirectorySafe
   !insertmacro setInstallModePerUser
   StrCpy $bkDesktopOption 1
   StrCpy $bkStartMenuOption 1
+  Call bkNormalizeInstallDirectory
 !macroend
 
 !macro customPageAfterChangeDir
+  !ifdef MUI_PAGE_CUSTOMFUNCTION_PRE
+    !undef MUI_PAGE_CUSTOMFUNCTION_PRE
+  !endif
+  !define MUI_PAGE_CUSTOMFUNCTION_PRE bkInstFilesPre
   Page custom bkOptionsPage bkOptionsLeave
 !macroend
 
@@ -178,4 +166,16 @@ Var bkDirectorySafe
     SetErrorLevel 2
     Quit
   ${EndIf}
+!macroend
+
+!macro customWelcomePage
+  !define MUI_WELCOMEPAGE_TITLE "欢迎安装 BookKeepAI"
+  !define MUI_WELCOMEPAGE_TEXT "让每一笔支出清楚可查。$\r$\n$\r$\n本地账本、图片整理与 AI 辅助记账，帮你把消费记录得更清晰。$\r$\n$\r$\n接下来可以选择程序位置和快捷方式。选择任意盘符根目录时，安装器会自动创建 BookKeepAI 文件夹。$\r$\n$\r$\n点击“下一步”继续。"
+  !insertmacro MUI_PAGE_WELCOME
+!macroend
+
+!macro customFinishPage
+  !define MUI_FINISHPAGE_TITLE "BookKeepAI 已准备就绪"
+  !define MUI_FINISHPAGE_TEXT "安装已完成。$\r$\n$\r$\n程序位置：$\r$\n$INSTDIR$\r$\n$\r$\n账本保存在当前用户的本机数据目录，卸载时保留。点击“完成”关闭向导，再从快捷方式或程序目录启动。"
+  !insertmacro MUI_PAGE_FINISH
 !macroend
