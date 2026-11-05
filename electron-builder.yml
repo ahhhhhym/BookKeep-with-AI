@@ -56,6 +56,9 @@ nsis:
   differentialPackage: false
   useZip: false
   include: scripts/installer.nsh
+  installerSidebar: assets/installer/sidebar.bmp
+  uninstallerSidebar: assets/installer/uninstall-sidebar.bmp
+  installerHeader: assets/installer/header.bmp
   artifactName: BookKeepAI-${version}-win-x64-setup.${ext}
   oneClick: false
   perMachine: false
