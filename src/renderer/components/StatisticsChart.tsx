@@ -45,12 +45,35 @@ export function StatisticsChart({ points, onSelect, selected, onClose, children,
         <text x="32" y="25" className="chart-label">¥{displayFen(maximum.toString())}</text>
         <polyline points={coords.filter((_, i) => !points[i]?.isFuture).map(({ x, y }) => `${x},${y}`).join(' ')} className="chart-line" />
         {points.some((point) => point.isFuture) ? <polyline points={coords.filter((_, i) => points[i]?.isFuture || points[i + 1]?.isFuture).map(({ x, y }) => `${x},${y}`).join(' ')} className="chart-line chart-future-line" /> : null}
+        {coords.length > 0 ? (
+          <line
+            x1="0"
+            x2="0"
+            y1="36"
+            y2="220"
+            className="chart-selection"
+            style={{
+              transform: `translateX(${(selected !== null && coords[selected] ? coords[selected]!.x : coords[active]?.x ?? 32)}px)`,
+              opacity: selected !== null ? 1 : 0,
+            }}
+          />
+        ) : null}
+        {coords.length > 0 && selected !== null && coords[selected] ? (
+          <circle
+            cx="0"
+            cy="0"
+            r="11"
+            className="chart-point-halo"
+            style={{
+              transform: `translate(${coords[selected]!.x}px, ${coords[selected]!.y}px)`,
+            }}
+          />
+        ) : null}
         {points.map((point, index) => { const coordinate = coords[index]!; return <g key={point.pointKey} data-point-key={point.pointKey}
           onMouseEnter={() => { if (!pinned && !keyboardMode.current) choose(index); }}
           onMouseMove={(event) => { if (event.movementX || event.movementY) { keyboardMode.current = false; if (!pinned) choose(index); } }}
           onClick={() => { keyboardMode.current = false; if (pinned && selected === index) close(); else choose(index, true); }}>
           <rect x={coordinate.x - Math.min(18, plotWidth / points.length / 2)} y="32" width={Math.min(36, plotWidth / points.length)} height="195" fill="transparent" className="chart-hit" />
-          {selected === index ? <line x1={coordinate.x} x2={coordinate.x} y1="36" y2="220" className="chart-selection" /> : null}
           <circle cx={coordinate.x} cy={coordinate.y} r={selected === index ? 6 : 4} className={point.isFuture ? 'chart-point chart-future' : 'chart-point'} />
           {(index % labelStep === 0 || index === points.length - 1) ? <text x={coordinate.x} y="248" textAnchor="middle" className="chart-label">{point.label}</text> : null}
         </g>; })}
@@ -60,7 +83,9 @@ export function StatisticsChart({ points, onSelect, selected, onClose, children,
     <div aria-live="polite" className="sr-only">{selected !== null && points[selected] ? `${points[selected]!.pointKey}，${points[selected]!.isFuture ? '尚未到来' : `支出${displayFen(points[selected]!.amountFen)}元`}` : ''}</div>
     {selected !== null ? <section className="point-detail" aria-label="统计点详情" data-pinned={pinned}>
       <button className="button detail-close" onClick={() => { close(); chart.current?.focus({ preventScroll: true }); onClose(); }}>关闭详情</button>
-      {children}
+      <div className="point-detail-content" key={points[selected]?.pointKey ?? selected}>
+        {children}
+      </div>
     </section> : null}
   </div>;
 }

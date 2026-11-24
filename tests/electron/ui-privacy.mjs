@@ -9,6 +9,7 @@ import { ROOT, electronExecutable, electronSafeEnv } from '../../scripts/lib/pat
 const { _electron } = createRequire(path.join(process.env.BOOKKEEP_QA_NODE_MODULES ?? path.join(ROOT, 'node_modules'), '__qa__.cjs'))('playwright');
 const output = path.resolve(process.env.BOOKKEEP_QA_OUTPUT ?? path.join(ROOT, '.tmp/ui-privacy'));
 const appRoot = path.resolve(process.env.BOOKKEEP_QA_APP_ROOT ?? ROOT);
+const { version: expectedAppVersion } = JSON.parse(readFileSync(path.join(appRoot, 'package.json'), 'utf8'));
 mkdirSync(output, {recursive:true});
 const localAppData = mkdtempSync(path.join(tmpdir(), 'BookKeepAI 013 隔离 '));
 const report = {ok:false, localAppData, checks:[], errors:[], console:[], externalHttp:0, kind:'implementation self-test; not acceptance', browser:'Browser plugin not available; project Playwright Electron workflow'};
@@ -179,7 +180,7 @@ try {
     await primary(id);await page.locator(`[data-nav="${route}"]`).waitFor();const g=await geometry();assert(Math.abs(g.left-g.right)<=2);assert(!g.overflow&&!g.mainOverflow);check('centered-'+id,g);
   }
   assert((await page.locator('.storage-location').innerText()).includes('%LOCALAPPDATA%'));
-  assert((await page.getByRole('region',{name:'关于',exact:true}).innerText()).includes('0.2.0'));
+  assert((await page.getByRole('region',{name:'关于',exact:true}).innerText()).includes(expectedAppVersion));
   const policy=page.getByRole('button',{name:'隐私政策',exact:true});await policy.scrollIntoViewIfNeeded();
   const scrollBefore=await page.locator('.main').evaluate(el=>el.scrollTop);
   await page.context().setOffline(true);await policy.click();

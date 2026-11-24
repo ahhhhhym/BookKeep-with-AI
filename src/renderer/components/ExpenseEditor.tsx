@@ -5,6 +5,7 @@ import { call, errorCodeOf } from '../lib/bridge';
 import { describeError } from '../lib/messages';
 import { expenseDraft, MutationAttempt, validateExpense, type ExpenseDraft } from '../lib/ledger';
 import { Modal } from './Modal';
+import { Spinner } from './ui';
 
 export type LeaveGuard = ((leave: () => void) => void) | null;
 
@@ -147,7 +148,7 @@ export function ExpenseEditor({ original, categories, dataEpoch, onSaved, onClos
           <button type="button" className="button" disabled={busy} onClick={() => void refreshConflict().catch((failure: unknown) => setError(describeError(failure)))}>重新读取最新记录</button>
           {latest && !latest.deletedAt ? <button type="button" className="button" onClick={() => { setBase(latest); attempt.current.reset(); setConflict(false); setUncertain(false); setError('已采用最新版本，请复核保留的输入后保存。'); }}>保留我的输入继续编辑</button> : null}
         </div> : null}
-        <div className="expense-actions"><button className="button" type="button" disabled={busy} onClick={() => requestLeave(onClose)}>取消</button><button className="button button-primary" type="submit" title="保存（Ctrl+Enter）" disabled={busy || epochChanged || conflict}>{busy ? '正在保存…' : uncertain ? '重试保存' : '保存支出'}</button></div>
+        <div className="expense-actions"><button className="button" type="button" disabled={busy} onClick={() => requestLeave(onClose)}>取消</button><button className="button button-primary" type="submit" title="保存（Ctrl+Enter）" disabled={busy || epochChanged || conflict}>{busy ? <><Spinner />正在保存…</> : uncertain ? '重试保存' : '保存支出'}</button></div>
       </form>
     </Modal>
     {leaveAction ? <Modal title="有未保存的修改" busy={busy} onClose={() => {setLeaveAction(null);window.dispatchEvent(new Event("bookkeep:leave-cancel"));}}>

@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState, type JSX } from 'react';
-import { EmptyState, ErrorLine, Notice, PageHeader, Panel } from '../components/ui';
+import { EmptyState, ErrorLine, Notice, PageHeader, Panel, Spinner } from '../components/ui';
 import { BridgeError, call, getBridge } from '../lib/bridge';
 import { reconcileRestore, RESTORE_STATUS_TEXT } from '../lib/restore-status';
 import { describeError } from '../lib/messages';
@@ -219,7 +219,7 @@ export function DataPage({ onDataRestored }: { onDataRestored?: () => void }): J
 
       {error ? <ErrorLine message={error} /> : null}
       {notice ? <Notice title="操作完成">{notice}</Notice> : null}
-      {verifying ? <p role="status">正在核实恢复结果…</p> : null}
+      {verifying ? <p role="status" className="status-inline"><Spinner />正在核实恢复结果…</p> : null}
       {verifyId ? <div className="form-actions"><span className="tiny">恢复编号：{verifyId}</span><button className="button" disabled={pending} onClick={() => void recheckRestore()}>重新核实本次恢复状态</button></div> : null}
 
       <div className="grid-2">
@@ -308,6 +308,7 @@ export function DataPage({ onDataRestored }: { onDataRestored?: () => void }): J
       </Panel>
 
       {preview ? (
+        <div className="panel-enter">
         <Panel
           title="恢复预览"
           actions={
@@ -338,6 +339,7 @@ export function DataPage({ onDataRestored }: { onDataRestored?: () => void }): J
             <dd title={preview.backupId}>{preview.backupId.slice(0, 12)}…</dd>
           </dl>
         </Panel>
+        </div>
       ) : null}
 
       <details className="advanced-disclosure">

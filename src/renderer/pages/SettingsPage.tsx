@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState, type JSX } from 'react';
 import type { ProbeReport } from '../../shared/probe';
-import { Badge, MetaList, Notice, PageHeader, Panel } from '../components/ui';
+import { Check, Copy } from 'lucide-react';
+import { Badge, MetaList, Notice, PageHeader, Panel, Spinner } from '../components/ui';
 import type { AiSettingsView, ProviderCapabilitiesView, SecretStatusView } from '../../shared/dto';
 import type { NavId } from '../../shared/nav';
 import { CONTRACT_VERSION } from '../../shared/constants';
@@ -166,17 +167,19 @@ export function SettingsPage({ ai: initialAi, secret: initialSecret, capabilitie
         {achievements.preferences ? <>
           <label className="achievement-preference"><input id="achievement-notices-enabled" type="checkbox" checked={achievements.preferences.enabled} disabled={achievements.saving}
             onChange={event => void changeNotices({...achievements.preferences!,enabled:event.target.checked})}/>显示成就提示</label>
-          {achievements.preferences.enabled ? <>
-            <div className="field"><label htmlFor="achievement-notices-position">提示位置</label>
-              <select id="achievement-notices-position" value={achievements.preferences.position} disabled={achievements.saving}
-                onChange={event => void changeNotices({...achievements.preferences!,position:event.target.value as AchievementPreferences['position']})}>
-                <option value="center">中央（默认）</option><option value="bottom-right">右下角</option>
-              </select>
+          <div className="filter-collapse" data-open={achievements.preferences.enabled} inert={!achievements.preferences.enabled} aria-hidden={!achievements.preferences.enabled}>
+            <div className="filter-collapse-inner panel-body">
+              <div className="field"><label htmlFor="achievement-notices-position">提示位置</label>
+                <select id="achievement-notices-position" value={achievements.preferences.position} disabled={achievements.saving}
+                  onChange={event => void changeNotices({...achievements.preferences!,position:event.target.value as AchievementPreferences['position']})}>
+                  <option value="center">中央（默认）</option><option value="bottom-right">右下角</option>
+                </select>
+              </div>
+              <div className="form-actions"><button type="button" className="button" disabled={achievements.saving} onClick={achievementController.preview}>预览效果</button></div>
             </div>
-            <div className="form-actions"><button type="button" className="button" disabled={achievements.saving} onClick={achievementController.preview}>预览效果</button></div>
-          </> : null}
+          </div>
           <p className="field-hint">选择自动保存在本机。关闭提示不影响成就解锁，重新开启也不会补弹旧提示。</p>
-        </> : <p role="status">正在读取提示偏好…</p>}
+        </> : <p role="status" className="status-inline"><Spinner />正在读取提示偏好…</p>}
         {noticeError ? <p role="alert" className="error-line">保存失败：{noticeError}</p> : null}
       </Panel>
 
@@ -289,7 +292,7 @@ export function SettingsPage({ ai: initialAi, secret: initialSecret, capabilitie
         ) : (
           <>
             <label className="check-row"><input type="checkbox" checked={consent} disabled={busy} onChange={(event) => setConsent(event.target.checked)} />我同意发送内置测试图并了解可能产生少量 API 费用</label>
-            <div className="form-actions"><button type="button" className="button button-primary" disabled={busy || !consent} onClick={() => void runProbe()}>{busy ? '正在测试连接…' : '测试识图连接'}</button></div>
+            <div className="form-actions"><button type="button" className="button button-primary" disabled={busy || !consent} onClick={() => void runProbe()}>{busy ? <><Spinner />正在测试连接…</> : '测试识图连接'}</button></div>
           </>
         )}
         {probe ? <details className="subtle-disclosure" open><summary>测试结果</summary><pre className="raw-json" data-probe-result>{JSON.stringify(probe, null, 2)}</pre></details> : null}
@@ -298,7 +301,9 @@ export function SettingsPage({ ai: initialAi, secret: initialSecret, capabilitie
       <Panel title="本地数据">
         <div className="storage-path-row">
           <span>存储位置：<code className="storage-location">%LOCALAPPDATA%\BookKeepAI</code></span>
-          <button type="button" className="button button-small" onClick={() => void copyStoragePath()}>{copiedPath ? '已复制' : '复制路径'}</button>
+          <button type="button" className={`button button-small${copiedPath ? ' button-copied' : ''}`} onClick={() => void copyStoragePath()}>
+            {copiedPath ? <><span className="icon-pop"><Check size={14} aria-hidden="true" /></span>已复制</> : <><Copy size={14} aria-hidden="true" />复制路径</>}
+          </button>
         </div>
         <p className="muted">
           账本、附件、备份与日志均保存在当前 Windows 用户目录下，与程序文件分离；移动或更新程序不会丢失账本。
