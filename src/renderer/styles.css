@@ -116,7 +116,7 @@
 .achievement-notice-layer[data-position="bottom-right"] { left: var(--nav-width); grid-template-rows: minmax(56px,1fr) auto 12px; justify-items: end; }
 .achievement-notice { grid-row: 2; position: relative; display: flex; align-items: flex-start; gap: 12px; width: min(460px, 100%); min-width: 0; max-height: calc(100dvh - 68px); overflow: auto; border: 1px solid var(--warn-border); border-radius: 14px; background: var(--surface); color: var(--text); box-shadow: var(--shadow); padding: 20px; pointer-events: auto; }
 .achievement-notice-layer[data-position="bottom-right"] .achievement-notice { width: min(420px,100%); padding: 18px; }
-.achievement-notice[data-phase="entering"] { animation: achievement-appear var(--notice-enter) ease-out both; }
+.achievement-notice[data-phase="entering"] { animation: achievement-appear var(--notice-enter) var(--ease-apple) both; }
 .achievement-notice[data-phase="exiting"] { animation: achievement-disappear var(--notice-exit) ease-out both; pointer-events: none; }
 .achievement-notice-layer[data-visible="false"] .achievement-notice { pointer-events: none; }
 .achievement-notice-symbol { color: var(--warn); flex: 0 0 auto; padding-top: 4px; }
@@ -127,7 +127,6 @@
 .achievement-notice-link:focus-visible, .achievement-notice-close:focus-visible { outline: 2px solid var(--primary); outline-offset: 3px; border-radius: 3px; }
 .achievement-notice:has(.achievement-notice-error) { flex-wrap: wrap; }
 .achievement-notice-error { position: relative; flex-basis: 100%; min-width: 0; overflow-wrap: anywhere; font-size: 12px; color: var(--danger); }
-@keyframes achievement-appear { from { opacity: 0; transform: scale(.97); } to { opacity: 1; transform: scale(1); } }
 @keyframes achievement-disappear { from { opacity: 1; } to { opacity: 0; } }
 
 @media (max-width: 899px) { .achievement-notice-layer[data-position="bottom-right"] { left: 0; } }
@@ -1771,7 +1770,6 @@ details[open] > :not(summary) {
 }
 
 .achievement-notice {
-  animation: achievement-appear 220ms var(--ease-apple);
   transition: transform var(--motion-fast) var(--ease-apple), box-shadow var(--motion-fast) var(--ease-swift);
 }
 
@@ -1779,8 +1777,8 @@ details[open] > :not(summary) {
   transform: translateY(-1px);
 }
 
-.achievement-notice-layer[data-position="bottom-right"] .achievement-notice {
-  animation: achievement-appear-corner 220ms var(--ease-apple);
+.achievement-notice-layer[data-position="bottom-right"] .achievement-notice[data-phase="entering"] {
+  animation-name: achievement-appear-corner;
 }
 
 .achievement-notice-symbol {

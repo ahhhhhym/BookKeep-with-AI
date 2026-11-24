@@ -23,6 +23,34 @@ try {
   page.setDefaultTimeout(10000);
   await page.emulateMedia({ reducedMotion: 'no-preference' });
   await page.locator('[data-ledger-total]').waitFor();
+
+  const noticeAnimations = await page.evaluate(() => {
+    const layer = document.createElement('aside');
+    layer.className = 'achievement-notice-layer';
+    layer.setAttribute('aria-hidden', 'true');
+    layer.style.setProperty('--notice-enter', '260ms');
+    layer.style.setProperty('--notice-exit', '180ms');
+    const card = document.createElement('div');
+    card.className = 'achievement-notice';
+    layer.append(card);
+    document.body.append(layer);
+    const animations = {};
+    for (const position of ['center', 'bottom-right']) {
+      layer.dataset.position = position;
+      animations[position] = ['entering', 'visible', 'exiting'].map(phase => {
+        card.dataset.phase = phase;
+        return getComputedStyle(card).animationName;
+      });
+    }
+    layer.remove();
+    return animations;
+  });
+  assert.deepEqual(noticeAnimations, {
+    center: ['achievement-appear', 'none', 'achievement-disappear'],
+    'bottom-right': ['achievement-appear-corner', 'none', 'achievement-disappear'],
+  });
+  console.log('PASS achievement notice enters once and keeps its exit animation in both positions');
+
   await page.locator('[data-nav-item="statistics"]').click();
   await page.locator('[data-statistics-total="0"]').waitFor();
   const refresh = page.getByRole('button', { name: '刷新统计', exact: true });
