@@ -60,11 +60,13 @@ try{
   await nav('import');await page.getByRole('button',{name:'选择图片',exact:true}).click();await page.locator('canvas').waitFor();
   assert.equal(await page.locator('.rect-fields,input[type="number"]').count(),0);assert.equal(await page.getByText('核对原图（仅本地）与本次上传图',{exact:true}).count(),0);
   await until(async()=>await page.getByRole('button',{name:'保存处理（仅本地）',exact:true}).isEnabled());
-  await page.locator('canvas').focus();await page.keyboard.press('Alt+ArrowLeft');await page.keyboard.press('Alt+ArrowUp');await page.getByRole('button',{name:'添加遮盖',exact:true}).click();await page.getByRole('button',{name:'选择遮盖1',exact:true}).click();await page.keyboard.press('Shift+ArrowRight');await page.getByRole('button',{name:'保存处理（仅本地）',exact:true}).click();
+  await page.locator('canvas').focus();await page.keyboard.press('Alt+ArrowLeft');await page.keyboard.press('Alt+ArrowUp');await page.getByRole('button',{name:'添加遮盖',exact:true}).click();await page.getByText('精确像素微调',{exact:true}).click();await page.getByRole('button',{name:'选择遮盖1',exact:true}).click();await page.keyboard.press('Shift+ArrowRight');await page.getByRole('button',{name:'保存处理（仅本地）',exact:true}).click();
   await page.getByText('处理图已保存，当前编辑区已更新。开始识别时请重新检查并同意上传。',{exact:true}).waitFor();
   assert.match(await page.locator('.image-editor [role="status"]').innerText(),/399×299/);baseHash=await page.evaluate(async()=>{return 'saved';});await screen('single-image-editor');assert.equal(await app.evaluate(()=>globalThis.qaHttp),0);
  });
  await check('I02 dirty navigation three choices; save failure keeps draft and cancels continuation; retry same intent',async()=>{
+  const precision=page.locator('.image-editor details');
+  if (await precision.getAttribute('open')===null) await precision.locator('summary').click();
   await page.getByRole('button',{name:'选择裁剪框',exact:true}).click();await page.keyboard.press('Alt+ArrowLeft');await page.locator('[data-nav-item="statistics"]').click();await page.getByRole('dialog',{name:'有未保存的图片修改'}).waitFor();await page.getByRole('button',{name:'继续编辑',exact:true}).click();assert.equal(await page.locator('.app').getAttribute('data-nav'),'import');
   await app.evaluate(async()=>{const fs={default:process.getBuiltinModule('node:fs')};globalThis.qaOriginalRename=fs.default.renameSync;fs.default.renameSync=()=>{throw Error('synthetic storage failure');};});
   await page.locator('[data-nav-item="statistics"]').click();await page.getByRole('button',{name:'保存后继续',exact:true}).click();await page.getByText('保存尚未确认。重试使用同一提交，核实前暂时锁定编辑；也可以放弃本次修改。',{exact:true}).waitFor();assert.equal(await page.locator('.app').getAttribute('data-nav'),'import');await screen('save-failed');

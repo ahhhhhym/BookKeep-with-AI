@@ -4,9 +4,9 @@ import { useLayoutEffect, useRef, useState, type JSX } from 'react';
 
 /** Presentation only: the owner approves navigation before changing value. CSS retargets
  * from the current interpolated position; no timers, duplicated pages or business effects. */
-export function SlidingSegments<T extends string>({ value, items, onChange, label, className = '' }: {
+export function SlidingSegments<T extends string>({ value, items, onChange, label, className = '', disabled = false }: {
   value: T; items: readonly { value: T; label: string; controls?: string;icon?:NavigationIconKey }[];
-  onChange: (value: T) => void; label: string; className?: string;
+  onChange: (value: T) => void; label: string; className?: string; disabled?: boolean;
 }): JSX.Element {
   const ref = useRef<HTMLDivElement>(null);
   const [indicator, setIndicator] = useState<{ x: number; y: number; width: number; height: number } | null>(null);
@@ -27,6 +27,6 @@ export function SlidingSegments<T extends string>({ value, items, onChange, labe
   }, [value, items]);
   return <div ref={ref} className={`segmented sliding-segments ${className}`} role="group" aria-label={label}>
     <span className="segment-indicator" aria-hidden="true" data-ready={!!indicator} style={indicator ? { transform: `translate(${indicator.x}px, ${indicator.y}px)`, width: indicator.width, height: indicator.height } : undefined} />
-    {items.map(item => <button type="button" key={item.value} aria-pressed={value === item.value} aria-controls={item.controls} onClick={() => onChange(item.value)}>{item.icon?<NavIcon name={item.icon} variant={value===item.value?'solid':'outline'} size={20}/>:null}{item.label}</button>)}
+    {items.map(item => <button type="button" key={item.value} aria-pressed={value === item.value} aria-controls={item.controls} disabled={disabled} onClick={() => onChange(item.value)}>{item.icon?<NavIcon name={item.icon} variant={value===item.value?'solid':'outline'} size={20}/>:null}{item.label}</button>)}
   </div>;
 }

@@ -60,8 +60,8 @@ export function ImageEditor({ session, busy, onSave,onChange }: {
     }, [image, crop, masks, mode, asset.width, asset.height, valid]);
     const point = (e: PointerEvent<HTMLCanvasElement>) => { const el = e.currentTarget; const box = el.getBoundingClientRect(); return { x: Math.max(0, Math.min(el.width - 1, Math.floor((e.clientX - box.left) * el.width / box.width))), y: Math.max(0, Math.min(el.height - 1, Math.floor((e.clientY - box.top) * el.height / box.height))) }; };
     return <div className="image-editor">
-    <div className="form-actions"><button className="button" disabled={busy} onClick={() => setMode('crop')} aria-pressed={mode === 'crop'}>裁剪（源图像素）</button><button className="button" disabled={busy || !valid} onClick={() => setMode('mask')} aria-pressed={mode === 'mask'}>遮盖（裁剪后像素）</button><button className="button" onClick={() => setScale(null)}>适应窗口</button><button className="button" onClick={() => setScale(1)}>100%</button><button className="button" onClick={() => setScale(n => Math.min(4, (n ?? 1) * 1.25))}>放大</button><button className="button" onClick={() => setScale(n => Math.max(.1, (n ?? 1) / 1.25))}>缩小</button></div>
-    <p className="tiny">在图片上拖出矩形；Tab选择裁剪框或遮盖块，方向键移动1像素，Shift加速10像素，Alt加方向键调整宽高，Home选择完整裁剪，Delete删除所选遮盖。重置仅回到当前已保存图片，无法还原已裁掉内容。遮盖为不透明黑色。</p>
+    <div className="form-actions"><button className="button" disabled={busy} onClick={() => setMode('crop')} aria-pressed={mode === 'crop'}>框选裁剪</button><button className="button" disabled={busy || !valid} onClick={() => setMode('mask')} aria-pressed={mode === 'mask'}>涂黑遮盖</button><button className="button" onClick={() => setScale(null)}>适应窗口</button><button className="button" onClick={() => setScale(1)}>100%</button><button className="button" onClick={() => setScale(n => Math.min(4, (n ?? 1) * 1.25))}>放大</button><button className="button" onClick={() => setScale(n => Math.max(.1, (n ?? 1) / 1.25))}>缩小</button></div>
+    <p className="tiny">在图片上拖动{mode === 'crop' ? '框选裁剪区域' : '涂黑隐私信息'}。重置仅回到当前已保存图片，无法还原已裁掉内容。</p>
     {loading ? <p role="status">正在读取本地图像…</p> : null}{previewError ? <p role="alert">预览已过期或不可用。<button className="button" onClick={() => setRefresh(n => n + 1)}>重新读取本地图像</button></p> : null}
     <div className="image-workspace"><canvas ref={canvas} tabIndex={0} role="img" aria-label="裁剪遮盖预览" onKeyDown={e=>{
       if(busy)return;
@@ -79,7 +79,10 @@ export function ImageEditor({ session, busy, onSave,onChange }: {
     else if (masks.length < 50)
         setMasks([...masks, r]); }}/></div>
     <div className="form-actions"><button className="button" disabled={masks.length >= 50 || busy} onClick={() => { setMode('mask'); setMasks([...masks, { x: 0, y: 0, width: Math.min(50, crop.width), height: Math.min(30, crop.height) }]); }}>添加遮盖</button><button className="button" disabled={!masks.length || busy} onClick={() => setMasks(m => m.slice(0, -1))}>撤销最后遮盖</button><button className="button" disabled={busy} onClick={() => { setCrop({ x: 0, y: 0, width: asset.width, height: asset.height }); setMasks([]); }}>取消编辑 / 重置</button></div>
+    <details className="subtle-disclosure"><summary>精确像素微调</summary>
+    <p className="tiny">选择编辑对象后，方向键移动 1 像素，Shift 加速至 10 像素，Alt 加方向键调整宽高，Home 选择完整裁剪，Delete 删除所选遮盖。</p>
     <div role="group" aria-label="编辑对象"><button className="button" aria-pressed={mode==='crop'} onClick={()=>{setMode('crop');canvas.current?.focus();}}>选择裁剪框</button>{masks.map((_,i)=><button className="button" key={i} aria-pressed={mode==='mask'&&activeMask===i} onClick={()=>{setActiveMask(i);setMode('mask');canvas.current?.focus();}}>选择遮盖{i+1}</button>)}</div>
+    </details>
     <p role="status" aria-live="polite">{mode==='crop'?`裁剪框：${crop.width}×${crop.height}，位置${crop.x}、${crop.y}`:masks[activeMask]?`遮盖${activeMask+1}：${masks[activeMask].width}×${masks[activeMask].height}，位置${masks[activeMask].x}、${masks[activeMask].y}`:'请选择或添加遮盖'}</p>
     <label className="check-row"><input type="checkbox" checked={retain} onChange={e => setRetain(e.target.checked)}/>保留本地原图，便于核对</label>
     {!retain ? <p className="notice" data-tone="warn">原图将在处理保存成功后移除，之后只能核对处理后的图片。已有任务引用的原图会保留。</p> : null}

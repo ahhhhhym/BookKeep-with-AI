@@ -230,9 +230,9 @@ export function App(): JSX.Element {
         <div className="page ai-page" hidden={primaryId !== 'ai'}>
           <DeepSeekBillingNotice active={primaryId==='ai'} target={{provider:recognitionProvider,endpoint:ai?.billingTarget?.endpoint??null,model:ai?.billingTarget?.model??null}}/>
           <SlidingSegments className="ai-switcher" value={aiPage} items={AI_SEGMENTS} label="AI记账子页" onChange={navigate} />
-          <section id="ai-import" className={subMotion ? 'ai-sub-fade' : undefined} hidden={navId !== 'import'} aria-label="图片导入">{importVisited ? <ImportPage onError={setLastError} registerGuard={registerImageGuard} provider={recognitionProvider} onProviderChange={setRecognitionProvider} /> : null}</section>
-          <section id="ai-queue" className={subMotion ? 'ai-sub-fade' : undefined} hidden={navId !== 'queue'} aria-label="任务队列">{navId === 'queue' ? <QueuePage /> : null}</section>
-          <section id="ai-review" className={subMotion ? 'ai-sub-fade' : undefined} hidden={navId !== 'review'} aria-label="候选审核">{navId === 'review' ? <ReviewPage registerGuard={registerGuard} /> : null}</section>
+          <section id="ai-import" className={subMotion ? 'ai-sub-fade' : undefined} hidden={navId !== 'import'} aria-label="图片导入">{importVisited ? <ImportPage onNavigate={navigate} onError={setLastError} registerGuard={registerImageGuard} provider={recognitionProvider} onProviderChange={setRecognitionProvider} /> : null}</section>
+          <section id="ai-queue" className={subMotion ? 'ai-sub-fade' : undefined} hidden={navId !== 'queue'} aria-label="任务队列">{navId === 'queue' ? <QueuePage onNavigate={navigate} /> : null}</section>
+          <section id="ai-review" className={subMotion ? 'ai-sub-fade' : undefined} hidden={navId !== 'review'} aria-label="候选审核">{navId === 'review' ? <ReviewPage onNavigate={navigate} registerGuard={registerGuard} /> : null}</section>
         </div>
         {navId === 'data' ? <DataPage onDataRestored={resetRestoredViews} /> : null}
         {navId === 'achievements' ? <AchievementsPage /> : null}

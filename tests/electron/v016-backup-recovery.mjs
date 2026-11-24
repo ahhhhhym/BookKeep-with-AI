@@ -37,7 +37,7 @@ try{
   await page.locator('[data-nav-item="data"]').click();await page.locator('[data-main-transition][data-phase="stable"]').waitFor();
   const list=await raw('backup.list',{page:{limit:50,cursor:null}});c.list=list;assert.equal(list.ok,true);
   const record=list.data.records.find(r=>r.id===c.fixture.record.id);assert(record);c.recordBefore=record;
-  const row=page.locator('tbody tr').filter({hasText:record.archiveHash.slice(0,12)});await row.waitFor();await row.scrollIntoViewIfNeeded();
+  const row=page.locator(`[data-backup-id="${record.id}"]`);await row.waitFor();await row.scrollIntoViewIfNeeded();
   const button=row.getByRole('button',{name:'校验并恢复',exact:true});c.rowText=await row.innerText();c.buttonEnabled=await button.isEnabled();await page.screenshot({path:dir+'/target-row.png'});
   const blocked=['missing-core','hash-conflict'].includes(scenario);
   if(blocked){assert.equal(c.buttonEnabled,false);const rejected=await raw('backup.restore',{mode:'preview',backupId:record.id});assert.equal(rejected.ok,false);c.rejected=rejected;c.checks.push('main-rejects-unavailable-core-and-ui-disabled');}
@@ -49,7 +49,7 @@ try{
     const preview=page.getByRole('region',{name:'恢复预览',exact:true});await preview.waitFor();await preview.scrollIntoViewIfNeeded();await page.screenshot({path:dir+'/preview.png'});
     const previewState=await snapshot();assert.deepEqual(previewState.pointer,c.before.pointer);assert.deepEqual(previewState.transactions,c.before.transactions);c.checks.push('ui-preview-is-read-only');
     await preview.getByRole('button',{name:'确认覆盖当前数据并恢复',exact:true}).click();assert.equal(c.dialogs.length,1);assert.equal(c.dialogs[0].accepted,false);assert.deepEqual((await snapshot()).pointer,c.before.pointer);c.checks.push('cancel-confirm-does-not-restore');
-    accept=true;await preview.getByRole('button',{name:'确认覆盖当前数据并恢复',exact:true}).click();await page.getByText(/^恢复完成：已切换数据世代/).waitFor();assert.equal(c.dialogs.length,2);assert.equal(c.dialogs[1].accepted,true);c.checks.push('actual-ui-preview-and-explicit-confirm-restore');
+    accept=true;await preview.getByRole('button',{name:'确认覆盖当前数据并恢复',exact:true}).click();await page.getByText(/^恢复完成！已自动为原数据创建/).waitFor();assert.equal(c.dialogs.length,2);assert.equal(c.dialogs[1].accepted,true);c.checks.push('actual-ui-preview-and-explicit-confirm-restore');
    }
   }
   c.trace=await app.evaluate(()=>globalThis.recoveryTrace);c.after=await snapshot();c.achievements=await data('achievement.list');c.afterList=await data('backup.list',{page:{limit:50,cursor:null}});c.recordAfter=c.afterList.records.find(r=>r.id===record.id);

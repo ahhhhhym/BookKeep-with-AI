@@ -23,15 +23,15 @@ export interface SettingsPageProps {
 }
 
 const READINESS_LABEL: Record<AiSettingsView['readiness'], string> = {
-  stub: '真实识图尚未接入（S09）',
-  needs_probe: '待真实探针验证',
-  ready: '已验证',
+  stub: '未验证连接',
+  needs_probe: '待连接测试',
+  ready: '已就绪',
 };
 
 const SECRET_LABEL: Record<SecretStatusView['mode'], string> = {
-  absent: '尚未配置密钥，手工记账可用。',
-  encrypted: '已为当前 Windows 用户加密保存。',
-  session: '密钥仅在本次会话保留，退出后需重新输入。',
+  absent: '尚未配置',
+  encrypted: '已加密保存',
+  session: '仅本次会话有效',
 };
 
 /** P07 设置：S09 安全配置与固定无隐私合成图探针。 */
@@ -44,6 +44,8 @@ export function SettingsPage({ ai: initialAi, secret: initialSecret, capabilitie
     catch (caught) { setNoticeError(describeError(caught)); }
   };
   const [privacyOpen, setPrivacyOpen] = useState(false);
+  const [confirmRemove, setConfirmRemove] = useState(false);
+  const [copiedPath, setCopiedPath] = useState(false);
   const [theme, setTheme] = useState<ThemeSource>('system');
   const [themeBusy, setThemeBusy] = useState(false);
   useEffect(() => {
@@ -116,6 +118,7 @@ export function SettingsPage({ ai: initialAi, secret: initialSecret, capabilitie
     try {
       if (secretInput.current) secretInput.current.value = '';
       await call((api) => api.settings.saveSecret({ action: 'remove', expectedVersion: secret?.version ?? 0 }));
+      setConfirmRemove(false);
       setMessage('已移除密钥。');
     } catch (caught) {
       const text = describeError(caught);
@@ -126,6 +129,14 @@ export function SettingsPage({ ai: initialAi, secret: initialSecret, capabilitie
       setBusy(false);
     }
   }, [onError, secret?.version, refresh]);
+
+  const copyStoragePath = async (): Promise<void> => {
+    try {
+      await navigator.clipboard.writeText('%LOCALAPPDATA%\\BookKeepAI');
+      setCopiedPath(true);
+      setTimeout(() => setCopiedPath(false), 2000);
+    } catch { /* Clipboard may be unavailable in restricted sessions. */ }
+  };
 
   const runProbe = async () => {
     setBusy(true); setError(null); setProbe(null); setMessage(null);
@@ -155,39 +166,48 @@ export function SettingsPage({ ai: initialAi, secret: initialSecret, capabilitie
         {achievements.preferences ? <>
           <label className="achievement-preference"><input id="achievement-notices-enabled" type="checkbox" checked={achievements.preferences.enabled} disabled={achievements.saving}
             onChange={event => void changeNotices({...achievements.preferences!,enabled:event.target.checked})}/>显示成就提示</label>
-          <div className="field"><label htmlFor="achievement-notices-position">提示位置</label>
-            <select id="achievement-notices-position" value={achievements.preferences.position} disabled={achievements.saving}
-              onChange={event => void changeNotices({...achievements.preferences!,position:event.target.value as AchievementPreferences['position']})}>
-              <option value="center">中央（默认）</option><option value="bottom-right">右下角</option>
-            </select>
-          </div>
-          <button type="button" className="button" disabled={achievements.saving} onClick={achievementController.preview}>预览效果</button>
-          <p className="field-hint">选择自动保存在本机。关闭后仍正常解锁，重新开启不补弹旧提示；预览不会记录成就。</p>
+          {achievements.preferences.enabled ? <>
+            <div className="field"><label htmlFor="achievement-notices-position">提示位置</label>
+              <select id="achievement-notices-position" value={achievements.preferences.position} disabled={achievements.saving}
+                onChange={event => void changeNotices({...achievements.preferences!,position:event.target.value as AchievementPreferences['position']})}>
+                <option value="center">中央（默认）</option><option value="bottom-right">右下角</option>
+              </select>
+            </div>
+            <div className="form-actions"><button type="button" className="button" disabled={achievements.saving} onClick={achievementController.preview}>预览效果</button></div>
+          </> : null}
+          <p className="field-hint">选择自动保存在本机。关闭提示不影响成就解锁，重新开启也不会补弹旧提示。</p>
         </> : <p role="status">正在读取提示偏好…</p>}
-        {noticeError ? <p role="alert">保存失败：{noticeError}</p> : null}
+        {noticeError ? <p role="alert" className="error-line">保存失败：{noticeError}</p> : null}
       </Panel>
 
-      <Panel title="AI 服务" actions={<Badge tone="warn">{ai ? READINESS_LABEL[ai.readiness] : '读取中…'}</Badge>}>
+      <Panel title="AI 服务" actions={<Badge tone={ai?.readiness === 'ready' ? 'primary' : 'warn'}>{ai ? READINESS_LABEL[ai.readiness] : '读取中…'}</Badge>}>
         <MetaList
           entries={[
-            ['提供商', ai?.provider ?? '—'],
-            ['配置模型名', ai?.model ?? '—'],
-            ['提示词版本', ai?.promptVersion ?? '—'],
-            ['候选 schema', ai?.schemaVersion ?? '—'],
+            ['服务商', ai?.provider ?? '—'],
+            ['模型', ai?.model ?? '—'],
           ]}
         />
-        <ul className="tiny">
-          {capabilities.map((capability) => (
-            <li key={capability.providerId}>
-              {capability.providerId}：图片 {capability.supportsImage ? '声明支持' : '不支持'} · 结构化输出{' '}
-              {capability.structuredOutputStatus} · 训练提交
-              {capability.trainingSubmitSupported ? '支持' : '不支持'}（{capability.adapterVersion}）
-            </li>
-          ))}
-        </ul>
         <Notice>
-          在 AI记账中导入图片、查看任务并逐笔审核。识别质量仍为实验性；mock 为本地模拟，不能证明真实 API 可用。
+          可在“AI 记账”中导入消费截图，识别结果经你逐笔核对后才会入账。不配置 AI 也可完整使用手工记账。
         </Notice>
+        <details className="subtle-disclosure">
+          <summary>技术信息</summary>
+          <MetaList
+            entries={[
+              ['提示词版本', ai?.promptVersion ?? '—'],
+              ['候选 schema', ai?.schemaVersion ?? '—'],
+            ]}
+          />
+          <ul className="tiny">
+            {capabilities.map((capability) => (
+              <li key={capability.providerId}>
+                {capability.providerId}：图片 {capability.supportsImage ? '声明支持' : '不支持'} · 结构化输出{' '}
+                {capability.structuredOutputStatus} · 训练提交
+                {capability.trainingSubmitSupported ? '支持' : '不支持'}（{capability.adapterVersion}）
+              </li>
+            ))}
+          </ul>
+        </details>
       </Panel>
 
       <Panel
@@ -207,60 +227,81 @@ export function SettingsPage({ ai: initialAi, secret: initialSecret, capabilitie
             spellCheck={false}
             ref={secretInput}
             disabled={busy}
-            placeholder="请输入 DeepSeek API 密钥"
+            placeholder={secret?.configured ? '输入新密钥以替换当前配置' : '请输入 DeepSeek API 密钥'}
             aria-describedby="secret-hint"
           />
           <span className="field-hint" id="secret-hint">
-            提交进入受限 IPC 后立即清空；已保存的密钥不会回读到界面。
+            提交后立即清空输入框，已保存的密钥不会回显。
           </span>
         </div>
         <div className="form-actions">
+          {secret?.encryptionAvailable !== false ? (
+            <button
+              type="button"
+              className="button button-primary"
+              onClick={() => void submitSecret('encrypted')}
+              disabled={busy}
+            >
+              保存到本机加密存储
+            </button>
+          ) : null}
           <button
             type="button"
-            className="button button-primary"
-            onClick={() => void submitSecret('encrypted')}
-            disabled={busy}
-          >
-            保存到本机加密存储
-          </button>
-          <button
-            type="button"
-            className="button"
+            className={secret?.encryptionAvailable === false ? 'button button-primary' : 'button'}
             onClick={() => void submitSecret('session')}
             disabled={busy}
           >
             仅本次会话
           </button>
-          <button type="button" className="button" onClick={() => void removeSecret()} disabled={busy}>
-            移除密钥
-          </button>
+          {secret?.configured ? (
+            confirmRemove ? (
+              <>
+                <button type="button" className="button button-danger" onClick={() => void removeSecret()} disabled={busy}>
+                  确认移除密钥
+                </button>
+                <button type="button" className="button" onClick={() => setConfirmRemove(false)} disabled={busy}>
+                  取消
+                </button>
+              </>
+            ) : (
+              <button type="button" className="button button-danger-ghost" onClick={() => setConfirmRemove(true)} disabled={busy}>
+                移除密钥
+              </button>
+            )
+          ) : null}
         </div>
-        {message ? <p className="tiny">{message}</p> : null}
+        {message ? <p className="notice" role="status">{message}</p> : null}
         {error ? (
           <p className="notice" data-tone="danger" role="alert">
             {error}
           </p>
         ) : null}
-        <p className="tiny">
-          系统加密可用：{secret ? (secret.encryptionAvailable ? '是' : '否（将仅本次会话保留）') : '读取中…'}
-        </p>
-        {secret?.lastErrorCode ? <p role="alert">密钥不可读取，请明确移除后重新配置：{secret.lastErrorCode}</p> : null}
+        {secret && !secret.encryptionAvailable ? (
+          <p className="tiny">当前系统暂不支持加密存储，密钥仅在本次会话保留。</p>
+        ) : null}
+        {secret?.lastErrorCode ? <p role="alert" className="error-line">已存密钥无法读取，请移除后重新配置：{secret.lastErrorCode}</p> : null}
       </Panel>
 
-      <Panel title="真实图片探针（S09）">
-        <p>仅上传程序内置的无隐私合成消费图，验证图片输入和 JSON 输出；不会上传账本，也不会入账或加入数据集。单次请求可能收费，最长等待90秒，不自动重试。</p>
-        <label><input type="checkbox" checked={consent} disabled={busy} onChange={(event) => setConsent(event.target.checked)} />我同意上传合成测试图并接受本次 API 费用</label>
-        <div className="form-actions"><button type="button" className="button button-primary" disabled={busy || !consent || !secret?.configured} onClick={() => void runProbe()}>运行一次真实图片探针</button></div>
-        {!secret?.configured ? <p>请先通过上方密码框配置本应用密钥，无需粘贴到聊天。</p> : null}
-        {busy ? <p role="status">正在处理实际操作，请稍候…</p> : null}
-        {probe ? <pre style={{ whiteSpace: 'pre-wrap', overflowWrap: 'anywhere' }} data-probe-result>{JSON.stringify(probe, null, 2)}</pre> : null}
+      <Panel title="连接测试">
+        <p className="muted">发送一张程序内置的无隐私测试图，验证 API 密钥与识图服务是否正常可用（不会上传账本，也不会入账）。</p>
+        {!secret?.configured ? (
+          <p className="tiny">请先在上方配置 API 密钥，再运行连接测试。</p>
+        ) : (
+          <>
+            <label className="check-row"><input type="checkbox" checked={consent} disabled={busy} onChange={(event) => setConsent(event.target.checked)} />我同意发送内置测试图并了解可能产生少量 API 费用</label>
+            <div className="form-actions"><button type="button" className="button button-primary" disabled={busy || !consent} onClick={() => void runProbe()}>{busy ? '正在测试连接…' : '测试识图连接'}</button></div>
+          </>
+        )}
+        {probe ? <details className="subtle-disclosure" open><summary>测试结果</summary><pre className="raw-json" data-probe-result>{JSON.stringify(probe, null, 2)}</pre></details> : null}
       </Panel>
 
       <Panel title="本地数据">
-        <p>存储位置：<code className="storage-location">%LOCALAPPDATA%\BookKeepAI</code>（当前 Windows 用户）</p>
-        <p className="tiny">账本及附件：data · 备份：backups · 日志：logs · 密钥：secrets。手工记账与已有数据浏览在本机处理。</p>
+        <div className="storage-path-row">
+          <span>存储位置：<code className="storage-location">%LOCALAPPDATA%\BookKeepAI</code></span>
+          <button type="button" className="button button-small" onClick={() => void copyStoragePath()}>{copiedPath ? '已复制' : '复制路径'}</button>
+        </div>
         <p className="muted">
-          数据库、附件、备份与脱敏日志保存在当前 Windows 用户目录下的 BookKeepAI 文件夹，与程序解压目录分离；移动或重新解压程序不会移动账本。
+          账本、附件、备份与日志均保存在当前 Windows 用户目录下，与程序文件分离；移动或更新程序不会丢失账本。
         </p>
         <div className="form-actions">
           <button type="button" className="button" onClick={() => onNavigate('data')}>
@@ -274,11 +315,13 @@ export function SettingsPage({ ai: initialAi, secret: initialSecret, capabilitie
           entries={[
             ['应用', `BookKeepAI ${APP_VERSION}`],
             ['发行者', '瀚宇铭'],
-            ['契约版本', CONTRACT_VERSION],
-            ['AI 状态', '实验性：真实识别质量尚未验收'],
             ['第三方许可', 'Electron / React / Lucide（ISC + MIT）等，见随包 licenses 目录'],
           ]}
         />
+        <details className="subtle-disclosure">
+          <summary>版本与契约信息</summary>
+          <MetaList entries={[['契约版本', CONTRACT_VERSION], ['AI 状态', '实验性：真实识别质量需结合实际使用核对']]} />
+        </details>
         <button type="button" className="privacy-link" onClick={() => setPrivacyOpen(true)}>隐私政策</button>
       </Panel>
       {privacyOpen ? <PrivacyPolicy onClose={() => setPrivacyOpen(false)} /> : null}
