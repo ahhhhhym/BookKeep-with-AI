@@ -44,7 +44,7 @@ try {
   }
   assert.deepEqual((await snapshot()).formal, { count: 3, total: 3330 }); check('real-form-F01-integer-fen-3330');
   await nav('statistics');
-  await page.getByLabel('选择周期日期').fill('2026-09-09'); await page.getByRole('button', { name: '选择周期', exact: true }).click();
+  await page.getByLabel('选择周期日期').fill('2026-09-09');
   await page.locator('[data-statistics-total="3330"]').waitFor();
   await page.getByRole('button', { name: '月', exact: true }).click(); await page.locator('[data-statistics-total="3330"]').waitFor();
   const days = await invoke('statistics.series', scope('month')); assert.equal(days.points.length, 30);

@@ -6,19 +6,26 @@ import { parseAmountYuanToFen, formatFenToYuan } from '../../shared/amount';
 import { call,BridgeError } from '../lib/bridge';
 import { describeError } from '../lib/messages';
 import { formatAmountFen } from '../lib/format';
-import { Notice, PageHeader, Panel } from '../components/ui';
+import { EmptyState, Notice, PageHeader, Panel } from '../components/ui';
 import { ImagePreview } from '../components/ImagePreview';
 import { Modal } from '../components/Modal';
+import { SlidingSegments } from '../components/SlidingSegments';
 import type { LeaveGuard } from '../components/ExpenseEditor';
 import type { Evidence } from '../../shared/candidate';
+import type { NavId } from '../../shared/nav';
 
 const fieldNames={amount:'实付金额',date:'实际日期及时间精度',name:'购买物或服务名称',category:'分类'} as const;
+const PROPOSAL_LABELS: Record<string, string> = {
+  amountFen: '实付金额', occurredDate: '实际日期', name: '购买物或服务名称',
+  categoryId: '分类', occurredTime: '精确时间', merchant: '商户',
+  transactionKind: '交易状态', amountBasis: '实付口径', groupKey: '付款组',
+};
 const emptyChecks=()=>({amount:false,date:false,name:false,category:false});
 const statusNames={pending_review:'待审核',rejected:'已拒绝',approved:'已入账',deleted:'已删除'};
 const reasonNames:Record<string,string>={REVIEW_INCOMPLETE:'字段缺失或尚未逐项核对',DUPLICATE_UNRESOLVED:'重复疑点尚未处理',NON_EXPENSE:'尚未核实为真实支出',TOTAL_DETAIL_AMBIGUOUS:'合计与明细须先明确并拒绝重复项',CATEGORY_DISABLED:'分类已停用',REVIEW_STALE:'候选或账本已变化，请重新核对',STATE_CONFLICT:'状态已变化',VERSION_CONFLICT:'版本已变化，请重新读取'};
 const humanReason=(s:string)=>reasonNames[s]??(s.startsWith('WARNING:')?'仍有字段疑点需要核实':s);
 
-export function ReviewPage({registerGuard}:{registerGuard?:(g:LeaveGuard)=>void}):JSX.Element {
+export function ReviewPage({registerGuard,onNavigate}:{registerGuard?:(g:LeaveGuard)=>void;onNavigate?:(id:NavId)=>void}):JSX.Element {
   const [data,setData]=useState<ReviewList|null>(null),[categories,setCategories]=useState<CategoryView[]>([]);
   const [error,setError]=useState<string|null>(null),[message,setMessage]=useState('');
   const [loading,setLoading]=useState(false),[busy,setBusy]=useState(false);
@@ -73,21 +80,28 @@ export function ReviewPage({registerGuard}:{registerGuard?:(g:LeaveGuard)=>void}
     if(!candidate||candidate.version!==item.expectedVersion||candidate.reviewDigest!==item.confirmation.reviewDigest)return;
     setSingle({item,candidate,categoryName:categories.find(cat=>cat.id===candidate.current.categoryId)?.name??'分类已不可用，请返回重新核对'});
   };
+  const totalCandidates = Object.values(data?.counts ?? {}).reduce((s, n) => s + n, 0);
+  const pendingCount = data?.counts.pending_review ?? 0;
+  const reviewSegments = (['all', 'pending_review', 'approved', 'rejected', 'deleted'] as const).map(state => ({
+    value: state,
+    label: `${state === 'all' ? '全部' : statusNames[state]}（${state === 'all' ? totalCandidates : data?.counts[state] ?? 0}）`,
+  }));
   return <div className="page" onKeyDownCapture={e=>{
     // 模态内 Ctrl+Enter 也不能激活最终确认；普通 Enter/Space 仍由按钮处理。
     if(e.ctrlKey&&e.key==='Enter'&&document.querySelector('dialog[open]')){e.preventDefault();e.stopPropagation();}
-  }}><PageHeader title="候选审核" subtitle="对照图片逐项核实，确认后才进入正式账本" actions={<button className="button" disabled={busy||loading} onClick={refresh}>重新读取</button>}/>
-    <Notice title="每笔均需人工确认">未知商品请填写实际购买物或服务；模型置信度仅供参考。待审核、拒绝和识别失败都不影响正式统计。</Notice>
-    <Panel title="本地人审活动记录" actions={<button className="button" onClick={()=>void call(a=>a.maintenance.reviewMetrics({jobId:null})).then(setEffort).catch(e=>setError(describeError(e)))}>读取人审记录</button>}>
-      {effort?<p data-review-effort>完成{String(effort.completedSessions)}个图片会话，未完成{String(effort.incompleteSessions)}个；活动耗时{effort.activeMs===null?'未采集':`${Math.round(Number(effort.activeMs)/1000)}秒`}，未完成会话已耗{effort.incompleteActiveMs===null?'未采集':`${Math.round(Number(effort.incompleteActiveMs)/1000)}秒`}。实际/估算费用未采集。</p>:<p className="tiny">按图片记录实质保存修改与补填，全部候选批准或拒绝后才完成；可恢复删除仍计入未完成。连续60秒空闲暂停、失焦暂停；不把推理耗时计作人审耗时。</p>}
-    </Panel>
-    <div className="segmented review-status" role="group" aria-label="候选状态筛选">{(['all','pending_review','approved','rejected','deleted'] as const).map(state=><button key={state} aria-pressed={filter===state} disabled={busy||loading} onClick={()=>{const go=()=>{dirty.current.clear();setFilter(state);};if(dirty.current.size)setLeave(()=>go);else go();}}>{state==='all'?'全部':statusNames[state]}（{state==='all'?Object.values(data?.counts??{}).reduce((s,n)=>s+n,0):data?.counts[state]??0}）</button>)}</div>
-    {data?.items.length?<details className="review-source-nav"><summary>按来源图片定位（当前已加载{data.items.length}笔）</summary>{[...new Set(data.items.map(c=>c.jobId))].map(job=><p key={job}>来源任务 {job.slice(0,8)}：{data.items.filter(c=>c.jobId===job).map(c=><button className="button" key={c.id} onClick={()=>document.getElementById(`candidate-${c.id}`)?.scrollIntoView({block:'start'})}>{c.current.name??'未知商品'} · {statusNames[c.reviewState]}</button>)}</p>)}</details>:null}
-    {error?<p role="alert">{error} 请重新读取并核对；不会自动重试批准。</p>:null}{message?<p role="status">{message}</p>:null}
-    <div className="review-toolbar"><span>已逐笔选择 {Object.keys(selected).length} 笔（最多100笔）</span><button className="button primary" disabled={busy||!Object.keys(selected).length} onClick={()=>void approve({mode:'preview',items:Object.values(selected)})}>预览批量批准</button></div>
-    <Panel title={`候选记录（${data?.totalCount??0}）`}>{loading&&!data?<p role="status">正在读取候选和证据…</p>:!data?.items.length?<p>暂无待审核记录。</p>:data.items.map(c=><ReviewCard key={`${c.id}:${c.version}:${c.reviewDigest}:${draftGeneration}`} candidate={c} categories={categories} onBeforeLifecycle={next=>{if(dirty.current.size)setLeave(()=>next);else next();}} onLifecycle={async()=>{setSelected({});setSingle(null);setPreview(null);intent.current=null;await load();requestAnimationFrame(()=>document.querySelector<HTMLButtonElement>('.review-status button[aria-pressed="true"]')?.focus());}} onChange={changed} onDirty={changeDirty} onSelect={select} selected={!!selected[c.id]} onApprove={openSingle} disabled={busy||loading}/>)}
+  }}><PageHeader title="候选审核" subtitle="对照图片核实后才会记入正式账本" actions={<button className="button" disabled={busy||loading} onClick={refresh}>刷新</button>}/>
+    <Notice title="每笔均需人工确认">未确认或已拒绝的记录不会影响正式账本与统计。</Notice>
+    <SlidingSegments className="review-status" value={filter} items={reviewSegments} label="候选状态筛选" disabled={busy||loading} onChange={state=>{if(busy||loading||state===filter)return;const go=()=>{dirty.current.clear();setFilter(state);};if(dirty.current.size)setLeave(()=>go);else go();}} />
+    {data && data.items.length > 1?<details className="review-source-nav subtle-disclosure"><summary>按来源图片快速定位（共 {data.items.length} 笔）</summary>{[...new Set(data.items.map(c=>c.jobId))].map(job=><p key={job}>来源任务 {job.slice(0,8)}：{data.items.filter(c=>c.jobId===job).map(c=><button className="button button-small" key={c.id} onClick={()=>document.getElementById(`candidate-${c.id}`)?.scrollIntoView({block:'start'})}>{c.current.name??'未知商品'} · {statusNames[c.reviewState]}</button>)}</p>)}</details>:null}
+    {error?<p role="alert" className="error-line">{error} 请刷新并核对；不会自动重试批准。</p>:null}{message?<p role="status" className="notice">{message}</p>:null}
+    {pendingCount > 0 || Object.keys(selected).length > 0 ? <div className="review-toolbar"><span>已选择 {Object.keys(selected).length} 笔（最多 100 笔）</span><button className="button button-primary" disabled={busy||!Object.keys(selected).length} onClick={()=>void approve({mode:'preview',items:Object.values(selected)})}>预览批量批准</button></div> : null}
+    <Panel title={`候选记录（${data?.totalCount??0}）`}>{loading&&!data?<p role="status">正在读取候选和证据…</p>:!data?.items.length?<EmptyState title={filter === 'all' ? '暂无候选记录' : `暂无${statusNames[filter]}记录`} action={filter === 'all' && onNavigate ? <button type="button" className="button button-primary" onClick={() => onNavigate('import')}>去导入图片</button> : undefined}>图片识别完成后，待核对的消费记录会出现在这里。</EmptyState>:data.items.map(c=><ReviewCard key={`${c.id}:${c.version}:${c.reviewDigest}:${draftGeneration}`} candidate={c} categories={categories} onBeforeLifecycle={next=>{if(dirty.current.size)setLeave(()=>next);else next();}} onLifecycle={async()=>{setSelected({});setSingle(null);setPreview(null);intent.current=null;await load();requestAnimationFrame(()=>document.querySelector<HTMLButtonElement>('.review-status button[aria-pressed="true"]')?.focus());}} onChange={changed} onDirty={changeDirty} onSelect={select} selected={!!selected[c.id]} onApprove={openSingle} disabled={busy||loading}/>)}
       {data?.nextCursor?<button className="button" disabled={loading||busy||dirty.current.size>0} onClick={()=>void load(data.nextCursor)}>加载更多候选</button>:null}
     </Panel>
+    <details className="subtle-disclosure"><summary>本地人审活动记录</summary>
+      <div className="form-actions" style={{marginTop:10}}><button className="button button-small" onClick={()=>void call(a=>a.maintenance.reviewMetrics({jobId:null})).then(setEffort).catch(e=>setError(describeError(e)))}>读取人审记录</button></div>
+      {effort?<p data-review-effort style={{marginTop:8}}>完成 {String(effort.completedSessions)} 个图片会话，未完成 {String(effort.incompleteSessions)} 个；活动耗时 {effort.activeMs===null?'未采集':`${Math.round(Number(effort.activeMs)/1000)} 秒`}，未完成会话已耗 {effort.incompleteActiveMs===null?'未采集':`${Math.round(Number(effort.incompleteActiveMs)/1000)} 秒`}。</p>:<p className="tiny" style={{marginTop:8}}>按图片记录实质保存修改与补填，全部候选处理后才完成。连续 60 秒空闲或窗口失焦时自动暂停计时。</p>}
+    </details>
     {single?<Modal title="确认本笔入账" busy={busy} onClose={()=>{cancelReview([single.candidate.jobId]);setSingle(null);}}><p>将入账1笔，合计{formatAmountFen(single.candidate.current.amountFen)}。</p><dl><dt>购买物或服务名称</dt><dd>{single.candidate.current.name}</dd><dt>实际日期及时间精度</dt><dd>{single.candidate.current.occurredDate} · {single.candidate.current.timePrecision==='minute'?`${single.candidate.current.occurredTime}（精确到分钟）`:'仅日期，精确时间未知'}</dd><dt>分类</dt><dd>{single.categoryName}</dd></dl><p>请确认已对照图片核实金额、日期、名称和分类。</p><div className="form-actions"><button className="button" disabled={busy} onClick={()=>{cancelReview([single.candidate.jobId]);setSingle(null);}}>取消</button><button className="button primary" disabled={busy} onClick={()=>void approve({mode:'single',...single.item})}>{busy?'正在原子入账…':'确认本笔入账'}</button></div></Modal>:null}
     {preview?<Modal title="批量批准预览" busy={busy} onClose={()=>{cancelReview(preview.eligible.map(c=>c.jobId));setPreview(null);}}><p className="point-total">将入账{preview.count}笔，合计{formatAmountFen(Number(preview.totalFen))}</p><ul>{preview.eligible.map(c=><li key={c.id}>{c.current.name} · {formatAmountFen(c.current.amountFen!)} · {c.current.occurredDate} · {categories.find(cat=>cat.id===c.current.categoryId)?.name} <small>{c.id}</small></li>)}</ul>
       {preview.excluded.length?<><h3>已排除（不入账）</h3><ul>{preview.excluded.map(e=><li key={e.id}>{e.id}：{e.reasons.map(humanReason).join('；')}</li>)}</ul></>:null}<p>确认有效期60秒；候选或账本变化后需重新预览。</p><div className="form-actions"><button className="button" disabled={busy} onClick={()=>{cancelReview(preview.eligible.map(c=>c.jobId));setPreview(null);}}>取消</button><button className="button primary" disabled={busy||!preview.previewToken} onClick={()=>void approve({mode:'commit',previewToken:preview.previewToken!})}>{busy?'正在原子入账…':`确认入账${preview.count}笔`}</button></div></Modal>:null}
@@ -171,14 +185,14 @@ function ReviewCard({candidate:c,categories,onChange,onDirty,onSelect,selected,o
         <label>实付口径<select aria-label="实付口径" value={fields.amountBasis??''} onChange={e=>edit({amountBasis:(e.target.value||null) as EditableFields['amountBasis']})}><option value="">未知</option><option value="paid_total">订单实付合计</option><option value="line_payment">一次独立付款</option></select></label>
         <label>付款组（同订单须相同）<input aria-label="付款组" value={fields.groupKey??''} maxLength={64} onChange={e=>edit({groupKey:e.target.value||null})}/></label>
       </div></fieldset>
-      <details className="review-original"><summary>AI原值 → 当前值 / 字段依据</summary><dl>{(['amountFen','occurredDate','name','categoryId','occurredTime','merchant','transactionKind','amountBasis','groupKey'] as const).map(field=><div key={field}><dt>{field}</dt><dd>{String(c.proposal[field]??'未知')} → {String(c.current[field]??'未知')} <button className="button" onClick={()=>locate(field)}>查看{field}依据</button></dd></div>)}</dl></details>
+      <details className="review-original"><summary>AI 原值与当前值对照</summary><dl>{(['amountFen','occurredDate','name','categoryId','occurredTime','merchant','transactionKind','amountBasis','groupKey'] as const).map(field=><div key={field}><dt>{PROPOSAL_LABELS[field] ?? field}</dt><dd>{String(c.proposal[field]??'未知')} → {String(c.current[field]??'未知')} <button className="button button-small" onClick={()=>locate(field)}>定位依据</button></dd></div>)}</dl></details>
       <label className="review-reason">修改、核实或拒绝理由（必填）<textarea aria-label="处理理由" value={reason} maxLength={500} disabled={locked} onChange={e=>setReason(e.target.value)} placeholder="请说明实际依据；重复消费需解释为何是另一笔"/></label>
-      {error?<p role="alert">{error} 补填仍保留在表单，请重新读取后对照处理。</p>:null}
-      {pending?<><div className="form-actions"><button className="button" disabled={locked||!dirty||!reason.trim()} onClick={()=>void save()}>保存补填</button><button className="button" disabled={locked||dirty} onClick={()=>setLater(true)}>稍后处理</button><button className="button danger" disabled={locked||dirty||!reason.trim()} onClick={()=>void run({id:c.id,expectedVersion:c.version,reason},true)}>拒绝本笔</button></div>
+      {error?<p role="alert" className="error-line">{error} 补填仍保留在表单，请刷新后对照处理。</p>:null}
+      {pending?<><div className="form-actions"><button className="button" disabled={locked||!dirty||!reason.trim()} onClick={()=>void save()}>保存补填</button><button className="button" disabled={locked||dirty} onClick={()=>setLater(true)}>稍后处理</button><button className="button button-danger" disabled={locked||dirty||!reason.trim()} onClick={()=>void run({id:c.id,expectedVersion:c.version,reason},true)}>拒绝本笔</button></div>
         <fieldset disabled={locked||dirty||!ready||c.blocking}><legend>已对照图片逐项核实</legend>{Object.entries(fieldNames).map(([k,label])=><label className="check-row" key={k}><input type="checkbox" aria-label={`确认${label}`} checked={checks[k as keyof typeof checks]} onChange={e=>{setChecks(old=>({...old,[k]:e.target.checked}));onSelect(c.id,null);}}/>{label}</label>)}</fieldset>
         {!ready?<p>来源图片暂不可读，当前不能核对批准。</p>:null}{c.blocking?<p>待处理：{c.blockingReasons.map(humanReason).join('；')}</p>:null}
-        <div className="form-actions"><button className="button primary" disabled={locked||!pending||(!canApprove&&!errors.length)} onClick={()=>{if(!focusError()&&canApprove)onApprove(item());}}>批准本笔</button><label className="check-row"><input type="checkbox" aria-label="加入批量批准" disabled={locked||!all||c.blocking||c.highRisk} checked={selected} onChange={e=>onSelect(c.id,e.target.checked?item():null)}/>加入批量批准</label></div></>:<button className="button" disabled={locked||!reason.trim()} onClick={()=>void run({id:c.id,expectedVersion:c.version,action:'reopen',reason})}>恢复审核</button>}
+        <div className="form-actions"><button className="button button-primary" disabled={locked||!pending||(!canApprove&&!errors.length)} onClick={()=>{if(!focusError()&&canApprove)onApprove(item());}}>批准本笔</button><label className="check-row"><input type="checkbox" aria-label="加入批量批准" disabled={locked||!all||c.blocking||c.highRisk} checked={selected} onChange={e=>onSelect(c.id,e.target.checked?item():null)}/>加入批量批准</label></div></>:<button className="button" disabled={locked||!reason.trim()} onClick={()=>void run({id:c.id,expectedVersion:c.version,action:'reopen',reason})}>恢复审核</button>}
     </div></div></div></>}</>}
-    <p className="tiny hash-text">候选 {c.id} · v{c.version} · 来源任务 {c.jobId} · SHA256 {c.preparedHash}</p>
+    <details className="subtle-disclosure"><summary>技术摘要</summary><p className="tiny hash-text">候选 {c.id} · v{c.version} · 来源任务 {c.jobId} · SHA256 {c.preparedHash}</p></details>
   </article>;
 }

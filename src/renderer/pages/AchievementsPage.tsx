@@ -1,7 +1,15 @@
 import { useState, type JSX } from 'react';
 import { achievementController, useAchievementContent } from '../lib/achievement-controller';
 import { AppIcon } from '../lib/icon-registry';
+import { PageHeader } from '../components/ui';
+import { SlidingSegments } from '../components/SlidingSegments';
 import type { AchievementView } from '../../shared/achievements';
+
+const ACHIEVEMENT_FILTERS = [
+  { value: 'all', label: '全部' },
+  { value: 'unlocked', label: '已解锁' },
+  { value: 'locked', label: '未解锁' },
+] as const;
 
 function unlockLabel(item: AchievementView): string {
   if (item.origin === 'history' || !item.unlockedAt) return '历史补领';
@@ -11,18 +19,16 @@ export function AchievementsPage(): JSX.Element {
   const {data,error,loading} = useAchievementContent();
   const [filter,setFilter] = useState<'all'|'unlocked'|'locked'>('all');
   const items = data?.items.filter(item => filter === 'all' || (filter === 'unlocked' ? item.unlocked : !item.unlocked)) ?? [];
-  return <section className="page achievements-page" aria-labelledby="achievements-heading" data-achievements-stage="complete">
-    <div className="page-header"><h1 id="achievements-heading">成就</h1><p className="muted">每一次认真记录，都值得留念。</p></div>
+  return <section className="page achievements-page" aria-label="成就" data-achievements-stage="complete">
+    <PageHeader title="成就" subtitle="每一次认真记录，都值得留念。" />
     {loading ? <p role="status">正在读取成就…</p> : error ? <div className="notice" data-tone="danger" role="alert"><p>成就读取失败：{error}</p><button type="button" className="button" onClick={achievementController.retry}>重新读取成就</button></div> : data ? <>
       <div className="achievement-summary" aria-label="成就概况">
         <div><strong>已解锁 {data.items.filter(i=>i.unlocked).length} / {data.items.length}</strong><span>成就</span></div>
         <div><strong>{data.progress.currentStreak} 天</strong><span>当前连续记账</span></div>
         <div><strong>{data.progress.longestStreak} 天</strong><span>历史最长连续</span></div>
       </div>
-      <div className="segmented achievement-filters" role="group" aria-label="成就筛选">
-        {([['all','全部'],['unlocked','已解锁'],['locked','未解锁']] as const).map(([id,label]) => <button type="button" key={id} aria-pressed={filter === id} onClick={() => setFilter(id)}>{label}</button>)}
-      </div>
-      {!items.length ? <p className="notice" role="status">没有符合筛选的成就。</p> : <div className="achievement-grid">
+      <SlidingSegments className="achievement-filters" value={filter} items={ACHIEVEMENT_FILTERS} label="成就筛选" onChange={setFilter} />
+      {!items.length ? <p className="notice" role="status">{filter === 'unlocked' ? '还没有解锁的成就，记下几笔支出试试吧。' : '全部成就都已解锁！'}</p> : <div className="achievement-grid">
         {items.map(item => <article className="achievement-card" key={item.id} data-achievement={item.id} data-unlocked={item.unlocked}>
           <div className="achievement-badge"><AppIcon iconKey="lucide:party-popper" size={26}/><span aria-hidden="true">{item.unlocked ? '✓' : '○'}</span></div>
           <h2>{item.name}</h2><p className="muted">{item.condition}</p>

@@ -8,6 +8,20 @@ import { Modal } from './Modal';
 
 export type LeaveGuard = ((leave: () => void) => void) | null;
 
+const LAST_CATEGORY_KEY = 'bookkeep.lastCategoryId';
+
+function initialDraft(original: TransactionView | null, categories: CategoryView[]): ExpenseDraft {
+  const base = expenseDraft(original);
+  if (original) return base;
+  try {
+    const lastId = localStorage.getItem(LAST_CATEGORY_KEY);
+    if (lastId && categories.some((item) => item.id === lastId && item.enabled)) {
+      return { ...base, categoryId: lastId };
+    }
+  } catch { /* Ignore storage errors in restricted environments. */ }
+  return base;
+}
+
 export function ExpenseEditor({ original, categories, dataEpoch, onSaved, onClose, onRefresh, registerGuard }: {
   original: TransactionView | null; categories: CategoryView[];
   dataEpoch: string;
@@ -15,8 +29,8 @@ export function ExpenseEditor({ original, categories, dataEpoch, onSaved, onClos
   onRefresh: () => Promise<void>; registerGuard: (guard: LeaveGuard) => void;
 }): JSX.Element {
   const [base, setBase] = useState(original);
-  const [draft, setDraft] = useState(() => expenseDraft(original));
-  const initial = useRef(JSON.stringify(expenseDraft(original)));
+  const [draft, setDraft] = useState(() => initialDraft(original, categories));
+  const initial = useRef(JSON.stringify(draft));
   const [errors, setErrors] = useState<Partial<Record<keyof ExpenseDraft, string>>>({});
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
@@ -81,6 +95,7 @@ export function ExpenseEditor({ original, categories, dataEpoch, onSaved, onClos
       const result = await call((api) => base
         ? api.transaction.update({ id: base.id, expectedVersion: base.version, patch: input }, { mutationId, dataEpoch })
         : api.transaction.create(input, { mutationId, dataEpoch }));
+      try { localStorage.setItem(LAST_CATEGORY_KEY, input.categoryId); } catch { /* Ignore storage errors. */ }
       setUncertain(false); onSaved(result.transaction); afterSave?.();
     } catch (failure) {
       const code = errorCodeOf(failure);
@@ -112,32 +127,32 @@ export function ExpenseEditor({ original, categories, dataEpoch, onSaved, onClos
         if (event.key === 'Enter' && event.ctrlKey) { event.preventDefault(); void save(); }
         else if (event.key === 'Enter' && event.target instanceof HTMLInputElement) event.preventDefault();
       }}>
+        <p className="tiny muted">人民币 · 北京时间</p>
         {base ? <p className="tiny">来源：{base.source === 'manual' ? '手工记账' : 'AI审核入账'}{base.sourceCandidateId ? ` · 候选 ${base.sourceCandidateId}` : ''}</p> : null}
         <fieldset disabled={busy || uncertain || epochChanged || conflict} className="expense-fields">
           <label className="field" htmlFor="expense-amount">金额（元，必填）<input {...attrs('amount')} type="text" inputMode="decimal" autoFocus value={draft.amount} onChange={(event) => change('amount', event.target.value)} placeholder="0.00" />{fieldError('amount')}</label>
           <label className="field" htmlFor="expense-date">日期（必填）<input {...attrs('date')} type="date" min="1900-01-01" max="9998-12-31" value={draft.date} onChange={(event) => change('date', event.target.value)} />{fieldError('date')}</label>
-          <label className="field expense-wide" htmlFor="expense-name">购买物或服务名称（必填）<input {...attrs('name')} type="text" value={draft.name} onChange={(event) => change('name', event.target.value)} />{fieldError('name')}</label>
-          <label className="field expense-wide" htmlFor="expense-categoryId">消费分类（必填）<select {...attrs('categoryId')} value={draft.categoryId} onChange={(event) => change('categoryId', event.target.value)}>
+          <label className="field expense-wide" htmlFor="expense-name">购买物或服务名称（必填）<input {...attrs('name')} type="text" value={draft.name} placeholder="如：午餐、地铁、日用品" onChange={(event) => change('name', event.target.value)} />{fieldError('name')}</label>
+          <label className="field" htmlFor="expense-categoryId">消费分类（必填）<select {...attrs('categoryId')} value={draft.categoryId} onChange={(event) => change('categoryId', event.target.value)}>
             <option value="">请选择消费分类</option>{categories.filter((item) => item.enabled || item.id === base?.categoryId).map((item) => <option key={item.id} value={item.id}>{item.name}{item.enabled ? '' : '（已停用，可原样保留）'}</option>)}
           </select>{fieldError('categoryId')}</label>
-          <label className="expense-wide"><input type="checkbox" checked={draft.knownTime} onChange={(event) => change('knownTime', event.target.checked)} /> 记录精确时间（不选则仅日期，时间未知）</label>
-          {draft.knownTime ? <label className="field" htmlFor="expense-time">时刻<input {...attrs('time')} type="time" value={draft.time} onChange={(event) => change('time', event.target.value)} />{fieldError('time')}</label> : null}
-          <label className="field expense-wide" htmlFor="expense-merchant">商户（选填）<input {...attrs('merchant')} value={draft.merchant} onChange={(event) => change('merchant', event.target.value)} />{fieldError('merchant')}</label>
-          <label className="field expense-wide" htmlFor="expense-note">备注（选填）<textarea {...attrs('note')} rows={3} value={draft.note} onChange={(event) => change('note', event.target.value)} />{fieldError('note')}</label>
+          <label className="field" htmlFor="expense-time">时刻（选填）<input {...attrs('time')} type="time" value={draft.time} onChange={(event) => { const next = event.target.value; setDraft((current) => ({ ...current, time: next, knownTime: next.length > 0 })); setErrors((current) => ({ ...current, time: undefined })); }} />{fieldError('time')}</label>
+          <label className="field expense-wide" htmlFor="expense-merchant">商户（选填）<input {...attrs('merchant')} value={draft.merchant} placeholder="可选填店名或平台" onChange={(event) => change('merchant', event.target.value)} />{fieldError('merchant')}</label>
+          <label className="field expense-wide" htmlFor="expense-note">备注（选填）<textarea {...attrs('note')} rows={2} value={draft.note} placeholder="可选填补充说明" onChange={(event) => change('note', event.target.value)} />{fieldError('note')}</label>
         </fieldset>
-        {draft.date > todayInShanghai() ? <label className="future-confirm"><input type="checkbox" disabled={busy || uncertain || epochChanged} checked={futureConfirmed} onChange={(event) => setFutureConfirmed(event.target.checked)} /> 所选日期在未来，当前周期统计尚不计入。我已核实日期。</label> : null}
+        {draft.date > todayInShanghai() ? <label className="future-confirm"><input type="checkbox" disabled={busy || uncertain || epochChanged} checked={futureConfirmed} onChange={(event) => setFutureConfirmed(event.target.checked)} /> 所选日期在未来，当前周期统计暂不计入。我已确认日期。</label> : null}
         {error ? <p role="alert" className="error-line">{error}</p> : null}
         {uncertain ? <p className="tiny">保存结果尚未确认。请重试保存核实原提交，重试不会重复记账；核实前暂时锁定输入。</p> : null}
         {conflict ? <div className="conflict-review"><p>最新记录：{latest ? `${latest.name} · ${expenseDraft(latest).amount}元 · ${latest.occurredDate}${latest.deletedAt ? '（已删除）' : ''}` : '暂未读到，请重新读取。'}</p>
           <button type="button" className="button" disabled={busy} onClick={() => void refreshConflict().catch((failure: unknown) => setError(describeError(failure)))}>重新读取最新记录</button>
-          {latest && !latest.deletedAt ? <button type="button" className="button" onClick={() => { setBase(latest); attempt.current.reset(); setConflict(false); setUncertain(false); setError('已采用最新版本，请复核保留的输入后保存。'); }}>已核对最新记录，保留我的输入继续编辑</button> : null}
+          {latest && !latest.deletedAt ? <button type="button" className="button" onClick={() => { setBase(latest); attempt.current.reset(); setConflict(false); setUncertain(false); setError('已采用最新版本，请复核保留的输入后保存。'); }}>保留我的输入继续编辑</button> : null}
         </div> : null}
-        <div className="expense-actions"><button className="button" type="button" disabled={busy} onClick={() => requestLeave(onClose)}>取消</button><button className="button button-primary" type="submit" disabled={busy || epochChanged || conflict}>{busy ? '正在保存…' : uncertain ? '重试保存' : '保存支出'}</button></div>
+        <div className="expense-actions"><button className="button" type="button" disabled={busy} onClick={() => requestLeave(onClose)}>取消</button><button className="button button-primary" type="submit" title="保存（Ctrl+Enter）" disabled={busy || epochChanged || conflict}>{busy ? '正在保存…' : uncertain ? '重试保存' : '保存支出'}</button></div>
       </form>
     </Modal>
     {leaveAction ? <Modal title="有未保存的修改" busy={busy} onClose={() => {setLeaveAction(null);window.dispatchEvent(new Event("bookkeep:leave-cancel"));}}>
       <p>{uncertain ? '原提交结果尚未核实，请先重试保存。放弃输入不会撤销可能已提交的交易。' : '选择保存后离开，或放弃本次修改。'}</p>
-      <div className="expense-actions"><button className="button" disabled={busy} onClick={() => {setLeaveAction(null);window.dispatchEvent(new Event("bookkeep:leave-cancel"));}}>继续编辑</button><button className="button" disabled={busy} onClick={() => { const leave = leaveAction; setLeaveAction(null); onClose(); if (leave !== onClose) leave(); }}>放弃修改</button><button className="button button-primary" disabled={busy || epochChanged || conflict} onClick={() => { const leave = leaveAction; setLeaveAction(null); void save(leave); }}>保存并离开</button></div>
+      <div className="expense-actions"><button className="button" disabled={busy} onClick={() => {setLeaveAction(null);window.dispatchEvent(new Event("bookkeep:leave-cancel"));}}>继续编辑</button><button className="button button-danger-ghost" disabled={busy} onClick={() => { const leave = leaveAction; setLeaveAction(null); onClose(); if (leave !== onClose) leave(); }}>放弃修改</button><button className="button button-primary" disabled={busy || epochChanged || conflict} onClick={() => { const leave = leaveAction; setLeaveAction(null); void save(leave); }}>保存并离开</button></div>
     </Modal> : null}
   </>;
 }

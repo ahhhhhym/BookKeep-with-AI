@@ -195,9 +195,9 @@ export function DataPage({ onDataRestored }: { onDataRestored?: () => void }): J
       restoreIntent.current=null;
       setVerifyId(null);
       const displayedEpoch = await refreshAfterRestore();
-      if (displayedEpoch === result.newDataEpoch) setNotice(`恢复完成：已切换数据世代，当前修订号 ${result.revision}；恢复前备份 ${result.preRestoreBackupId.slice(0, 8)}…`);
+      if (displayedEpoch === result.newDataEpoch) setNotice('恢复完成！已自动为原数据创建“恢复前备份”。');
       else if (displayedEpoch) setNotice(RESTORE_STATUS_TEXT.previously_committed);
-      else { setVerifyId(restoreId); setNotice('本次恢复已提交；当前列表读取失败，暂无法核对当前数据世代，请再次只读核实。'); }
+      else { setVerifyId(restoreId); setNotice('本次恢复已提交；当前列表读取失败，暂无法核对当前数据，请再次只读核实。'); }
     } catch (commitError) {
       setPreview(null);
       await verifyRestore(restoreId);
@@ -214,31 +214,28 @@ export function DataPage({ onDataRestored }: { onDataRestored?: () => void }): J
     <div className="page">
       <PageHeader
         title="数据管理"
-        subtitle="CSV 导出、完整备份与恢复；数据库与备份保存在当前 Windows 用户目录，移动程序不会移动账本。"
+        subtitle="导出表格、备份与恢复账本；数据保存在本机用户目录，移动程序不会丢失账本。"
       />
 
       {error ? <ErrorLine message={error} /> : null}
       {notice ? <Notice title="操作完成">{notice}</Notice> : null}
-      {verifying ? <p role="status">正在只读核实恢复结果…</p> : null}
+      {verifying ? <p role="status">正在核实恢复结果…</p> : null}
       {verifyId ? <div className="form-actions"><span className="tiny">恢复编号：{verifyId}</span><button className="button" disabled={pending} onClick={() => void recheckRestore()}>重新核实本次恢复状态</button></div> : null}
-      <DatasetPanel key={datasetGeneration} />
 
       <div className="grid-2">
-        <Panel title="正式交易 CSV">
-          <p className="muted">导出全部正式未删除记录或当前筛选结果，UTF-8 带 BOM、CRLF、公式前缀转义。</p>
+        <Panel title="导出支出 CSV">
+          <p className="muted">导出全部正式支出为 Excel 可直接打开的 CSV 表格（UTF-8 编码）。</p>
           <div className="form-actions">
             <button type="button" className="button" disabled={pending} onClick={()=>void exportCsv()}>
-              选择保存位置并导出
+              导出 CSV
             </button>
           </div>
-          <p className="tiny">仅导出正式未删除交易；候选、失败任务和已删除记录不在范围内。</p>
+          <p className="tiny">仅包含正式未删除支出，不含待审草稿与已删除记录。</p>
         </Panel>
 
-        <Panel title="账本与附件备份" actions={<span className="tiny">不含密钥/日志/独立数据集</span>}>
+        <Panel title="账本备份与恢复" actions={<span className="tiny">不含密钥与日志</span>}>
           <p className="muted">
-            一致数据库快照，保存到 <code>%LOCALAPPDATA%\BookKeepAI\backups</code>；档案记录 schema、账本与修订号，
-            恢复前会再次校验 hash 与完整性。
-            包含候选与引用的原图/预处理图。独立数据集state/images/artifacts、撤回墓碑与test接触记录不在备份中，恢复时保持本地独立记录并使旧授权失效。
+            完整备份当前账本、待审记录与关联图片到本机目录。恢复前会自动校验文件完整性，并为当前数据创建“恢复前备份”。
           </p>
           <div className="form-actions">
             <button
@@ -258,26 +255,23 @@ export function DataPage({ onDataRestored }: { onDataRestored?: () => void }): J
         {records === null ? (
           <EmptyState title="正在读取备份…" />
         ) : records.length === 0 ? (
-          <EmptyState title={error ? '备份列表暂不可用' : '暂无备份'}>{error ? '请重新打开数据管理读取备份列表。' : '创建备份后可在此预览校验并恢复。'}</EmptyState>
+          <EmptyState title={error ? '备份列表暂不可用' : '暂无备份'}>{error ? '请重新打开数据管理读取备份列表。' : '点击上方“创建备份”即可生成本机快照，随时预览校验并恢复。'}</EmptyState>
         ) : (
           <table className="result-table">
             <thead>
               <tr>
                 <th>创建时间</th>
                 <th>类型</th>
-                <th>schema</th>
                 <th>大小</th>
                 <th>状态</th>
-                <th>SHA256</th>
                 <th>操作</th>
               </tr>
             </thead>
             <tbody>
               {records.map((record) => (
-                <tr key={record.id}>
+                <tr key={record.id} data-backup-id={record.id}>
                   <td>{formatTime(record.createdAt)}</td>
                   <td>{KIND_TEXT[record.kind]}</td>
-                  <td>{record.dbSchemaVersion}</td>
                   <td>{record.artifact ? formatSize(record.artifact.byteSize) : '—'}</td>
                   <td>
                     {record.status === 'completed'
@@ -292,18 +286,19 @@ export function DataPage({ onDataRestored }: { onDataRestored?: () => void }): J
                             : '文件缺失/校验冲突'
                           : record.status}
                   </td>
-                  <td title={record.archiveHash ?? ''}>{record.archiveHash?.slice(0, 12) ?? '—'}…</td>
                   <td>
-                    <button
-                      type="button"
-                      className="button button-small"
-                      disabled={pending || !['completed', 'processing'].includes(record.status) || record.artifact === null}
-                      title={record.artifact === null ? '备份文件缺失或校验冲突，无法恢复' : undefined}
-                      onClick={() => void previewRestore(record)}
-                    >
-                      校验并恢复
-                    </button>
-                    <button className="button button-small" disabled={pending||!record.artifact} onClick={()=>void saveBackup(record.id)}>另存备份</button>
+                    <div className="form-actions">
+                      <button
+                        type="button"
+                        className="button button-small"
+                        disabled={pending || !['completed', 'processing'].includes(record.status) || record.artifact === null}
+                        title={record.artifact === null ? '备份文件缺失或校验冲突，无法恢复' : undefined}
+                        onClick={() => void previewRestore(record)}
+                      >
+                        校验并恢复
+                      </button>
+                      <button className="button button-small" disabled={pending||!record.artifact} onClick={()=>void saveBackup(record.id)}>另存备份</button>
+                    </div>
                   </td>
                 </tr>
               ))}
@@ -322,7 +317,7 @@ export function DataPage({ onDataRestored }: { onDataRestored?: () => void }): J
               </button>
               <button
                 type="button"
-                className="button button-primary"
+                className="button button-danger"
                 disabled={pending}
                 onClick={() => void commitRestore()}
               >
@@ -331,30 +326,26 @@ export function DataPage({ onDataRestored }: { onDataRestored?: () => void }): J
             </div>
           }
         >
+          <Notice tone="warn" title="将覆盖当前账本数据">
+            恢复前会自动为当前数据创建“恢复前备份”，可随时切换回来。
+          </Notice>
           <dl className="kv">
-            <dt>备份</dt>
-            <dd title={preview.backupId}>{preview.backupId}</dd>
             <dt>创建时间</dt>
             <dd>{formatTime(preview.createdAt)}</dd>
-            <dt>schema</dt>
-            <dd>
-              {preview.dbSchemaVersion}
-              {preview.schemaCompatibility === 'needs_migration' ? '（恢复时在 staging 迁移）' : ''}
-            </dd>
-            <dt>备份时修订号</dt>
-            <dd>{preview.snapshotRevision}</dd>
-            <dt>校验</dt>
-            <dd>hash 与完整性已通过；版本 {preview.manifestVersion}</dd>
-            {preview.lastAppliedRestoreId ? (
-              <>
-                <dt>此前恢复</dt>
-                <dd>{preview.lastAppliedRestoreId}</dd>
-              </>
-            ) : null}
+            <dt>完整性校验</dt>
+            <dd>已通过{preview.schemaCompatibility === 'needs_migration' ? '（恢复时将自动升级格式）' : ''}</dd>
+            <dt>备份编号</dt>
+            <dd title={preview.backupId}>{preview.backupId.slice(0, 12)}…</dd>
           </dl>
-          <p className="tiny">恢复成功后 dataEpoch 会更换，旧页面缓存与令牌随之失效；当前数据会先自动备份。</p>
         </Panel>
       ) : null}
+
+      <details className="advanced-disclosure">
+        <summary>高级：样本标注与模型评测（开发者工具）</summary>
+        <div className="advanced-disclosure-body">
+          <DatasetPanel key={datasetGeneration} />
+        </div>
+      </details>
 
     </div>
   );

@@ -25,7 +25,7 @@ async function launch(){
   await page.locator('[data-ledger-total]').waitFor();await app.evaluate(({BrowserWindow})=>BrowserWindow.getAllWindows()[0].setContentSize(1400,1100));
   // Block all real API traffic in the isolated selftest. No key is configured.
   await app.evaluate(()=>{globalThis.qaDatasetHttp=0;globalThis.fetch=async()=>{globalThis.qaDatasetHttp++;throw Error('selftest forbids external HTTP');};});
-  await page.locator('[data-nav-item="data"]').click();await page.locator('[data-dataset-panel]').waitFor();
+  await page.locator('[data-nav-item="data"]').click();await page.locator('.advanced-disclosure > summary').click();await page.locator('[data-dataset-panel]').waitFor();
 }
 async function formalCount(){return app.evaluate(({app})=>{const require=process.getBuiltinModule('node:module').createRequire(app.getAppPath()+'/package.json'),fs=require('node:fs'),path=require('node:path'),DB=require('better-sqlite3');const root=path.join(process.env.LOCALAPPDATA,'BookKeepAI'),pointer=JSON.parse(fs.readFileSync(path.join(root,'data/active.json'),'utf8')),db=new DB(path.join(root,'data/generations',pointer.generationId,'ledger.db'),{readonly:true});try{return {transactions:db.prepare('SELECT count(*) n FROM "transaction"').get().n,candidates:db.prepare('SELECT count(*) n FROM candidate').get().n,integrity:db.pragma('quick_check',{simple:true})};}finally{db.close();}});}
 try{
