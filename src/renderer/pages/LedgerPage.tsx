@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState, type JSX } from 'react';
 import type { CategoryView, TransactionFilter, TransactionListResult, TransactionView } from '../../shared/entities';
 import { isTransactionDate, todayInShanghai } from '../../shared/date';
-import { EmptyState, PageHeader } from '../components/ui';
+import { EmptyState, PageHeader, Spinner } from '../components/ui';
 import { Modal } from '../components/Modal';
 import { ExpenseEditor, type LeaveGuard } from '../components/ExpenseEditor';
 import { ChevronDown } from 'lucide-react';
@@ -173,7 +173,7 @@ export function LedgerPage({ registerGuard, newRequest = 0, onNewRequestHandled,
       <details className="category-filter"><summary>分类筛选{selected.length ? `（已选${selected.length}类）` : '（全部）'}</summary><div className="filter-categories">{categories.map((item) => <label key={item.id}><input type="checkbox" checked={selected.includes(item.id)} onChange={(event) => setSelected((value) => event.target.checked ? [...value, item.id] : value.filter((id) => id !== item.id))} />{item.name}{item.enabled ? '' : '（已停用）'}</label>)}</div></details>
       <div className="expense-actions"><button className="button button-primary" type="submit">应用筛选</button><button className="button ledger-filter-clear" type="button" disabled={!filtered && !hasDraftFilter} onClick={clear}>清空筛选</button>{!deleted ? <button className="button" type="button" disabled={exporting||loading} onClick={()=>void exportFiltered()}>导出当前筛选CSV</button> : null}</div>
     </form></div></div></section>
-    <div className="ledger-summary" tabIndex={-1}><p role="status" aria-live="polite" data-ledger-total={loading || error ? undefined : result?.filteredTotalFen}>{loading ? '正在读取本地账本…' : error ? '列表尚未读取成功' : result ? `支出明细 ${result.totalCount} 笔 · ¥${displayFen(result.filteredTotalFen)}` : '—'}</p><button className="button" aria-pressed={deleted} disabled={loading} onClick={() => setFilter((value) => ({ ...value, deleted: deleted ? 'active' : 'deleted' }))}>{deleted ? '返回正式支出' : '已删除记录'}</button></div>
+    <div className="ledger-summary" tabIndex={-1}><p role="status" aria-live="polite" data-ledger-total={loading || error ? undefined : result?.filteredTotalFen}>{loading ? <span className="status-inline"><Spinner />正在读取本地账本…</span> : error ? '列表尚未读取成功' : result ? `支出明细 ${result.totalCount} 笔 · ¥${displayFen(result.filteredTotalFen)}` : '—'}</p><button className="button" aria-pressed={deleted} disabled={loading} onClick={() => setFilter((value) => ({ ...value, deleted: deleted ? 'active' : 'deleted' }))}>{deleted ? '返回正式支出' : '已删除记录'}</button></div>
     {notice ? <div className="notice notice-toast"><span role="status">{notice.text}</span><div className="notice-toast-actions">{notice.undo ? <button type="button" className="button button-small button-primary" disabled={undoBusy} onClick={() => void undoDelete(notice.undo!)}>{undoBusy ? '正在撤销…' : '撤销'}</button> : null}<button type="button" className="notice-dismiss" aria-label="关闭提示" onClick={() => setNotice(null)}>×</button></div></div> : null}
     {error ? <div role="alert" className="error-line">{error} <button className="button" onClick={() => void load()}>重新读取</button></div> : null}
     {!loading && !error && result?.items.length === 0 ? <div className={!filtered ? deleted ? 'ledger-empty-deleted' : 'ledger-empty-book' : undefined}>{!filtered ? <p>{deleted ? '暂无已删除记录' : <strong>还没有支出，记下第一笔吧</strong>}</p> : <EmptyState title="没有符合条件的记录。" action={<button type="button" className="button" onClick={clear}>清空筛选</button>} />}</div> : null}
@@ -197,11 +197,11 @@ export function LedgerPage({ registerGuard, newRequest = 0, onNewRequestHandled,
         </section>;
       })}
     </div>
-    {result?.nextCursor && !error ? <button className="button" disabled={loading} onClick={() => void load(true)}>{loading ? '正在读取…' : '加载更多'}</button> : null}
+    {result?.nextCursor && !error ? <button className="button" disabled={loading} onClick={() => void load(true)}>{loading ? <><Spinner />正在读取…</> : '加载更多'}</button> : null}
     {editor ? <ExpenseEditor original={editor.original} dataEpoch={editor.epoch} categories={categories} registerGuard={registerGuard} onClose={() => { setEditor(null); void load(); }} onRefresh={load} onSaved={() => { setEditor(null); setNotice({ text: '已保存 1 笔支出。' }); void load(); }} /> : null}
     {action ? <Modal title={action.restore ? `恢复“${action.transaction.name}”？` : `删除“${action.transaction.name}”？`} busy={actionBusy} onClose={() => { if (!actionPending.current) setAction(null); }}>
       <p>{action.restore ? '恢复后将重新计入正式账本与统计。' : '删除后会移入“已删除记录”，可随时撤销或恢复。'}</p>{actionError ? <p role="alert" className="error-line">{actionError} 重试将复用原提交标识。</p> : null}
-      <div className="expense-actions"><button className="button" disabled={actionBusy} onClick={() => setAction(null)}>{action.restore ? '取消' : '保留'}</button><button className={`button ${action.restore ? 'button-primary' : 'button-danger'}`} disabled={actionBusy} onClick={() => void submitAction()}>{actionBusy ? '正在处理…' : actionError ? '重试' : action.restore ? '恢复' : '确认删除'}</button></div>
+      <div className="expense-actions"><button className="button" disabled={actionBusy} onClick={() => setAction(null)}>{action.restore ? '取消' : '保留'}</button><button className={`button ${action.restore ? 'button-primary' : 'button-danger'}`} disabled={actionBusy} onClick={() => void submitAction()}>{actionBusy ? <><Spinner />正在处理…</> : actionError ? '重试' : action.restore ? '恢复' : '确认删除'}</button></div>
     </Modal> : null}
   </div>;
 }

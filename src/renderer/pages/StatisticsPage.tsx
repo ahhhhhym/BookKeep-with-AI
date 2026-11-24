@@ -2,7 +2,7 @@ import { useCallback, useEffect, useRef, useState, type JSX } from 'react';
 import type { TransactionFilter } from '../../shared/entities';
 import { isTransactionDate, todayInShanghai } from '../../shared/date';
 import { calendarShift, periodRange, type StatisticsInput, type TopTransactionsResult, type TopCategoriesResult } from '../../shared/statistics';
-import { PageHeader, Panel } from '../components/ui';
+import { AnimatedFen, AnimatedYuan, PageHeader, Panel, Spinner } from '../components/ui';
 import { StatisticsChart } from '../components/StatisticsChart';
 import { getBridge, errorCodeOf } from '../lib/bridge';
 import { describeError } from '../lib/messages';
@@ -103,20 +103,20 @@ export function StatisticsPage({ input, onInput, onDetails }: {
     </form>
     <details className="category-filter"><summary>统计分类筛选（{input.categoryIds.length ? `已选${input.categoryIds.length}类` : '全部'}）</summary><div className="filter-categories">{bundle?.categories.map((category) => <label key={category.id}><input type="checkbox" checked={input.categoryIds.includes(category.id)} onChange={(event) => onInput({ ...input, categoryIds: event.target.checked ? [...input.categoryIds, category.id] : input.categoryIds.filter((id) => id !== category.id) })} />{category.name}{category.enabled ? '' : '（已停用）'}</label>)}</div>{input.categoryIds.length > 0 ? <button className="button button-small" type="button" onClick={() => onInput({ ...input, categoryIds: [] })}>统计全部分类</button> : null}</details>
     <div className={`statistics-update${error ? '' : ' sr-only'}`} role="status" aria-live="polite">{error ? <span className="error-line">统计暂未读取成功：{error} {bundle ? '下方保留上次完成的结果，尚未更新。' : ''} <button className="button" onClick={reload}>重试</button></span> : blocked && bundle ? '正在更新统计。' : bundle ? '统计已更新' : '正在计算本周期统计…'}</div>
-    {!bundle ? <div className="statistics-placeholder" role="status">{error ? '暂无可展示的统计结果，请重试。' : '正在计算本周期统计…'}</div> : <div className="statistics-snapshot" data-scope={scope!.scopeId} data-period={displayed!.period} data-epoch={scope!.dataEpoch} aria-busy={blocked}>
-      <div className="snapshot-fade" key={snapshot!.key}>
-      <p className="statistics-range" data-statistics-displayed>{LABEL[displayed!.period]}统计 · {scope!.start} 至 {calendarShift(scope!.end, -1)} · 截至 {calendarShift(scope!.effectiveEnd, -1)} · {displayed!.categoryIds.length ? `分类：${displayed!.categoryIds.map(id => bundle.categories.find(c => c.id === id)?.name ?? id).join('、')}` : '全部分类'}</p>
+    {!bundle ? <div className={`statistics-placeholder${error ? '' : ' skeleton-shimmer'}`} role="status">{error ? '暂无可展示的统计结果，请重试。' : <span className="status-inline"><Spinner />正在计算本周期统计…</span>}</div> : <div className="statistics-snapshot" data-scope={scope!.scopeId} data-period={displayed!.period} data-epoch={scope!.dataEpoch} aria-busy={blocked}>
+      <p className="statistics-range snapshot-fade" key={snapshot!.key} data-statistics-displayed>{LABEL[displayed!.period]}统计 · {scope!.start} 至 {calendarShift(scope!.end, -1)} · 截至 {calendarShift(scope!.effectiveEnd, -1)} · {displayed!.categoryIds.length ? `分类：${displayed!.categoryIds.map(id => bundle.categories.find(c => c.id === id)?.name ?? id).join('、')}` : '全部分类'}</p>
       <div className="metric-row" data-statistics-total={bundle.summary.totalFen}>
-        <div className="metric"><div className="metric-label">总支出</div><div className="metric-value">¥{displayFen(bundle.summary.totalFen)}</div><div className="metric-note">{bundle.summary.count} 笔支出</div></div>
-        <div className="metric"><div className="metric-label">日均支出</div><div className="metric-value" data-daily-average>{`¥${bundle.summary.dailyAverage.displayYuan}`}</div><div className="metric-note">按 {bundle.summary.dailyAverage.denominatorDays} 天平均（含无消费日）</div></div>
+        <div className="metric"><div className="metric-label">总支出</div><div className="metric-value"><AnimatedFen fen={bundle.summary.totalFen} /></div><div className="metric-note">{bundle.summary.count} 笔支出</div></div>
+        <div className="metric"><div className="metric-label">日均支出</div><div className="metric-value" data-daily-average><AnimatedYuan displayYuan={bundle.summary.dailyAverage.displayYuan} /></div><div className="metric-note">按 {bundle.summary.dailyAverage.denominatorDays} 天平均（含无消费日）</div></div>
       </div>
+      <div className="snapshot-fade" key={`charts:${snapshot!.key}`}>
       <Panel title={`${LABEL[displayed!.period]}支出趋势`}>
         <StatisticsChart points={bundle.series.points} disabled={blocked} selected={blocked ? null : selected} onSelect={index => { if (!blocked) setSelected(index); }} onClose={close}>
           {point ? <><h3>{displayed!.period === 'year' ? `${point.pointKey.slice(0, 4)}年${Number(point.pointKey.slice(5))}月` : point.pointKey}</h3>
             {point.isFuture ? <p>尚未到来</p> : <>
               <p className="point-total">{displayed!.period === 'year' ? '当月总支出' : '当日总支出'} <strong>¥{displayFen(point.amountFen)}</strong></p>
               <h4>{displayed!.period === 'year' ? '前三消费分类' : '最大 3 笔交易'}</h4>
-              {detailError ? <p role="alert">{detailError}</p> : !detailReady ? <p role="status">正在读取详情…</p> : detail!.items.length ? <ol className="top-items">{detail!.items.map((item) => <li key={item.id}><span>{item.name}</span><strong>¥{displayFen(item.amount)}</strong></li>)}</ol> : <p>暂无支出</p>}
+              {detailError ? <p role="alert">{detailError}</p> : !detailReady ? <p role="status" className="status-inline"><Spinner />正在读取详情…</p> : detail!.items.length ? <ol className="top-items">{detail!.items.map((item) => <li key={item.id}><span>{item.name}</span><strong>¥{displayFen(item.amount)}</strong></li>)}</ol> : <p>暂无支出</p>}
               <p className="tiny muted">仅列前三项，总额含全部支出。</p>
               <button className="button" disabled={blocked} onClick={() => onDetails({ dateStart: point.start, dateEnd: point.end < scope!.effectiveEnd ? point.end : scope!.effectiveEnd, categoryIds: displayed!.categoryIds, nameQuery: null, deleted: 'active' })}>查看明细</button>
             </>}

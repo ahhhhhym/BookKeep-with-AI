@@ -16,7 +16,7 @@ export function useMainTransition(target: NavId) {
   const enterFrom = (from: { opacity: string | number; transform: string }): void => {
     const el = ref.current;
     if (!el) return;
-    const enter = el.animate([from, { opacity: 1, transform: 'translateY(0px)' }], { duration: 160, easing: 'ease-out', fill: 'forwards' });
+    const enter = el.animate([from, { opacity: 1, transform: 'translateY(0px)' }], { duration: 160, easing: 'cubic-bezier(0.22, 1, 0.36, 1)', fill: 'forwards' });
     animation.current = enter;
     enter.onfinish = () => {
       if (animation.current !== enter) return;
@@ -67,7 +67,7 @@ export function useMainTransition(target: NavId) {
       resetScroll.current = false;
     }
     if (phase !== 'entering' || animation.current || !ref.current) return;
-    enterFrom({ opacity: 0, transform: 'translateY(10px)' });
+    enterFrom({ opacity: 0, transform: 'translateY(8px)' });
   }, [shown, phase]);
   useEffect(() => () => animation.current?.cancel(), []);
   return { shown, phase, ref };

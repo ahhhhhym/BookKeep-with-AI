@@ -1,4 +1,46 @@
 import { Fragment, type JSX, type ReactNode } from 'react';
+import { useAnimatedNumber } from '../lib/motion';
+import { displayFen } from '../lib/ledger';
+
+export function Spinner({ size = 14 }: { readonly size?: number }): JSX.Element {
+  return (
+    <svg
+      className="ui-spinner"
+      width={size}
+      height={size}
+      viewBox="0 0 16 16"
+      fill="none"
+      aria-hidden="true"
+    >
+      <circle cx="8" cy="8" r="6" stroke="currentColor" strokeOpacity="0.22" strokeWidth="2" />
+      <path d="M14 8a6 6 0 0 0-6-6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+    </svg>
+  );
+}
+
+export function StatusDot({ tone = 'primary' }: { readonly tone?: 'primary' | 'warn' | 'danger' }): JSX.Element {
+  return <span className="status-dot" data-tone={tone} aria-hidden="true" />;
+}
+
+/** Interruptible numeric counter for Fen-based currency amounts (safe for BigInt strings). */
+export function AnimatedFen({ fen, prefix = '¥' }: { readonly fen: string | number; readonly prefix?: string }): JSX.Element {
+  const numeric = Number(fen);
+  const safe = Number.isSafeInteger(numeric);
+  const animated = useAnimatedNumber(safe ? numeric : 0, 260);
+  const text = safe ? displayFen(Math.round(animated)) : displayFen(fen);
+  return <span className="tabular-num">{prefix}{text}</span>;
+}
+
+/** Interruptible numeric counter for Yuan string values (e.g. daily average "12.34"). */
+export function AnimatedYuan({ displayYuan, prefix = '¥' }: { readonly displayYuan: string; readonly prefix?: string }): JSX.Element {
+  const numeric = Number(displayYuan.replace(/,/g, ''));
+  const valid = Number.isFinite(numeric) && Math.abs(numeric) < 1e12;
+  const animated = useAnimatedNumber(valid ? numeric : 0, 260);
+  const text = valid
+    ? animated.toLocaleString('zh-CN', { minimumFractionDigits: 2, maximumFractionDigits: 2, useGrouping: false })
+    : displayYuan;
+  return <span className="tabular-num">{prefix}{text}</span>;
+}
 
 export interface PageHeaderProps {
   readonly title: string;
